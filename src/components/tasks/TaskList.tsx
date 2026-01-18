@@ -11,7 +11,7 @@ const EPIC_STORAGE_KEY = "ralph-ui-task-list-epic-collapsed-state"
 // Types
 
 /** Task status groups for display in the task list. */
-export type TaskGroup = "ready" | "in_progress" | "blocked" | "other"
+export type TaskGroup = "blocked" | "ready" | "in_progress" | "closed"
 
 export interface TaskListProps {
   /** Tasks to display in the list */
@@ -40,23 +40,23 @@ interface GroupConfig {
 
 const groupConfigs: GroupConfig[] = [
   {
+    key: "blocked",
+    label: "Blocked",
+    statusFilter: status => status === "blocked",
+  },
+  {
     key: "ready",
     label: "Ready",
     statusFilter: status => status === "open",
   },
   {
     key: "in_progress",
-    label: "In Progress",
+    label: "In progress",
     statusFilter: status => status === "in_progress",
   },
   {
-    key: "blocked",
-    label: "Blocked",
-    statusFilter: status => status === "blocked",
-  },
-  {
-    key: "other",
-    label: "Other",
+    key: "closed",
+    label: "Closed",
     statusFilter: status => status === "deferred" || status === "closed",
   },
 ]
@@ -175,12 +175,12 @@ function EpicGroupHeader({
  * - Status groups are also collapsible
  */
 
-// Default collapsed state: Ready + In Progress expanded, Blocked + Other collapsed
+// Default collapsed state: Ready + In Progress expanded, Blocked + Closed collapsed
 const DEFAULT_STATUS_COLLAPSED_STATE: Record<TaskGroup, boolean> = {
+  blocked: true, // Collapsed by default
   ready: false,
   in_progress: false,
-  blocked: true, // Collapsed by default per requirements
-  other: true, // Collapsed by default
+  closed: true, // Collapsed by default
 }
 
 /** Load status collapsed state from localStorage */
@@ -252,10 +252,10 @@ export function TaskList({
       const stored = persistCollapsedState ? loadStatusCollapsedState() : null
       const base = stored ?? DEFAULT_STATUS_COLLAPSED_STATE
       return {
+        blocked: defaultCollapsed.blocked ?? base.blocked,
         ready: defaultCollapsed.ready ?? base.ready,
         in_progress: defaultCollapsed.in_progress ?? base.in_progress,
-        blocked: defaultCollapsed.blocked ?? base.blocked,
-        other: defaultCollapsed.other ?? base.other,
+        closed: defaultCollapsed.closed ?? base.closed,
       }
     },
   )
@@ -341,10 +341,10 @@ export function TaskList({
   // Group ungrouped tasks by status
   const groupedUngroupedTasks = useMemo(() => {
     const groups: Record<TaskGroup, TaskCardTask[]> = {
+      blocked: [],
       ready: [],
       in_progress: [],
-      blocked: [],
-      other: [],
+      closed: [],
     }
 
     for (const task of ungroupedTasks) {

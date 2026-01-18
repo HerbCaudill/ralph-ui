@@ -27,18 +27,18 @@ describe("TaskList", () => {
 
     it("renders all group headers", () => {
       render(<TaskList tasks={sampleTasks} />)
-      expect(screen.getByLabelText(/Ready section/)).toBeInTheDocument()
-      expect(screen.getByLabelText(/In Progress section/)).toBeInTheDocument()
       expect(screen.getByLabelText(/Blocked section/)).toBeInTheDocument()
-      expect(screen.getByLabelText(/Other section/)).toBeInTheDocument()
+      expect(screen.getByLabelText(/Ready section/)).toBeInTheDocument()
+      expect(screen.getByLabelText(/In progress section/)).toBeInTheDocument()
+      expect(screen.getByLabelText(/Closed section/)).toBeInTheDocument()
     })
 
     it("displays correct task counts in headers", () => {
       render(<TaskList tasks={sampleTasks} />)
-      expect(screen.getByLabelText("Ready section, 2 tasks")).toBeInTheDocument()
-      expect(screen.getByLabelText("In Progress section, 1 task")).toBeInTheDocument()
       expect(screen.getByLabelText("Blocked section, 1 task")).toBeInTheDocument()
-      expect(screen.getByLabelText("Other section, 2 tasks")).toBeInTheDocument()
+      expect(screen.getByLabelText("Ready section, 2 tasks")).toBeInTheDocument()
+      expect(screen.getByLabelText("In progress section, 1 task")).toBeInTheDocument()
+      expect(screen.getByLabelText("Closed section, 2 tasks")).toBeInTheDocument()
     })
 
     it("renders tasks within groups", () => {
@@ -46,7 +46,7 @@ describe("TaskList", () => {
       render(
         <TaskList
           tasks={sampleTasks}
-          defaultCollapsed={{ ready: false, in_progress: false, blocked: false, other: false }}
+          defaultCollapsed={{ blocked: false, ready: false, in_progress: false, closed: false }}
         />,
       )
       expect(screen.getByText("Open task 1")).toBeInTheDocument()
@@ -73,7 +73,7 @@ describe("TaskList", () => {
       render(<TaskList tasks={tasksOnlyOpen} />)
 
       expect(screen.getByLabelText(/Ready section/)).toBeInTheDocument()
-      expect(screen.queryByLabelText(/In Progress section/)).not.toBeInTheDocument()
+      expect(screen.queryByLabelText(/In progress section/)).not.toBeInTheDocument()
       expect(screen.queryByLabelText(/Blocked section/)).not.toBeInTheDocument()
     })
 
@@ -82,7 +82,7 @@ describe("TaskList", () => {
       render(<TaskList tasks={tasksOnlyOpen} showEmptyGroups />)
 
       expect(screen.getByLabelText(/Ready section/)).toBeInTheDocument()
-      expect(screen.getByLabelText(/In Progress section/)).toBeInTheDocument()
+      expect(screen.getByLabelText(/In progress section/)).toBeInTheDocument()
       expect(screen.getByLabelText(/Blocked section/)).toBeInTheDocument()
     })
 
@@ -107,13 +107,13 @@ describe("TaskList", () => {
       expect(readyHeader).toBeInTheDocument()
     })
 
-    it("groups in_progress tasks under In Progress", () => {
+    it("groups in_progress tasks under In progress", () => {
       const tasks: TaskCardTask[] = [
         { id: "task-1", title: "Working on it", status: "in_progress" },
       ]
       render(<TaskList tasks={tasks} />)
 
-      const header = screen.getByLabelText("In Progress section, 1 task")
+      const header = screen.getByLabelText("In progress section, 1 task")
       expect(header).toBeInTheDocument()
     })
 
@@ -125,14 +125,14 @@ describe("TaskList", () => {
       expect(header).toBeInTheDocument()
     })
 
-    it("groups deferred and closed tasks under Other", () => {
+    it("groups deferred and closed tasks under Closed", () => {
       const tasks: TaskCardTask[] = [
         { id: "task-1", title: "Deferred task", status: "deferred" },
         { id: "task-2", title: "Closed task", status: "closed" },
       ]
       render(<TaskList tasks={tasks} />)
 
-      const header = screen.getByLabelText("Other section, 2 tasks")
+      const header = screen.getByLabelText("Closed section, 2 tasks")
       expect(header).toBeInTheDocument()
     })
   })
@@ -180,9 +180,9 @@ describe("TaskList", () => {
       expect(screen.queryByText("Blocked task")).not.toBeInTheDocument()
     })
 
-    it("collapses Other group by default", () => {
+    it("collapses Closed group by default", () => {
       render(<TaskList tasks={sampleTasks} persistCollapsedState={false} />)
-      // Other group (deferred/closed) tasks should not be visible
+      // Closed group (deferred/closed) tasks should not be visible
       expect(screen.queryByText("Deferred task")).not.toBeInTheDocument()
       expect(screen.queryByText("Closed task")).not.toBeInTheDocument()
     })
@@ -228,7 +228,7 @@ describe("TaskList", () => {
       const defaultCollapsed: Partial<Record<TaskGroup, boolean>> = {
         ready: true,
         in_progress: false,
-        other: false,
+        closed: false,
       }
       render(<TaskList tasks={sampleTasks} defaultCollapsed={defaultCollapsed} />)
 
@@ -238,7 +238,7 @@ describe("TaskList", () => {
       // In Progress should be expanded
       expect(screen.getByText("In progress task")).toBeInTheDocument()
 
-      // Other should be expanded (overriding default behavior)
+      // Closed should be expanded (overriding default behavior)
       expect(screen.getByText("Deferred task")).toBeInTheDocument()
     })
 
@@ -278,10 +278,10 @@ describe("TaskList", () => {
       localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({
+          blocked: false, // Override default
           ready: true,
           in_progress: false,
-          blocked: false, // Override default
-          other: false,
+          closed: false,
         }),
       )
 
@@ -308,10 +308,10 @@ describe("TaskList", () => {
       localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({
+          blocked: false,
           ready: true,
           in_progress: false,
-          blocked: false,
-          other: false,
+          closed: false,
         }),
       )
 
@@ -326,10 +326,10 @@ describe("TaskList", () => {
       localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({
+          blocked: false,
           ready: false,
           in_progress: false,
-          blocked: false,
-          other: false,
+          closed: false,
         }),
       )
 
