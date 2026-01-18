@@ -328,7 +328,7 @@ export function ToolUseCard({ event, className, defaultExpanded = false }: ToolU
 
               {/* Bash output */}
               {event.tool === "Bash" && event.output && (
-                <pre className="text-foreground/80 mt-1 max-h-48 overflow-auto font-mono text-xs whitespace-pre-wrap">
+                <pre className="bg-muted/30 text-foreground/80 mt-1 max-h-48 overflow-auto rounded border p-2 font-mono text-xs whitespace-pre-wrap">
                   {event.output.length > 500 ?
                     <>
                       {event.output.slice(0, 200)}
