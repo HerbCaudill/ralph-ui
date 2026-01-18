@@ -207,10 +207,14 @@ export function WorkspacePicker({ className }: WorkspacePickerProps) {
     }
   }, [])
 
-  // Fetch workspace info on mount
+  // Fetch workspace info on mount (only once)
+  const hasFetchedRef = useRef(false)
   useEffect(() => {
+    if (hasFetchedRef.current) return
+    hasFetchedRef.current = true
     fetchWorkspaceInfo()
-  }, [fetchWorkspaceInfo])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Fetch all workspaces when dropdown opens
   useEffect(() => {
