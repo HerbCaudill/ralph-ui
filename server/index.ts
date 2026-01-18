@@ -41,20 +41,66 @@ function createApp(config: ServerConfig): Express {
     res.status(200).json({ ok: true })
   })
 
-  // API endpoints (to be expanded)
-  app.post("/api/start", (_req: Request, res: Response) => {
-    // TODO: Implement ralph spawn
-    res.status(501).json({ ok: false, error: "Not implemented" })
+  // API endpoints
+  app.post("/api/start", async (req: Request, res: Response) => {
+    try {
+      const manager = getRalphManager()
+      if (manager.isRunning) {
+        res.status(409).json({ ok: false, error: "Ralph is already running" })
+        return
+      }
+
+      const { iterations } = req.body as { iterations?: number }
+      await manager.start(iterations)
+      res.status(200).json({ ok: true, status: manager.status })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to start"
+      res.status(500).json({ ok: false, error: message })
+    }
   })
 
-  app.post("/api/stop", (_req: Request, res: Response) => {
-    // TODO: Implement ralph stop
-    res.status(501).json({ ok: false, error: "Not implemented" })
+  app.post("/api/stop", async (_req: Request, res: Response) => {
+    try {
+      const manager = getRalphManager()
+      if (!manager.isRunning) {
+        res.status(409).json({ ok: false, error: "Ralph is not running" })
+        return
+      }
+
+      await manager.stop()
+      res.status(200).json({ ok: true, status: manager.status })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to stop"
+      res.status(500).json({ ok: false, error: message })
+    }
   })
 
-  app.post("/api/message", (_req: Request, res: Response) => {
-    // TODO: Implement message to ralph stdin
-    res.status(501).json({ ok: false, error: "Not implemented" })
+  app.post("/api/message", (req: Request, res: Response) => {
+    try {
+      const manager = getRalphManager()
+      if (!manager.isRunning) {
+        res.status(409).json({ ok: false, error: "Ralph is not running" })
+        return
+      }
+
+      const { message } = req.body as { message?: string | object }
+      if (message === undefined) {
+        res.status(400).json({ ok: false, error: "Message is required" })
+        return
+      }
+
+      manager.send(message)
+      res.status(200).json({ ok: true })
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to send message"
+      res.status(500).json({ ok: false, error: msg })
+    }
+  })
+
+  // Status endpoint (GET for convenience)
+  app.get("/api/status", (_req: Request, res: Response) => {
+    const manager = getRalphManager()
+    res.status(200).json({ ok: true, status: manager.status })
   })
 
   // Static assets from dist (built by Vite)
