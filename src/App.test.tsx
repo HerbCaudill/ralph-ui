@@ -1,8 +1,33 @@
 import { render, screen } from "@testing-library/react"
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, beforeEach, vi, afterEach } from "vitest"
 import { App } from "./App"
 
+// Mock fetch for WorkspacePicker
+const mockFetch = vi.fn()
+;(globalThis as { fetch: typeof fetch }).fetch = mockFetch
+
 describe("App", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          ok: true,
+          workspace: {
+            path: "/test/workspace",
+            name: "workspace",
+            issueCount: 10,
+            daemonConnected: true,
+          },
+        }),
+    })
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it("renders the main layout with sidebar and status bar", () => {
     render(<App />)
 

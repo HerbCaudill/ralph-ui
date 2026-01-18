@@ -1,8 +1,33 @@
 import { render, screen, fireEvent } from "@testing-library/react"
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, beforeEach, vi, afterEach } from "vitest"
 import { MainLayout } from "./MainLayout"
 
+// Mock fetch for WorkspacePicker
+const mockFetch = vi.fn()
+;(globalThis as { fetch: typeof fetch }).fetch = mockFetch
+
 describe("MainLayout", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          ok: true,
+          workspace: {
+            path: "/test/workspace",
+            name: "workspace",
+            issueCount: 10,
+            daemonConnected: true,
+          },
+        }),
+    })
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it("renders sidebar content", () => {
     render(<MainLayout sidebar={<div>Sidebar Content</div>} />)
     expect(screen.getByText("Sidebar Content")).toBeInTheDocument()

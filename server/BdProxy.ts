@@ -86,6 +86,17 @@ export interface BdProxyOptions {
   timeout?: number
 }
 
+export interface BdInfo {
+  database_path: string
+  issue_count: number
+  mode: string
+  daemon_connected: boolean
+  daemon_status?: string
+  daemon_version?: string
+  socket_path?: string
+  config?: Record<string, string>
+}
+
 // =============================================================================
 // BdProxy
 // =============================================================================
@@ -251,6 +262,17 @@ export class BdProxy {
 
     const result = await this.exec(args)
     return JSON.parse(result) as BdIssue[]
+  }
+
+  /**
+   * Get database info.
+   *
+   * @returns Database and daemon information
+   */
+  async getInfo(): Promise<BdInfo> {
+    const args = ["info", "--json"]
+    const result = await this.exec(args)
+    return JSON.parse(result) as BdInfo
   }
 
   /**

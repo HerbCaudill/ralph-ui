@@ -1,0 +1,297 @@
+import { cn } from "@/lib/utils"
+import { useAppStore, selectWorkspace } from "@/store"
+import { useState, useRef, useEffect, useCallback } from "react"
+
+// =============================================================================
+// Types
+// =============================================================================
+
+export interface WorkspaceInfo {
+  path: string
+  name: string
+  issueCount?: number
+  daemonConnected?: boolean
+  daemonStatus?: string
+}
+
+export interface WorkspacePickerProps {
+  className?: string
+}
+
+// =============================================================================
+// Icons
+// =============================================================================
+
+function FolderIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
+    </svg>
+  )
+}
+
+function ChevronDownIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  )
+}
+
+function CheckIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  )
+}
+
+function PlusIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </svg>
+  )
+}
+
+function RefreshIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+      <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+      <path d="M16 16h5v5" />
+    </svg>
+  )
+}
+
+// =============================================================================
+// WorkspacePicker Component
+// =============================================================================
+
+/**
+ * Dropdown component to display and switch between bd workspaces.
+ * Shows the current workspace name and allows switching to other workspaces.
+ */
+export function WorkspacePicker({ className }: WorkspacePickerProps) {
+  const workspace = useAppStore(selectWorkspace)
+  const setWorkspace = useAppStore(state => state.setWorkspace)
+  const [isOpen, setIsOpen] = useState(false)
+  const [workspaceInfo, setWorkspaceInfo] = useState<WorkspaceInfo | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Fetch workspace info from the server
+  const fetchWorkspaceInfo = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const response = await fetch("/api/workspace")
+      if (!response.ok) {
+        throw new Error("Failed to fetch workspace info")
+      }
+      const data = await response.json()
+      if (data.ok && data.workspace) {
+        setWorkspaceInfo(data.workspace)
+        // Update the store with the workspace path
+        if (data.workspace.path !== workspace) {
+          setWorkspace(data.workspace.path)
+        }
+      } else {
+        throw new Error(data.error || "Unknown error")
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch workspace")
+    } finally {
+      setIsLoading(false)
+    }
+  }, [workspace, setWorkspace])
+
+  // Fetch workspace info on mount
+  useEffect(() => {
+    fetchWorkspaceInfo()
+  }, [fetchWorkspaceInfo])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  // Display name: use workspaceInfo name, or derive from workspace path, or fallback
+  const displayName =
+    workspaceInfo?.name || (workspace ? workspace.split("/").pop() : null) || "No workspace"
+
+  // Issue count badge
+  const issueCount = workspaceInfo?.issueCount
+
+  return (
+    <div className={cn("relative", className)} ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={cn(
+          "flex items-center gap-2 rounded-md px-3 py-1.5",
+          "bg-secondary hover:bg-secondary/80 transition-colors",
+          "text-sm font-medium",
+          isLoading && "opacity-70",
+        )}
+        aria-expanded={isOpen}
+        aria-haspopup="true"
+        disabled={isLoading}
+      >
+        <FolderIcon className="text-muted-foreground" />
+        <span className="max-w-[200px] truncate">{displayName}</span>
+        {issueCount !== undefined && (
+          <span className="bg-muted text-muted-foreground rounded-full px-1.5 py-0.5 text-xs">
+            {issueCount}
+          </span>
+        )}
+        <ChevronDownIcon className={cn("transition-transform", isOpen && "rotate-180")} />
+      </button>
+
+      {isOpen && (
+        <div
+          className={cn(
+            "bg-popover border-border absolute top-full left-0 z-50 mt-1 w-72 rounded-md border shadow-lg",
+          )}
+        >
+          {/* Current workspace section */}
+          <div className="p-1">
+            <div className="text-muted-foreground px-3 py-1.5 text-xs font-medium tracking-wider uppercase">
+              Current Workspace
+            </div>
+            {error ?
+              <div className="flex items-center gap-2 px-3 py-2 text-sm text-red-500">
+                <span>{error}</span>
+                <button
+                  onClick={fetchWorkspaceInfo}
+                  className="text-muted-foreground hover:text-foreground"
+                  title="Retry"
+                >
+                  <RefreshIcon />
+                </button>
+              </div>
+            : workspaceInfo ?
+              <div className="px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <FolderIcon className="text-muted-foreground shrink-0" />
+                  <span className="truncate text-sm font-medium">{workspaceInfo.name}</span>
+                  <CheckIcon className="text-primary ml-auto shrink-0" />
+                </div>
+                <div
+                  className="text-muted-foreground mt-1 truncate text-xs"
+                  title={workspaceInfo.path}
+                >
+                  {workspaceInfo.path}
+                </div>
+                <div className="mt-2 flex items-center gap-3 text-xs">
+                  {workspaceInfo.issueCount !== undefined && (
+                    <span className="text-muted-foreground">{workspaceInfo.issueCount} issues</span>
+                  )}
+                  {workspaceInfo.daemonConnected && (
+                    <span className="flex items-center gap-1">
+                      <span className="size-1.5 rounded-full bg-green-500" />
+                      <span className="text-muted-foreground">Daemon connected</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+            : <div className="text-muted-foreground px-3 py-2 text-sm">Loading...</div>}
+          </div>
+
+          {/* Actions section */}
+          <div className="border-border border-t p-1">
+            <button
+              onClick={() => {
+                fetchWorkspaceInfo()
+              }}
+              className={cn(
+                "flex w-full items-center gap-2 rounded px-3 py-2 text-sm",
+                "hover:bg-accent transition-colors",
+              )}
+            >
+              <RefreshIcon className="text-muted-foreground" />
+              <span>Refresh</span>
+            </button>
+            <button
+              onClick={() => {
+                // TODO: Implement workspace selection dialog
+                setIsOpen(false)
+              }}
+              className={cn(
+                "flex w-full items-center gap-2 rounded px-3 py-2 text-sm",
+                "hover:bg-accent transition-colors",
+              )}
+            >
+              <PlusIcon className="text-muted-foreground" />
+              <span>Open workspace...</span>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

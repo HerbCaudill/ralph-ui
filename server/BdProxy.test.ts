@@ -445,6 +445,70 @@ describe("BdProxy", () => {
     })
   })
 
+  describe("getInfo", () => {
+    const sampleInfo = {
+      database_path: "/Users/test/my-project/.beads/beads.db",
+      issue_count: 42,
+      mode: "daemon",
+      daemon_connected: true,
+      daemon_status: "healthy",
+      daemon_version: "0.47.1",
+      socket_path: "/Users/test/my-project/.beads/bd.sock",
+      config: {
+        issue_prefix: "rui",
+      },
+    }
+
+    it("calls bd info with --json flag", async () => {
+      const infoPromise = proxy.getInfo()
+
+      mockProcess.stdout.emit("data", Buffer.from(JSON.stringify(sampleInfo)))
+      mockProcess.emit("close", 0)
+
+      const result = await infoPromise
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        "bd",
+        ["info", "--json"],
+        expect.objectContaining({
+          stdio: ["ignore", "pipe", "pipe"],
+        }),
+      )
+      expect(result).toEqual(sampleInfo)
+    })
+
+    it("returns database path", async () => {
+      const infoPromise = proxy.getInfo()
+
+      mockProcess.stdout.emit("data", Buffer.from(JSON.stringify(sampleInfo)))
+      mockProcess.emit("close", 0)
+
+      const result = await infoPromise
+      expect(result.database_path).toBe("/Users/test/my-project/.beads/beads.db")
+    })
+
+    it("returns issue count", async () => {
+      const infoPromise = proxy.getInfo()
+
+      mockProcess.stdout.emit("data", Buffer.from(JSON.stringify(sampleInfo)))
+      mockProcess.emit("close", 0)
+
+      const result = await infoPromise
+      expect(result.issue_count).toBe(42)
+    })
+
+    it("returns daemon connection status", async () => {
+      const infoPromise = proxy.getInfo()
+
+      mockProcess.stdout.emit("data", Buffer.from(JSON.stringify(sampleInfo)))
+      mockProcess.emit("close", 0)
+
+      const result = await infoPromise
+      expect(result.daemon_connected).toBe(true)
+      expect(result.daemon_status).toBe("healthy")
+    })
+  })
+
   describe("close", () => {
     it("closes single issue", async () => {
       const closePromise = proxy.close("rui-123")

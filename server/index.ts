@@ -104,6 +104,31 @@ function createApp(config: ServerConfig): Express {
     res.status(200).json({ ok: true, status: manager.status })
   })
 
+  // Workspace info endpoint
+  app.get("/api/workspace", async (_req: Request, res: Response) => {
+    try {
+      const bdProxy = getBdProxy()
+      const info = await bdProxy.getInfo()
+
+      // Extract workspace path from database_path (remove .beads/beads.db suffix)
+      const workspacePath = info.database_path.replace(/\/.beads\/beads\.db$/, "")
+
+      res.status(200).json({
+        ok: true,
+        workspace: {
+          path: workspacePath,
+          name: workspacePath.split("/").pop() || workspacePath,
+          issueCount: info.issue_count,
+          daemonConnected: info.daemon_connected,
+          daemonStatus: info.daemon_status,
+        },
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to get workspace info"
+      res.status(500).json({ ok: false, error: message })
+    }
+  })
+
   // Task management endpoints
   app.post("/api/tasks", async (req: Request, res: Response) => {
     try {
