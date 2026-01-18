@@ -9,7 +9,7 @@ import {
   selectIsRalphRunning,
   selectIsConnected,
 } from "./store"
-import { useRalphConnection, useHotkeys } from "./hooks"
+import { useRalphConnection, useHotkeys, useTheme } from "./hooks"
 
 // =============================================================================
 // API Functions (for hotkeys)
@@ -123,6 +123,9 @@ function StatusBar() {
 export function App() {
   const layoutRef = useRef<MainLayoutHandle>(null)
   const chatInputRef = useRef<ChatInputHandle>(null)
+
+  // Initialize theme management (applies dark class and listens for system changes)
+  useTheme()
 
   // Get state for hotkey conditions
   const ralphStatus = useAppStore(selectRalphStatus)

@@ -6,6 +6,7 @@ import type { ConnectionStatus } from "../hooks/useWebSocket"
 // =============================================================================
 
 export type RalphStatus = "stopped" | "starting" | "running" | "stopping"
+export type Theme = "system" | "light" | "dark"
 
 export interface RalphEvent {
   type: string
@@ -63,6 +64,9 @@ export interface AppState {
 
   // UI State
   sidebarOpen: boolean
+
+  // Theme
+  theme: Theme
 }
 
 // =============================================================================
@@ -105,6 +109,9 @@ export interface AppActions {
   setSidebarOpen: (open: boolean) => void
   toggleSidebar: () => void
 
+  // Theme
+  setTheme: (theme: Theme) => void
+
   // Reset
   reset: () => void
 }
@@ -124,6 +131,7 @@ const initialState: AppState = {
   connectionStatus: "disconnected",
   accentColor: null,
   sidebarOpen: true,
+  theme: "system",
 }
 
 // =============================================================================
@@ -183,6 +191,9 @@ export const useAppStore = create<AppState & AppActions>(set => ({
   setSidebarOpen: open => set({ sidebarOpen: open }),
   toggleSidebar: () => set(state => ({ sidebarOpen: !state.sidebarOpen })),
 
+  // Theme
+  setTheme: theme => set({ theme }),
+
   // Reset
   reset: () => set(initialState),
 }))
@@ -203,3 +214,4 @@ export const selectIsConnected = (state: AppState) => state.connectionStatus ===
 export const selectIsRalphRunning = (state: AppState) => state.ralphStatus === "running"
 export const selectAccentColor = (state: AppState) => state.accentColor
 export const selectSidebarOpen = (state: AppState) => state.sidebarOpen
+export const selectTheme = (state: AppState) => state.theme

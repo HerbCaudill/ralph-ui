@@ -7,6 +7,18 @@ import { useAppStore } from "@/store"
 const mockFetch = vi.fn()
 ;(globalThis as { fetch: typeof fetch }).fetch = mockFetch
 
+// Mock matchMedia for theme detection
+const mockMatchMedia = vi.fn().mockImplementation((query: string) => ({
+  matches: false,
+  media: query,
+  onchange: null,
+  addListener: vi.fn(),
+  removeListener: vi.fn(),
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn(),
+  dispatchEvent: vi.fn(),
+}))
+
 describe("MainLayout", () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -25,6 +37,8 @@ describe("MainLayout", () => {
           },
         }),
     })
+    // Mock matchMedia for theme detection
+    window.matchMedia = mockMatchMedia
   })
 
   afterEach(() => {

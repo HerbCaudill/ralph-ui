@@ -7,6 +7,42 @@ import { useAppStore } from "@/store"
 const mockFetch = vi.fn()
 ;(globalThis as { fetch: typeof fetch }).fetch = mockFetch
 
+// Mock matchMedia
+const mockMatchMedia = vi.fn().mockImplementation((query: string) => ({
+  matches: false,
+  media: query,
+  onchange: null,
+  addListener: vi.fn(),
+  removeListener: vi.fn(),
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn(),
+  dispatchEvent: vi.fn(),
+}))
+
+// Mock localStorage
+const mockLocalStorage = (() => {
+  let store: Record<string, string> = {}
+  return {
+    getItem: vi.fn((key: string) => store[key] ?? null),
+    setItem: vi.fn((key: string, value: string) => {
+      store[key] = value
+    }),
+    removeItem: vi.fn((key: string) => {
+      delete store[key]
+    }),
+    clear: vi.fn(() => {
+      store = {}
+    }),
+    key: vi.fn((i: number) => Object.keys(store)[i] ?? null),
+    get length() {
+      return Object.keys(store).length
+    },
+    _setStore: (newStore: Record<string, string>) => {
+      store = newStore
+    },
+  }
+})()
+
 describe("Header", () => {
   const mockWorkspaceResponse = {
     ok: true,
@@ -27,6 +63,14 @@ describe("Header", () => {
     mockFetch.mockResolvedValue({
       ok: true,
       json: () => Promise.resolve(mockWorkspaceResponse),
+    })
+    // Mock matchMedia for theme detection
+    window.matchMedia = mockMatchMedia
+    // Mock localStorage for theme persistence
+    mockLocalStorage.clear()
+    Object.defineProperty(window, "localStorage", {
+      value: mockLocalStorage,
+      writable: true,
     })
   })
 
@@ -117,6 +161,58 @@ describe("Header", () => {
   it("applies custom className", async () => {
     const { container } = render(<Header className="custom-class" />)
     expect(container.firstChild).toHaveClass("custom-class")
+  })
+
+  describe("theme toggle", () => {
+    it("renders theme toggle button", async () => {
+      render(<Header />)
+      expect(screen.getByTestId("theme-toggle")).toBeInTheDocument()
+    })
+
+    it("shows monitor icon for system theme", async () => {
+      useAppStore.getState().setTheme("system")
+      render(<Header />)
+
+      const button = screen.getByTestId("theme-toggle")
+      expect(button).toHaveAttribute("aria-label", "System theme")
+    })
+
+    it("shows sun icon for light theme", async () => {
+      // Set localStorage so useTheme initializes with light
+      mockLocalStorage._setStore({ "ralph-ui-theme": "light" })
+      render(<Header />)
+
+      const button = screen.getByTestId("theme-toggle")
+      expect(button).toHaveAttribute("aria-label", "Light theme")
+    })
+
+    it("shows moon icon for dark theme", async () => {
+      // Set localStorage so useTheme initializes with dark
+      mockLocalStorage._setStore({ "ralph-ui-theme": "dark" })
+      render(<Header />)
+
+      const button = screen.getByTestId("theme-toggle")
+      expect(button).toHaveAttribute("aria-label", "Dark theme")
+    })
+
+    it("cycles theme when clicked: system -> light -> dark -> system", async () => {
+      useAppStore.getState().setTheme("system")
+      render(<Header />)
+
+      const button = screen.getByTestId("theme-toggle")
+
+      // system -> light
+      fireEvent.click(button)
+      expect(useAppStore.getState().theme).toBe("light")
+
+      // light -> dark
+      fireEvent.click(button)
+      expect(useAppStore.getState().theme).toBe("dark")
+
+      // dark -> system
+      fireEvent.click(button)
+      expect(useAppStore.getState().theme).toBe("system")
+    })
   })
 
   describe("accent color bar", () => {

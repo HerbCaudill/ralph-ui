@@ -17,3 +17,5 @@ export {
   type UseHotkeysOptions,
   type UseHotkeysReturn,
 } from "./useHotkeys"
+
+export { useTheme, getStoredTheme, type UseThemeReturn } from "./useTheme"

@@ -1,6 +1,9 @@
 import { cn } from "@/lib/utils"
 import { useAppStore, selectConnectionStatus, selectAccentColor } from "@/store"
+import { useTheme } from "@/hooks"
 import { WorkspacePicker } from "./WorkspacePicker"
+import { Button } from "@/components/ui/button"
+import { Sun, Moon, Monitor } from "lucide-react"
 
 // =============================================================================
 // Constants
@@ -15,6 +18,35 @@ const DEFAULT_ACCENT_COLOR = "#000000"
 
 export interface HeaderProps {
   className?: string
+}
+
+// =============================================================================
+// ThemeToggle Component
+// =============================================================================
+
+function ThemeToggle() {
+  const { theme, cycleTheme } = useTheme()
+
+  const iconConfig = {
+    system: { Icon: Monitor, label: "System theme" },
+    light: { Icon: Sun, label: "Light theme" },
+    dark: { Icon: Moon, label: "Dark theme" },
+  }
+
+  const { Icon, label } = iconConfig[theme]
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      onClick={cycleTheme}
+      title={`${label} (click to cycle)`}
+      aria-label={label}
+      data-testid="theme-toggle"
+    >
+      <Icon className="size-4" />
+    </Button>
+  )
 }
 
 // =============================================================================
@@ -113,6 +145,7 @@ export function Header({ className }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-4">
+          <ThemeToggle />
           <ConnectionIndicator />
         </div>
       </div>
