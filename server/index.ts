@@ -189,6 +189,41 @@ function createApp(config: ServerConfig): Express {
     }
   })
 
+  // Switch to a different workspace
+  app.post("/api/workspace/switch", async (req: Request, res: Response) => {
+    try {
+      const { path: workspacePath } = req.body as { path?: string }
+
+      if (!workspacePath?.trim()) {
+        res.status(400).json({ ok: false, error: "Workspace path is required" })
+        return
+      }
+
+      // Switch the BdProxy to the new workspace
+      switchWorkspace(workspacePath)
+
+      // Get info from the new workspace to confirm it works
+      const bdProxy = getBdProxy()
+      const info = await bdProxy.getInfo()
+      const accentColor = await readPeacockColor(workspacePath)
+
+      res.status(200).json({
+        ok: true,
+        workspace: {
+          path: workspacePath,
+          name: workspacePath.split("/").pop(),
+          issueCount: info.issue_count,
+          daemonConnected: info.daemon_connected,
+          daemonStatus: info.daemon_status,
+          accentColor,
+        },
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to switch workspace"
+      res.status(500).json({ ok: false, error: message })
+    }
+  })
+
   // Task management endpoints
   app.post("/api/tasks", async (req: Request, res: Response) => {
     try {
@@ -394,6 +429,13 @@ export function getBdProxy(): BdProxy {
  */
 export function resetBdProxy(): void {
   bdProxy = null
+}
+
+/**
+ * Switch to a different workspace by creating a new BdProxy with the given cwd.
+ */
+export function switchWorkspace(workspacePath: string): void {
+  bdProxy = new BdProxy({ cwd: workspacePath })
 }
 
 // =============================================================================

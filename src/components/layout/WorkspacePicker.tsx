@@ -207,6 +207,46 @@ export function WorkspacePicker({ className }: WorkspacePickerProps) {
     }
   }, [])
 
+  // Switch to a different workspace
+  const switchToWorkspace = useCallback(
+    async (workspacePath: string) => {
+      setIsLoading(true)
+      setError(null)
+      try {
+        const response = await fetch("/api/workspace/switch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ path: workspacePath }),
+        })
+        if (!response.ok) {
+          throw new Error("Failed to switch workspace")
+        }
+        const data = await response.json()
+        if (data.ok && data.workspace) {
+          setWorkspaceInfo(data.workspace)
+          setWorkspace(data.workspace.path)
+          setAccentColor(data.workspace.accentColor ?? null)
+          // Update the list to reflect new active state
+          setAllWorkspaces(prev =>
+            prev.map(ws => ({
+              ...ws,
+              isActive: ws.path === workspacePath,
+            })),
+          )
+        } else {
+          throw new Error(data.error || "Unknown error")
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Failed to switch workspace"
+        setError(message)
+      } finally {
+        setIsLoading(false)
+        setIsOpen(false)
+      }
+    },
+    [setWorkspace, setAccentColor],
+  )
+
   // Fetch workspace info on mount (only once)
   const hasFetchedRef = useRef(false)
   useEffect(() => {
@@ -313,8 +353,11 @@ export function WorkspacePicker({ className }: WorkspacePickerProps) {
                   <button
                     key={ws.path}
                     onClick={() => {
-                      // For now, just close the dropdown - switching requires server restart
-                      setIsOpen(false)
+                      if (!ws.isActive) {
+                        switchToWorkspace(ws.path)
+                      } else {
+                        setIsOpen(false)
+                      }
                     }}
                     className={cn(
                       "flex w-full items-center gap-2 rounded px-3 py-2 text-left",
