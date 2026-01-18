@@ -311,7 +311,7 @@ export function ToolUseCard({ event, className, defaultExpanded = false }: ToolU
       {/* Expanded output */}
       {isExpanded && hasExpandableContent && (
         <div className="border-muted-foreground/30 mt-1 ml-1 border-l pl-3">
-          <div className="text-muted-foreground flex items-center gap-1 text-xs">
+          <div className="text-muted-foreground flex items-start gap-1 text-xs">
             <span>└</span>
             <div className="flex-1">
               {/* Edit tool: show diff */}
