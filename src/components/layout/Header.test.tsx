@@ -126,15 +126,16 @@ describe("Header", () => {
     })
 
     // Dropdown should be closed initially
-    expect(screen.queryByText("Current Workspace")).not.toBeInTheDocument()
+    expect(screen.queryByText("Workspaces")).not.toBeInTheDocument()
 
     // Click the workspace picker button
     const workspaceButton = screen.getByRole("button", { expanded: false })
     fireEvent.click(workspaceButton)
 
     // Dropdown should be open
-    expect(screen.getByText("Current Workspace")).toBeInTheDocument()
-    expect(screen.getByText("Open workspace...")).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText("Workspaces")).toBeInTheDocument()
+    })
   })
 
   it("closes dropdown when clicking outside", async () => {
@@ -149,13 +150,15 @@ describe("Header", () => {
     fireEvent.click(workspaceButton)
 
     // Dropdown should be open
-    expect(screen.getByText("Current Workspace")).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText("Workspaces")).toBeInTheDocument()
+    })
 
     // Click outside (on the document)
     fireEvent.mouseDown(document.body)
 
     // Dropdown should be closed
-    expect(screen.queryByText("Current Workspace")).not.toBeInTheDocument()
+    expect(screen.queryByText("Workspaces")).not.toBeInTheDocument()
   })
 
   it("applies custom className", async () => {

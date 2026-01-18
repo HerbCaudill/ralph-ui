@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises"
 import { WebSocketServer, type WebSocket, type RawData } from "ws"
 import { RalphManager, type RalphEvent, type RalphStatus } from "./RalphManager.js"
 import { BdProxy, type BdCreateOptions } from "./BdProxy.js"
+import { getAliveWorkspaces } from "./registry.js"
 
 // =============================================================================
 // Peacock Color Reader
@@ -150,6 +151,40 @@ function createApp(config: ServerConfig): Express {
       })
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to get workspace info"
+      res.status(500).json({ ok: false, error: message })
+    }
+  })
+
+  // List all available workspaces from the global registry
+  app.get("/api/workspaces", async (_req: Request, res: Response) => {
+    try {
+      // Get current workspace path for marking active
+      const bdProxy = getBdProxy()
+      let currentWorkspacePath: string | undefined
+      try {
+        const info = await bdProxy.getInfo()
+        currentWorkspacePath = info.database_path.replace(/\/.beads\/beads\.db$/, "")
+      } catch {
+        // If we can't get current workspace, that's fine - just don't mark any as active
+      }
+
+      const workspaces = getAliveWorkspaces(currentWorkspacePath)
+
+      // Add accent colors for each workspace
+      const workspacesWithColors = await Promise.all(
+        workspaces.map(async ws => ({
+          ...ws,
+          accentColor: await readPeacockColor(ws.path),
+        })),
+      )
+
+      res.status(200).json({
+        ok: true,
+        workspaces: workspacesWithColors,
+        currentPath: currentWorkspacePath,
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to list workspaces"
       res.status(500).json({ ok: false, error: message })
     }
   })

@@ -15,6 +15,17 @@ export interface WorkspaceInfo {
   accentColor?: string | null
 }
 
+export interface WorkspaceListEntry {
+  path: string
+  name: string
+  database: string
+  pid: number
+  version: string
+  startedAt: string
+  isActive: boolean
+  accentColor?: string | null
+}
+
 export interface WorkspacePickerProps {
   className?: string
 }
@@ -137,7 +148,9 @@ export function WorkspacePicker({ className }: WorkspacePickerProps) {
   const setAccentColor = useAppStore(state => state.setAccentColor)
   const [isOpen, setIsOpen] = useState(false)
   const [workspaceInfo, setWorkspaceInfo] = useState<WorkspaceInfo | null>(null)
+  const [allWorkspaces, setAllWorkspaces] = useState<WorkspaceListEntry[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingList, setIsLoadingList] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -175,10 +188,36 @@ export function WorkspacePicker({ className }: WorkspacePickerProps) {
     }
   }, [workspace, accentColor, setWorkspace, setAccentColor])
 
+  // Fetch all available workspaces from the registry
+  const fetchAllWorkspaces = useCallback(async () => {
+    setIsLoadingList(true)
+    try {
+      const response = await fetch("/api/workspaces")
+      if (!response.ok) {
+        throw new Error("Failed to fetch workspaces")
+      }
+      const data = await response.json()
+      if (data.ok && data.workspaces) {
+        setAllWorkspaces(data.workspaces)
+      }
+    } catch (err) {
+      console.error("Failed to fetch workspaces:", err)
+    } finally {
+      setIsLoadingList(false)
+    }
+  }, [])
+
   // Fetch workspace info on mount
   useEffect(() => {
     fetchWorkspaceInfo()
   }, [fetchWorkspaceInfo])
+
+  // Fetch all workspaces when dropdown opens
+  useEffect(() => {
+    if (isOpen) {
+      fetchAllWorkspaces()
+    }
+  }, [isOpen, fetchAllWorkspaces])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -232,66 +271,79 @@ export function WorkspacePicker({ className }: WorkspacePickerProps) {
       {isOpen && (
         <div
           className={cn(
-            "bg-popover border-border absolute top-full left-0 z-50 mt-1 w-72 rounded-md border shadow-lg",
+            "bg-popover border-border absolute top-full left-0 z-50 mt-1 w-80 rounded-md border shadow-lg",
           )}
         >
-          {/* Current workspace section */}
-          <div className="p-1">
-            <div className="text-muted-foreground px-3 py-1.5 text-xs font-medium tracking-wider uppercase">
-              Current Workspace
-            </div>
-            {error ?
-              <div className="px-3 py-2">
-                <div className="flex items-center gap-2 text-sm text-red-500">
-                  <span>{error}</span>
-                  <button
-                    onClick={fetchWorkspaceInfo}
-                    className="text-red-400 hover:text-red-300"
-                    title="Retry"
-                  >
-                    <RefreshIcon />
-                  </button>
-                </div>
-                {isServerDown && (
-                  <p className="text-muted-foreground mt-2 text-xs">
-                    Run <code className="bg-muted rounded px-1">pnpm dev</code> to start both
-                    servers
-                  </p>
-                )}
-              </div>
-            : workspaceInfo ?
-              <div className="px-3 py-2">
-                <div className="flex items-center gap-2">
-                  <FolderIcon className="text-muted-foreground shrink-0" />
-                  <span className="truncate text-sm font-medium">{workspaceInfo.name}</span>
-                  <CheckIcon className="text-primary ml-auto shrink-0" />
-                </div>
-                <div
-                  className="text-muted-foreground mt-1 truncate text-xs"
-                  title={workspaceInfo.path}
+          {/* Error state */}
+          {error && (
+            <div className="p-3">
+              <div className="flex items-center gap-2 text-sm text-red-500">
+                <span>{error}</span>
+                <button
+                  onClick={fetchWorkspaceInfo}
+                  className="text-red-400 hover:text-red-300"
+                  title="Retry"
                 >
-                  {workspaceInfo.path}
-                </div>
-                <div className="mt-2 flex items-center gap-3 text-xs">
-                  {workspaceInfo.issueCount !== undefined && (
-                    <span className="text-muted-foreground">{workspaceInfo.issueCount} issues</span>
-                  )}
-                  {workspaceInfo.daemonConnected && (
-                    <span className="flex items-center gap-1">
-                      <span className="size-1.5 rounded-full bg-green-500" />
-                      <span className="text-muted-foreground">Daemon connected</span>
-                    </span>
-                  )}
-                </div>
+                  <RefreshIcon />
+                </button>
               </div>
-            : <div className="text-muted-foreground px-3 py-2 text-sm">Loading...</div>}
-          </div>
+              {isServerDown && (
+                <p className="text-muted-foreground mt-2 text-xs">
+                  Run <code className="bg-muted rounded px-1">pnpm dev</code> to start both servers
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Workspaces list */}
+          {!error && (
+            <div className="max-h-80 overflow-y-auto p-1">
+              <div className="text-muted-foreground px-3 py-1.5 text-xs font-medium tracking-wider uppercase">
+                Workspaces
+              </div>
+              {isLoadingList && allWorkspaces.length === 0 ?
+                <div className="text-muted-foreground px-3 py-2 text-sm">Loading...</div>
+              : allWorkspaces.length === 0 ?
+                <div className="text-muted-foreground px-3 py-2 text-sm">No workspaces found</div>
+              : allWorkspaces.map(ws => (
+                  <button
+                    key={ws.path}
+                    onClick={() => {
+                      // For now, just close the dropdown - switching requires server restart
+                      setIsOpen(false)
+                    }}
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded px-3 py-2 text-left",
+                      "hover:bg-accent transition-colors",
+                      ws.isActive && "bg-accent/50",
+                    )}
+                  >
+                    {/* Accent color indicator */}
+                    <span
+                      className="size-2.5 shrink-0 rounded-full"
+                      style={{ backgroundColor: ws.accentColor || "#666" }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-sm font-medium">{ws.name}</span>
+                        {ws.isActive && <CheckIcon className="text-primary shrink-0" />}
+                      </div>
+                      <div className="text-muted-foreground truncate text-xs" title={ws.path}>
+                        {ws.path.replace(/^\/Users\/[^/]+\//, "~/")}
+                      </div>
+                    </div>
+                  </button>
+                ))
+              }
+            </div>
+          )}
 
           {/* Actions section */}
           <div className="border-border border-t p-1">
             <button
               onClick={() => {
                 fetchWorkspaceInfo()
+                fetchAllWorkspaces()
               }}
               className={cn(
                 "flex w-full items-center gap-2 rounded px-3 py-2 text-sm",
@@ -300,19 +352,6 @@ export function WorkspacePicker({ className }: WorkspacePickerProps) {
             >
               <RefreshIcon className="text-muted-foreground" />
               <span>Refresh</span>
-            </button>
-            <button
-              onClick={() => {
-                // TODO: Implement workspace selection dialog
-                setIsOpen(false)
-              }}
-              className={cn(
-                "flex w-full items-center gap-2 rounded px-3 py-2 text-sm",
-                "hover:bg-accent transition-colors",
-              )}
-            >
-              <PlusIcon className="text-muted-foreground" />
-              <span>Open workspace...</span>
             </button>
           </div>
         </div>

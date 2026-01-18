@@ -104,21 +104,60 @@ describe("WorkspacePicker", () => {
     })
 
     // Dropdown should be closed initially
-    expect(screen.queryByText("Current Workspace")).not.toBeInTheDocument()
+    expect(screen.queryByText("Workspaces")).not.toBeInTheDocument()
 
     // Click the workspace picker button
     const workspaceButton = screen.getByRole("button", { expanded: false })
     fireEvent.click(workspaceButton)
 
-    // Dropdown should be open
-    expect(screen.getByText("Current Workspace")).toBeInTheDocument()
-    expect(screen.getByText("Open workspace...")).toBeInTheDocument()
+    // Dropdown should be open - fetches workspaces list
+    await waitFor(() => {
+      expect(screen.getByText("Workspaces")).toBeInTheDocument()
+    })
   })
 
-  it("shows workspace details in dropdown", async () => {
-    mockFetch.mockResolvedValue({
+  it("shows workspace list in dropdown", async () => {
+    const mockWorkspacesResponse = {
       ok: true,
-      json: () => Promise.resolve(mockWorkspaceResponse),
+      workspaces: [
+        {
+          path: "/Users/test/my-project",
+          name: "my-project",
+          database: "/Users/test/my-project/.beads/beads.db",
+          pid: 1234,
+          version: "0.47.1",
+          startedAt: "2026-01-18T10:00:00Z",
+          isActive: true,
+          accentColor: "#ff0000",
+        },
+        {
+          path: "/Users/test/other-project",
+          name: "other-project",
+          database: "/Users/test/other-project/.beads/beads.db",
+          pid: 5678,
+          version: "0.47.1",
+          startedAt: "2026-01-18T11:00:00Z",
+          isActive: false,
+          accentColor: "#00ff00",
+        },
+      ],
+      currentPath: "/Users/test/my-project",
+    }
+
+    mockFetch.mockImplementation((url: string) => {
+      if (url === "/api/workspace") {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockWorkspaceResponse),
+        })
+      }
+      if (url === "/api/workspaces") {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockWorkspacesResponse),
+        })
+      }
+      return Promise.reject(new Error("Unknown URL"))
     })
 
     render(<WorkspacePicker />)
@@ -131,10 +170,10 @@ describe("WorkspacePicker", () => {
     const workspaceButton = screen.getByRole("button", { expanded: false })
     fireEvent.click(workspaceButton)
 
-    // Should show workspace details
-    expect(screen.getByText("/Users/test/my-project")).toBeInTheDocument()
-    expect(screen.getByText("42 issues")).toBeInTheDocument()
-    expect(screen.getByText("Daemon connected")).toBeInTheDocument()
+    // Should show both workspaces
+    await waitFor(() => {
+      expect(screen.getByText("other-project")).toBeInTheDocument()
+    })
   })
 
   it("closes dropdown when clicking outside", async () => {
@@ -154,13 +193,15 @@ describe("WorkspacePicker", () => {
     fireEvent.click(workspaceButton)
 
     // Dropdown should be open
-    expect(screen.getByText("Current Workspace")).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText("Workspaces")).toBeInTheDocument()
+    })
 
     // Click outside (on the document)
     fireEvent.mouseDown(document.body)
 
     // Dropdown should be closed
-    expect(screen.queryByText("Current Workspace")).not.toBeInTheDocument()
+    expect(screen.queryByText("Workspaces")).not.toBeInTheDocument()
   })
 
   it("shows error state when fetch fails", async () => {
@@ -181,7 +222,7 @@ describe("WorkspacePicker", () => {
     fireEvent.click(workspaceButton)
 
     await waitFor(() => {
-      // Fetch failures are treated as server not running (shows in button and dropdown)
+      // Error is shown in both button and dropdown
       expect(screen.getAllByText("Server not running")).toHaveLength(2)
     })
   })
