@@ -65,6 +65,33 @@ function EventLoader({
   return null
 }
 
+// Helper to stream events in real-time
+function EventStreamer({
+  events,
+  intervalMs = 300,
+}: {
+  events: Array<{ type: string; timestamp: number; [key: string]: unknown }>
+  intervalMs?: number
+}) {
+  useEffect(() => {
+    const store = useAppStore.getState()
+    store.clearEvents()
+
+    let index = 0
+    const interval = setInterval(() => {
+      if (index < events.length) {
+        store.addEvent(events[index])
+        index++
+      } else {
+        clearInterval(interval)
+      }
+    }, intervalMs)
+
+    return () => clearInterval(interval)
+  }, [events, intervalMs])
+  return null
+}
+
 // Real events from .ralph/events-1.jsonl - formatted for the new event structure
 const realEvents = [
   // User sends a message
@@ -648,6 +675,19 @@ export const RealSession2: Story = {
   render: args => (
     <>
       <EventLoader events={events2 as Array<{ type: string; timestamp: number }>} />
+      <EventStream {...args} />
+    </>
+  ),
+}
+
+export const RealtimeSimulation: Story = {
+  name: "Real-time simulation: Test fixes",
+  render: args => (
+    <>
+      <EventStreamer
+        events={events1 as Array<{ type: string; timestamp: number }>}
+        intervalMs={400}
+      />
       <EventStream {...args} />
     </>
   ),
