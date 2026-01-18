@@ -19,6 +19,7 @@ describe("useAppStore", () => {
       expect(state.tokenUsage).toEqual({ input: 0, output: 0 })
       expect(state.iteration).toEqual({ current: 0, total: 0 })
       expect(state.connectionStatus).toBe("disconnected")
+      expect(state.accentColor).toBeNull()
     })
   })
 
@@ -145,6 +146,19 @@ describe("useAppStore", () => {
     })
   })
 
+  describe("accent color", () => {
+    it("sets accent color", () => {
+      useAppStore.getState().setAccentColor("#4d9697")
+      expect(useAppStore.getState().accentColor).toBe("#4d9697")
+    })
+
+    it("clears accent color", () => {
+      useAppStore.getState().setAccentColor("#4d9697")
+      useAppStore.getState().setAccentColor(null)
+      expect(useAppStore.getState().accentColor).toBeNull()
+    })
+  })
+
   describe("branch", () => {
     it("sets branch name", () => {
       useAppStore.getState().setBranch("feature/new-feature")
@@ -219,6 +233,7 @@ describe("useAppStore", () => {
         addEvent,
         setTasks,
         setWorkspace,
+        setAccentColor,
         setBranch,
         setTokenUsage,
         setIteration,
@@ -229,6 +244,7 @@ describe("useAppStore", () => {
       addEvent({ type: "test", timestamp: 1 })
       setTasks([{ id: "1", content: "Task", status: "pending" }])
       setWorkspace("/path")
+      setAccentColor("#4d9697")
       setBranch("feature/test")
       setTokenUsage({ input: 1000, output: 500 })
       setIteration({ current: 5, total: 10 })
@@ -240,6 +256,7 @@ describe("useAppStore", () => {
       expect(state.events).toHaveLength(1)
       expect(state.tasks).toHaveLength(1)
       expect(state.workspace).toBe("/path")
+      expect(state.accentColor).toBe("#4d9697")
       expect(state.branch).toBe("feature/test")
       expect(state.tokenUsage).toEqual({ input: 1000, output: 500 })
       expect(state.iteration).toEqual({ current: 5, total: 10 })
@@ -254,6 +271,7 @@ describe("useAppStore", () => {
       expect(state.events).toEqual([])
       expect(state.tasks).toEqual([])
       expect(state.workspace).toBeNull()
+      expect(state.accentColor).toBeNull()
       expect(state.branch).toBeNull()
       expect(state.tokenUsage).toEqual({ input: 0, output: 0 })
       expect(state.iteration).toEqual({ current: 0, total: 0 })

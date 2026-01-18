@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils"
-import { useAppStore, selectWorkspace } from "@/store"
+import { useAppStore, selectWorkspace, selectAccentColor } from "@/store"
 import { useState, useRef, useEffect, useCallback } from "react"
 
 // =============================================================================
@@ -12,6 +12,7 @@ export interface WorkspaceInfo {
   issueCount?: number
   daemonConnected?: boolean
   daemonStatus?: string
+  accentColor?: string | null
 }
 
 export interface WorkspacePickerProps {
@@ -131,7 +132,9 @@ function RefreshIcon({ className }: { className?: string }) {
  */
 export function WorkspacePicker({ className }: WorkspacePickerProps) {
   const workspace = useAppStore(selectWorkspace)
+  const accentColor = useAppStore(selectAccentColor)
   const setWorkspace = useAppStore(state => state.setWorkspace)
+  const setAccentColor = useAppStore(state => state.setAccentColor)
   const [isOpen, setIsOpen] = useState(false)
   const [workspaceInfo, setWorkspaceInfo] = useState<WorkspaceInfo | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -154,6 +157,10 @@ export function WorkspacePicker({ className }: WorkspacePickerProps) {
         if (data.workspace.path !== workspace) {
           setWorkspace(data.workspace.path)
         }
+        // Update the store with the accent color from peacock
+        if (data.workspace.accentColor !== accentColor) {
+          setAccentColor(data.workspace.accentColor ?? null)
+        }
       } else {
         throw new Error(data.error || "Unknown error")
       }
@@ -162,7 +169,7 @@ export function WorkspacePicker({ className }: WorkspacePickerProps) {
     } finally {
       setIsLoading(false)
     }
-  }, [workspace, setWorkspace])
+  }, [workspace, accentColor, setWorkspace, setAccentColor])
 
   // Fetch workspace info on mount
   useEffect(() => {

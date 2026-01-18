@@ -1,6 +1,13 @@
 import { cn } from "@/lib/utils"
-import { useAppStore, selectConnectionStatus } from "@/store"
+import { useAppStore, selectConnectionStatus, selectAccentColor } from "@/store"
 import { WorkspacePicker } from "./WorkspacePicker"
+
+// =============================================================================
+// Constants
+// =============================================================================
+
+/** Default accent color (black) when peacock color is not set */
+const DEFAULT_ACCENT_COLOR = "#000000"
 
 // =============================================================================
 // Types
@@ -79,22 +86,35 @@ function Logo() {
 
 /**
  * Application header with logo, workspace picker, and connection status.
+ * Features an accent color bar at the top from peacock settings.
  */
 export function Header({ className }: HeaderProps) {
-  return (
-    <header
-      className={cn(
-        "bg-background border-border flex h-14 shrink-0 items-center justify-between border-b px-4",
-        className,
-      )}
-    >
-      <div className="flex items-center gap-4">
-        <Logo />
-        <WorkspacePicker />
-      </div>
+  const accentColor = useAppStore(selectAccentColor)
+  const barColor = accentColor ?? DEFAULT_ACCENT_COLOR
 
-      <div className="flex items-center gap-4">
-        <ConnectionIndicator />
+  return (
+    <header className={cn("flex shrink-0 flex-col", className)} data-testid="header">
+      {/* Accent color bar */}
+      <div
+        className="h-1 w-full shrink-0"
+        style={{ backgroundColor: barColor }}
+        data-testid="accent-bar"
+        aria-hidden="true"
+      />
+      {/* Main header content */}
+      <div
+        className={cn(
+          "bg-background border-border flex h-[calc(3.5rem-4px)] items-center justify-between border-b px-4",
+        )}
+      >
+        <div className="flex items-center gap-4">
+          <Logo />
+          <WorkspacePicker />
+        </div>
+
+        <div className="flex items-center gap-4">
+          <ConnectionIndicator />
+        </div>
       </div>
     </header>
   )

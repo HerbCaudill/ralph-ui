@@ -57,6 +57,9 @@ export interface AppState {
 
   // WebSocket connection status
   connectionStatus: ConnectionStatus
+
+  // Accent color from peacock settings (null means use default/black)
+  accentColor: string | null
 }
 
 // =============================================================================
@@ -78,6 +81,9 @@ export interface AppActions {
 
   // Workspace
   setWorkspace: (workspace: string | null) => void
+
+  // Accent color
+  setAccentColor: (color: string | null) => void
 
   // Branch
   setBranch: (branch: string | null) => void
@@ -109,6 +115,7 @@ const initialState: AppState = {
   tokenUsage: { input: 0, output: 0 },
   iteration: { current: 0, total: 0 },
   connectionStatus: "disconnected",
+  accentColor: null,
 }
 
 // =============================================================================
@@ -141,6 +148,9 @@ export const useAppStore = create<AppState & AppActions>(set => ({
 
   // Workspace
   setWorkspace: workspace => set({ workspace }),
+
+  // Accent color
+  setAccentColor: color => set({ accentColor: color }),
 
   // Branch
   setBranch: branch => set({ branch }),
@@ -179,3 +189,4 @@ export const selectIteration = (state: AppState) => state.iteration
 export const selectConnectionStatus = (state: AppState) => state.connectionStatus
 export const selectIsConnected = (state: AppState) => state.connectionStatus === "connected"
 export const selectIsRalphRunning = (state: AppState) => state.ralphStatus === "running"
+export const selectAccentColor = (state: AppState) => state.accentColor

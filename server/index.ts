@@ -1,9 +1,30 @@
 import express, { type Express, type Request, type Response } from "express"
 import { createServer, type Server } from "node:http"
 import path from "node:path"
+import { readFile } from "node:fs/promises"
 import { WebSocketServer, type WebSocket, type RawData } from "ws"
 import { RalphManager, type RalphEvent, type RalphStatus } from "./RalphManager.js"
 import { BdProxy, type BdCreateOptions } from "./BdProxy.js"
+
+// =============================================================================
+// Peacock Color Reader
+// =============================================================================
+
+/**
+ * Read the peacock accent color from .vscode/settings.json in the workspace.
+ * Returns null if not found or on any error.
+ */
+export async function readPeacockColor(workspacePath: string): Promise<string | null> {
+  try {
+    const settingsPath = path.join(workspacePath, ".vscode", "settings.json")
+    const content = await readFile(settingsPath, "utf-8")
+    const settings = JSON.parse(content) as { "peacock.color"?: string }
+    return settings["peacock.color"] ?? null
+  } catch {
+    // File doesn't exist or is invalid JSON - return null (fallback to black)
+    return null
+  }
+}
 
 // =============================================================================
 // Configuration
@@ -113,6 +134,9 @@ function createApp(config: ServerConfig): Express {
       // Extract workspace path from database_path (remove .beads/beads.db suffix)
       const workspacePath = info.database_path.replace(/\/.beads\/beads\.db$/, "")
 
+      // Read peacock accent color from .vscode/settings.json
+      const accentColor = await readPeacockColor(workspacePath)
+
       res.status(200).json({
         ok: true,
         workspace: {
@@ -121,6 +145,7 @@ function createApp(config: ServerConfig): Express {
           issueCount: info.issue_count,
           daemonConnected: info.daemon_connected,
           daemonStatus: info.daemon_status,
+          accentColor,
         },
       })
     } catch (err) {

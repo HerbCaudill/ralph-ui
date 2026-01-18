@@ -118,4 +118,57 @@ describe("Header", () => {
     const { container } = render(<Header className="custom-class" />)
     expect(container.firstChild).toHaveClass("custom-class")
   })
+
+  describe("accent color bar", () => {
+    it("renders accent bar with default black color when no accent color set", async () => {
+      render(<Header />)
+
+      const accentBar = screen.getByTestId("accent-bar")
+      expect(accentBar).toBeInTheDocument()
+      expect(accentBar).toHaveStyle({ backgroundColor: "#000000" })
+    })
+
+    it("renders accent bar with peacock color from store", async () => {
+      useAppStore.getState().setAccentColor("#4d9697")
+      render(<Header />)
+
+      const accentBar = screen.getByTestId("accent-bar")
+      expect(accentBar).toBeInTheDocument()
+      expect(accentBar).toHaveStyle({ backgroundColor: "#4d9697" })
+    })
+
+    it("updates accent bar color when accent color changes in store", async () => {
+      useAppStore.getState().setAccentColor("#4d9697")
+      const { rerender } = render(<Header />)
+
+      // Verify initial color
+      let accentBar = screen.getByTestId("accent-bar")
+      expect(accentBar).toHaveStyle({ backgroundColor: "#4d9697" })
+
+      // Change the accent color
+      useAppStore.getState().setAccentColor("#ff5733")
+      rerender(<Header />)
+
+      // Verify updated color
+      accentBar = screen.getByTestId("accent-bar")
+      expect(accentBar).toHaveStyle({ backgroundColor: "#ff5733" })
+    })
+
+    it("falls back to black when accent color is cleared", async () => {
+      useAppStore.getState().setAccentColor("#4d9697")
+      const { rerender } = render(<Header />)
+
+      // Verify initial color
+      let accentBar = screen.getByTestId("accent-bar")
+      expect(accentBar).toHaveStyle({ backgroundColor: "#4d9697" })
+
+      // Clear the accent color
+      useAppStore.getState().setAccentColor(null)
+      rerender(<Header />)
+
+      // Verify fallback to black
+      accentBar = screen.getByTestId("accent-bar")
+      expect(accentBar).toHaveStyle({ backgroundColor: "#000000" })
+    })
+  })
 })
