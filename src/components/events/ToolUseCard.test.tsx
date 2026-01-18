@@ -168,9 +168,9 @@ describe("ToolUseCard", () => {
     })
   })
 
-  describe("expand/collapse behavior for Bash tool", () => {
-    it("shows expand button when output is present", () => {
-      const { container } = render(
+  describe("expand behavior for Bash tool", () => {
+    it("shows output directly when lines fit within preview", () => {
+      render(
         <ToolUseCard
           event={createToolEvent("Bash", {
             input: { command: "echo test" },
@@ -178,31 +178,38 @@ describe("ToolUseCard", () => {
           })}
         />,
       )
-      const svgs = container.querySelectorAll("svg")
-      expect(svgs.length).toBeGreaterThan(0)
+      // Short output is shown immediately
+      expect(screen.getByText("test output")).toBeInTheDocument()
     })
 
-    it("expands to show output on click", () => {
+    it("shows truncated preview with expand button for long output", () => {
+      const longOutput = "line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8"
       render(
         <ToolUseCard
           event={createToolEvent("Bash", {
             input: { command: "echo test" },
-            output: "test output here",
+            output: longOutput,
           })}
         />,
       )
 
-      // Output should not be fully visible initially
-      expect(screen.queryByText("test output here")).not.toBeInTheDocument()
+      // First 5 lines should be visible
+      expect(screen.getByText(/line 1/)).toBeInTheDocument()
+
+      // Expand indicator should be present
+      expect(screen.getByText(/\.\.\. \+3 lines/)).toBeInTheDocument()
+
+      // Line 8 should not be visible initially
+      expect(screen.queryByText("line 8")).not.toBeInTheDocument()
 
       // Click to expand
-      fireEvent.click(screen.getByRole("button"))
+      fireEvent.click(screen.getByText(/\.\.\. \+3 lines/))
 
-      // Output should now be visible
-      expect(screen.getByText("test output here")).toBeInTheDocument()
+      // All lines should now be visible
+      expect(screen.getByText(/line 8/)).toBeInTheDocument()
     })
 
-    it("shows error when status is error", () => {
+    it("shows error without needing to expand", () => {
       render(
         <ToolUseCard
           event={createToolEvent("Bash", {
@@ -213,8 +220,7 @@ describe("ToolUseCard", () => {
         />,
       )
 
-      fireEvent.click(screen.getByRole("button"))
-
+      // Error is shown immediately
       expect(screen.getByText("Command failed")).toBeInTheDocument()
     })
   })
@@ -267,22 +273,20 @@ describe("ToolUseCard", () => {
     })
   })
 
-  describe("aria attributes", () => {
-    it("has aria-expanded attribute on expandable cards", () => {
+  describe("accessibility", () => {
+    it("has clickable expand button for long output", () => {
+      const longOutput = "line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7"
       render(
         <ToolUseCard
           event={createToolEvent("Bash", {
             input: { command: "test" },
-            output: "test output",
+            output: longOutput,
           })}
         />,
       )
 
-      const button = screen.getByRole("button")
-      expect(button).toHaveAttribute("aria-expanded", "false")
-
-      fireEvent.click(button)
-      expect(button).toHaveAttribute("aria-expanded", "true")
+      const expandButton = screen.getByRole("button")
+      expect(expandButton).toHaveTextContent(/\.\.\. \+2 lines/)
     })
   })
 

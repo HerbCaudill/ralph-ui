@@ -1,6 +1,5 @@
 import { cn } from "@/lib/utils"
-import { useState, useCallback } from "react"
-import { ChevronDown } from "lucide-react"
+import { useState } from "react"
 
 // Types
 
@@ -227,6 +226,20 @@ function TodoList({
   )
 }
 
+// Helper to get preview lines and remaining count
+const PREVIEW_LINES = 5
+
+function getPreviewInfo(content: string): { preview: string; remainingLines: number } {
+  const lines = content.split("\n")
+  if (lines.length <= PREVIEW_LINES) {
+    return { preview: content, remainingLines: 0 }
+  }
+  return {
+    preview: lines.slice(0, PREVIEW_LINES).join("\n"),
+    remainingLines: lines.length - PREVIEW_LINES,
+  }
+}
+
 // ToolUseCard Component
 
 export function ToolUseCard({ event, className, defaultExpanded = false }: ToolUseCardProps) {
@@ -236,15 +249,10 @@ export function ToolUseCard({ event, className, defaultExpanded = false }: ToolU
   const outputSummary = getOutputSummary(event.tool, event.output)
   const statusColor = getStatusColor(event.status)
 
-  const hasOutput = event.output || event.error
   const hasExpandableContent =
-    hasOutput || (event.tool === "Edit" && event.input?.old_string && event.input?.new_string)
-
-  const toggleExpanded = useCallback(() => {
-    if (hasExpandableContent) {
-      setIsExpanded(prev => !prev)
-    }
-  }, [hasExpandableContent])
+    event.output ||
+    event.error ||
+    (event.tool === "Edit" && event.input?.old_string && event.input?.new_string)
 
   // Special handling for TodoWrite
   if (event.tool === "TodoWrite" && event.input?.todos && Array.isArray(event.input.todos)) {
@@ -264,19 +272,14 @@ export function ToolUseCard({ event, className, defaultExpanded = false }: ToolU
     )
   }
 
+  // Calculate preview info for bash output
+  const bashPreviewInfo =
+    event.tool === "Bash" && event.output ? getPreviewInfo(event.output) : null
+
   return (
     <div className={cn("py-1.5 pr-4 pl-4", className)}>
       {/* Main row */}
-      <button
-        onClick={toggleExpanded}
-        disabled={!hasExpandableContent}
-        className={cn(
-          "flex w-full items-center gap-2.5 text-left",
-          hasExpandableContent && "cursor-pointer",
-          !hasExpandableContent && "cursor-default",
-        )}
-        aria-expanded={isExpanded}
-      >
+      <div className="flex w-full items-center gap-2.5">
         {/* Status indicator */}
         <span
           className={cn("size-1.5 shrink-0 rounded-full", statusColor)}
@@ -294,22 +297,11 @@ export function ToolUseCard({ event, className, defaultExpanded = false }: ToolU
               {summary}
             </span>
           )}
-
-          {/* Expand indicator */}
-          {hasExpandableContent && (
-            <ChevronDown
-              size={14}
-              className={cn(
-                "text-muted-foreground shrink-0 transition-transform",
-                isExpanded && "rotate-180",
-              )}
-            />
-          )}
         </div>
-      </button>
+      </div>
 
-      {/* Expanded output */}
-      {isExpanded && hasExpandableContent && (
+      {/* Output content */}
+      {hasExpandableContent && (
         <div className="border-muted-foreground/30 mt-1 ml-1 border-l pl-3">
           <div className="text-muted-foreground flex items-start gap-1 text-xs">
             <span>└</span>
@@ -327,17 +319,20 @@ export function ToolUseCard({ event, className, defaultExpanded = false }: ToolU
               {outputSummary && <span>{outputSummary}</span>}
 
               {/* Bash output */}
-              {event.tool === "Bash" && event.output && (
-                <pre className="bg-muted/30 text-foreground/80 mt-1 max-h-48 overflow-auto rounded border p-2 font-mono text-xs whitespace-pre-wrap">
-                  {event.output.length > 500 ?
+              {bashPreviewInfo && (
+                <pre className="bg-muted/30 text-foreground/80 mt-1 overflow-auto rounded border p-2 font-mono text-xs whitespace-pre-wrap">
+                  {isExpanded ? event.output : bashPreviewInfo.preview}
+                  {!isExpanded && bashPreviewInfo.remainingLines > 0 && (
                     <>
-                      {event.output.slice(0, 200)}
                       {"\n"}
-                      <span className="text-muted-foreground">
-                        ... +{event.output.split("\n").length - 4} lines
-                      </span>
+                      <button
+                        onClick={() => setIsExpanded(true)}
+                        className="text-muted-foreground hover:text-foreground cursor-pointer"
+                      >
+                        ... +{bashPreviewInfo.remainingLines} lines
+                      </button>
                     </>
-                  : event.output}
+                  )}
                 </pre>
               )}
 
@@ -345,13 +340,6 @@ export function ToolUseCard({ event, className, defaultExpanded = false }: ToolU
               {event.error && <span className="text-red-500">{event.error}</span>}
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Non-expanded output summary */}
-      {!isExpanded && outputSummary && (
-        <div className="border-muted-foreground/30 mt-1 ml-1 border-l pl-3">
-          <span className="text-muted-foreground text-xs">└ {outputSummary}</span>
         </div>
       )}
     </div>
