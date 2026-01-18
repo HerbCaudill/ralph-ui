@@ -1,4 +1,5 @@
 import type { Preview } from "@storybook/react"
+import React from "react"
 import "../src/index.css"
 
 const preview: Preview = {
@@ -10,13 +11,18 @@ const preview: Preview = {
       },
     },
     backgrounds: {
-      default: "dark",
-      values: [
-        { name: "dark", value: "#000000" },
-        { name: "light", value: "#ffffff" },
-      ],
+      disable: true, // Use our own theming instead
     },
   },
+  decorators: [
+    Story => {
+      return React.createElement(
+        "div",
+        { className: "dark bg-background text-foreground min-h-screen p-4" },
+        React.createElement(Story),
+      )
+    },
+  ],
 }
 
 export default preview
