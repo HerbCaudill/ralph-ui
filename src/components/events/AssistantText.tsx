@@ -16,7 +16,7 @@ export function AssistantText({ event, className }: Props) {
         className={cn(
           "prose prose-sm dark:prose-invert max-w-none flex-1 text-sm",
           "prose-p:my-1 prose-p:leading-relaxed",
-          "prose-strong:font-semibold",
+          "prose-strong:font-medium",
           "prose-a:text-cyan-600 dark:prose-a:text-cyan-400 prose-a:no-underline hover:prose-a:underline",
           "prose-code:text-muted-foreground prose-code:text-xs prose-code:font-normal prose-code:font-mono",
           "prose-code:before:content-none prose-code:after:content-none",
