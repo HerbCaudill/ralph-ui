@@ -19,3 +19,5 @@ export {
 } from "./useHotkeys"
 
 export { useTheme, getStoredTheme, type UseThemeReturn } from "./useTheme"
+
+export { useTasks, type UseTasksOptions, type UseTasksResult } from "./useTasks"

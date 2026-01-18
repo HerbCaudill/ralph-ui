@@ -2,6 +2,9 @@ import { useRef, useCallback } from "react"
 import { MainLayout, type MainLayoutHandle } from "./components/layout"
 import { ChatInput, type ChatInputHandle } from "./components/chat/ChatInput"
 import { EventStream } from "./components/events"
+import { TaskSidebar } from "./components/tasks/TaskSidebar"
+import { TaskList } from "./components/tasks/TaskList"
+import { QuickTaskInput } from "./components/tasks/QuickTaskInput"
 import {
   useAppStore,
   selectConnectionStatus,
@@ -9,7 +12,7 @@ import {
   selectIsRalphRunning,
   selectIsConnected,
 } from "./store"
-import { useRalphConnection, useHotkeys, useTheme } from "./hooks"
+import { useRalphConnection, useHotkeys, useTheme, useTasks } from "./hooks"
 
 // =============================================================================
 // API Functions (for hotkeys)
@@ -41,15 +44,17 @@ async function stopRalph(): Promise<{ ok: boolean; error?: string }> {
 }
 
 // =============================================================================
-// Placeholder Components (to be replaced with actual implementations)
+// Tasks Sidebar
 // =============================================================================
 
-function TasksSidebar() {
+function TasksSidebarPanel() {
+  const { tasks, refresh } = useTasks({ all: true })
+
   return (
-    <div className="space-y-4">
-      <h2 className="text-sidebar-foreground text-lg font-semibold">Tasks</h2>
-      <p className="text-muted-foreground text-sm">No tasks yet</p>
-    </div>
+    <TaskSidebar
+      quickInput={<QuickTaskInput onTaskCreated={refresh} />}
+      taskList={<TaskList tasks={tasks} />}
+    />
   )
 }
 
@@ -194,7 +199,7 @@ export function App() {
   return (
     <MainLayout
       ref={layoutRef}
-      sidebar={<TasksSidebar />}
+      sidebar={<TasksSidebarPanel />}
       main={<AgentView chatInputRef={chatInputRef} />}
       statusBar={<StatusBar />}
     />

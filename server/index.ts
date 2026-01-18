@@ -225,6 +225,28 @@ function createApp(config: ServerConfig): Express {
   })
 
   // Task management endpoints
+  app.get("/api/tasks", async (req: Request, res: Response) => {
+    try {
+      const { status, ready, all } = req.query as {
+        status?: string
+        ready?: string
+        all?: string
+      }
+
+      const bdProxy = getBdProxy()
+      const issues = await bdProxy.list({
+        status: status as "open" | "in_progress" | "blocked" | "deferred" | "closed" | undefined,
+        ready: ready === "true",
+        all: all === "true",
+      })
+
+      res.status(200).json({ ok: true, issues })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to list tasks"
+      res.status(500).json({ ok: false, error: message })
+    }
+  })
+
   app.post("/api/tasks", async (req: Request, res: Response) => {
     try {
       const { title, description, priority, type, assignee, parent, labels } = req.body as {
