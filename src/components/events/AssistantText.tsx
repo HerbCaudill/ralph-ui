@@ -20,7 +20,7 @@ export function AssistantText({ event, className }: Props) {
           "prose prose-sm dark:prose-invert max-w-none flex-1 text-sm",
           "prose-p:my-1 prose-p:leading-relaxed",
           "prose-a:text-cyan-600 dark:prose-a:text-cyan-400 prose-a:no-underline hover:prose-a:underline",
-          "prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:font-mono",
+          "prose-code:text-muted-foreground prose-code:text-xs prose-code:font-normal prose-code:font-mono",
           "prose-code:before:content-none prose-code:after:content-none",
           "prose-pre:bg-muted prose-pre:border prose-pre:border-border prose-pre:rounded-md prose-pre:my-2 prose-pre:text-[10px]",
           "prose-ul:my-1 prose-ol:my-1 prose-li:my-0",
