@@ -19,6 +19,16 @@ export interface Task {
   status: "pending" | "in_progress" | "completed"
 }
 
+export interface TokenUsage {
+  input: number
+  output: number
+}
+
+export interface IterationInfo {
+  current: number
+  total: number
+}
+
 // =============================================================================
 // Store State
 // =============================================================================
@@ -35,6 +45,15 @@ export interface AppState {
 
   // Current workspace path
   workspace: string | null
+
+  // Git branch name
+  branch: string | null
+
+  // Token usage
+  tokenUsage: TokenUsage
+
+  // Iteration progress
+  iteration: IterationInfo
 
   // WebSocket connection status
   connectionStatus: ConnectionStatus
@@ -60,6 +79,16 @@ export interface AppActions {
   // Workspace
   setWorkspace: (workspace: string | null) => void
 
+  // Branch
+  setBranch: (branch: string | null) => void
+
+  // Token usage
+  setTokenUsage: (usage: TokenUsage) => void
+  addTokenUsage: (usage: TokenUsage) => void
+
+  // Iteration
+  setIteration: (iteration: IterationInfo) => void
+
   // Connection
   setConnectionStatus: (status: ConnectionStatus) => void
 
@@ -76,6 +105,9 @@ const initialState: AppState = {
   events: [],
   tasks: [],
   workspace: null,
+  branch: null,
+  tokenUsage: { input: 0, output: 0 },
+  iteration: { current: 0, total: 0 },
   connectionStatus: "disconnected",
 }
 
@@ -110,6 +142,22 @@ export const useAppStore = create<AppState & AppActions>(set => ({
   // Workspace
   setWorkspace: workspace => set({ workspace }),
 
+  // Branch
+  setBranch: branch => set({ branch }),
+
+  // Token usage
+  setTokenUsage: usage => set({ tokenUsage: usage }),
+  addTokenUsage: usage =>
+    set(state => ({
+      tokenUsage: {
+        input: state.tokenUsage.input + usage.input,
+        output: state.tokenUsage.output + usage.output,
+      },
+    })),
+
+  // Iteration
+  setIteration: iteration => set({ iteration }),
+
   // Connection
   setConnectionStatus: status => set({ connectionStatus: status }),
 
@@ -125,6 +173,9 @@ export const selectRalphStatus = (state: AppState) => state.ralphStatus
 export const selectEvents = (state: AppState) => state.events
 export const selectTasks = (state: AppState) => state.tasks
 export const selectWorkspace = (state: AppState) => state.workspace
+export const selectBranch = (state: AppState) => state.branch
+export const selectTokenUsage = (state: AppState) => state.tokenUsage
+export const selectIteration = (state: AppState) => state.iteration
 export const selectConnectionStatus = (state: AppState) => state.connectionStatus
 export const selectIsConnected = (state: AppState) => state.connectionStatus === "connected"
 export const selectIsRalphRunning = (state: AppState) => state.ralphStatus === "running"

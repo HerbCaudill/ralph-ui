@@ -15,6 +15,9 @@ describe("useAppStore", () => {
       expect(state.events).toEqual([])
       expect(state.tasks).toEqual([])
       expect(state.workspace).toBeNull()
+      expect(state.branch).toBeNull()
+      expect(state.tokenUsage).toEqual({ input: 0, output: 0 })
+      expect(state.iteration).toEqual({ current: 0, total: 0 })
       expect(state.connectionStatus).toBe("disconnected")
     })
   })
@@ -142,6 +145,52 @@ describe("useAppStore", () => {
     })
   })
 
+  describe("branch", () => {
+    it("sets branch name", () => {
+      useAppStore.getState().setBranch("feature/new-feature")
+      expect(useAppStore.getState().branch).toBe("feature/new-feature")
+    })
+
+    it("clears branch", () => {
+      useAppStore.getState().setBranch("main")
+      useAppStore.getState().setBranch(null)
+      expect(useAppStore.getState().branch).toBeNull()
+    })
+  })
+
+  describe("token usage", () => {
+    it("sets token usage", () => {
+      useAppStore.getState().setTokenUsage({ input: 1000, output: 500 })
+      expect(useAppStore.getState().tokenUsage).toEqual({ input: 1000, output: 500 })
+    })
+
+    it("adds to token usage", () => {
+      useAppStore.getState().setTokenUsage({ input: 1000, output: 500 })
+      useAppStore.getState().addTokenUsage({ input: 200, output: 100 })
+      expect(useAppStore.getState().tokenUsage).toEqual({ input: 1200, output: 600 })
+    })
+
+    it("accumulates multiple token additions", () => {
+      useAppStore.getState().addTokenUsage({ input: 100, output: 50 })
+      useAppStore.getState().addTokenUsage({ input: 200, output: 100 })
+      useAppStore.getState().addTokenUsage({ input: 300, output: 150 })
+      expect(useAppStore.getState().tokenUsage).toEqual({ input: 600, output: 300 })
+    })
+  })
+
+  describe("iteration", () => {
+    it("sets iteration info", () => {
+      useAppStore.getState().setIteration({ current: 3, total: 10 })
+      expect(useAppStore.getState().iteration).toEqual({ current: 3, total: 10 })
+    })
+
+    it("updates iteration progress", () => {
+      useAppStore.getState().setIteration({ current: 1, total: 5 })
+      useAppStore.getState().setIteration({ current: 2, total: 5 })
+      expect(useAppStore.getState().iteration).toEqual({ current: 2, total: 5 })
+    })
+  })
+
   describe("connection status", () => {
     it("sets connection status", () => {
       useAppStore.getState().setConnectionStatus("connected")
@@ -165,13 +214,24 @@ describe("useAppStore", () => {
   describe("reset", () => {
     it("resets all state to initial values", () => {
       // Modify all state
-      const { setRalphStatus, addEvent, setTasks, setWorkspace, setConnectionStatus } =
-        useAppStore.getState()
+      const {
+        setRalphStatus,
+        addEvent,
+        setTasks,
+        setWorkspace,
+        setBranch,
+        setTokenUsage,
+        setIteration,
+        setConnectionStatus,
+      } = useAppStore.getState()
 
       setRalphStatus("running")
       addEvent({ type: "test", timestamp: 1 })
       setTasks([{ id: "1", content: "Task", status: "pending" }])
       setWorkspace("/path")
+      setBranch("feature/test")
+      setTokenUsage({ input: 1000, output: 500 })
+      setIteration({ current: 5, total: 10 })
       setConnectionStatus("connected")
 
       // Verify state is modified
@@ -180,6 +240,9 @@ describe("useAppStore", () => {
       expect(state.events).toHaveLength(1)
       expect(state.tasks).toHaveLength(1)
       expect(state.workspace).toBe("/path")
+      expect(state.branch).toBe("feature/test")
+      expect(state.tokenUsage).toEqual({ input: 1000, output: 500 })
+      expect(state.iteration).toEqual({ current: 5, total: 10 })
       expect(state.connectionStatus).toBe("connected")
 
       // Reset
@@ -191,6 +254,9 @@ describe("useAppStore", () => {
       expect(state.events).toEqual([])
       expect(state.tasks).toEqual([])
       expect(state.workspace).toBeNull()
+      expect(state.branch).toBeNull()
+      expect(state.tokenUsage).toEqual({ input: 0, output: 0 })
+      expect(state.iteration).toEqual({ current: 0, total: 0 })
       expect(state.connectionStatus).toBe("disconnected")
     })
   })
