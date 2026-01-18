@@ -7,6 +7,16 @@ import path from "path"
 export default defineConfig({
   server: {
     port: 5179,
+    proxy: {
+      "/api": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+      },
+      "/ws": {
+        target: "ws://localhost:3000",
+        ws: true,
+      },
+    },
   },
   plugins: [
     react(),
