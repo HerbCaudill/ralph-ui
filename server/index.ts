@@ -193,8 +193,8 @@ function createApp(config: ServerConfig): Express {
         return
       }
 
-      // Switch the BdProxy to the new workspace
-      switchWorkspace(workspacePath)
+      // Switch the BdProxy to the new workspace and start Ralph in watch mode
+      await switchWorkspace(workspacePath)
 
       // Get info from the new workspace to confirm it works
       const bdProxy = getBdProxy()
@@ -445,9 +445,30 @@ export function resetBdProxy(): void {
 
 /**
  * Switch to a different workspace by creating a new BdProxy with the given cwd.
+ * Also stops any running Ralph instance and starts a new one in watch mode for the new workspace.
  */
-export function switchWorkspace(workspacePath: string): void {
+export async function switchWorkspace(workspacePath: string): Promise<void> {
+  // Stop any currently running Ralph instance
+  if (ralphManager?.isRunning) {
+    await ralphManager.stop()
+  }
+
+  // Switch the BdProxy to the new workspace
   bdProxy = new BdProxy({ cwd: workspacePath })
+
+  // Create a new RalphManager for the new workspace with watch mode enabled
+  if (ralphManager) {
+    ralphManager.removeAllListeners()
+  }
+  ralphManager = createRalphManager({ cwd: workspacePath, watch: true })
+
+  // Start Ralph in watch mode
+  try {
+    await ralphManager.start()
+  } catch (err) {
+    // Log but don't fail - user can manually start later
+    console.error("[server] Failed to auto-start Ralph in watch mode:", err)
+  }
 }
 
 // RalphManager Integration
@@ -468,8 +489,8 @@ export function getRalphManager(): RalphManager {
 /**
  * Create a RalphManager and wire up event broadcasting.
  */
-function createRalphManager(): RalphManager {
-  const manager = new RalphManager()
+function createRalphManager(options?: { cwd?: string; watch?: boolean }): RalphManager {
+  const manager = new RalphManager(options)
 
   // Broadcast ralph events to all WebSocket clients
   manager.on("event", (event: RalphEvent) => {

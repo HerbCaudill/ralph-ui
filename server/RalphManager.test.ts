@@ -77,6 +77,40 @@ describe("RalphManager", () => {
       )
     })
 
+    it("includes --watch flag when watch option is enabled", async () => {
+      const watchManager = new RalphManager({
+        spawn: mockSpawn as unknown as SpawnFn,
+        watch: true,
+      })
+
+      const startPromise = watchManager.start()
+      mockProcess.emit("spawn")
+      await startPromise
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        "npx",
+        ["@herbcaudill/ralph", "--json", "--watch"],
+        expect.anything(),
+      )
+    })
+
+    it("includes both --watch and iterations when both provided", async () => {
+      const watchManager = new RalphManager({
+        spawn: mockSpawn as unknown as SpawnFn,
+        watch: true,
+      })
+
+      const startPromise = watchManager.start(25)
+      mockProcess.emit("spawn")
+      await startPromise
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        "npx",
+        ["@herbcaudill/ralph", "--json", "--watch", "25"],
+        expect.anything(),
+      )
+    })
+
     it("transitions to running status", async () => {
       const statusChanges: string[] = []
       manager.on("status", status => statusChanges.push(status))

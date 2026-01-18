@@ -24,6 +24,8 @@ export interface RalphManagerOptions {
   env?: Record<string, string>
   /** Custom spawn function (for testing) */
   spawn?: SpawnFn
+  /** Run in watch mode (adds --watch flag) */
+  watch?: boolean
 }
 
 // RalphManager
@@ -51,6 +53,7 @@ export class RalphManager extends EventEmitter {
     cwd: string
     env: Record<string, string>
     spawn: SpawnFn
+    watch: boolean
   }
 
   constructor(options: RalphManagerOptions = {}) {
@@ -61,6 +64,7 @@ export class RalphManager extends EventEmitter {
       cwd: options.cwd ?? process.cwd(),
       env: options.env ?? {},
       spawn: options.spawn ?? spawn,
+      watch: options.watch ?? false,
     }
   }
 
@@ -92,6 +96,9 @@ export class RalphManager extends EventEmitter {
     this.setStatus("starting")
 
     const args = [...this.options.args]
+    if (this.options.watch) {
+      args.push("--watch")
+    }
     if (iterations !== undefined) {
       args.push(String(iterations))
     }
