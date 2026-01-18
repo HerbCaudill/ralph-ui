@@ -90,4 +90,85 @@ describe("MainLayout", () => {
     const { container } = render(<MainLayout className="custom-class" />)
     expect(container.firstChild).toHaveClass("custom-class")
   })
+
+  describe("resizable sidebar", () => {
+    it("renders resize handle when sidebar is open", () => {
+      render(<MainLayout sidebar={<div>Sidebar Content</div>} />)
+      expect(screen.getByRole("separator", { name: /resize sidebar/i })).toBeInTheDocument()
+    })
+
+    it("does not render resize handle when sidebar is closed", () => {
+      render(<MainLayout sidebar={<div>Sidebar Content</div>} />)
+
+      // Close the sidebar
+      const toggleButton = screen.getByRole("button", { name: /collapse sidebar/i })
+      fireEvent.click(toggleButton)
+
+      expect(screen.queryByRole("separator", { name: /resize sidebar/i })).not.toBeInTheDocument()
+    })
+
+    it("updates sidebar width on drag", () => {
+      render(<MainLayout sidebar={<div>Sidebar Content</div>} />)
+
+      const resizeHandle = screen.getByRole("separator", { name: /resize sidebar/i })
+
+      // Start resize
+      fireEvent.mouseDown(resizeHandle)
+
+      // Move mouse to simulate resize
+      fireEvent.mouseMove(document, { clientX: 400 })
+
+      // Stop resize
+      fireEvent.mouseUp(document)
+
+      // Check that the store was updated
+      expect(useAppStore.getState().sidebarWidth).toBe(400)
+    })
+
+    it("respects minimum sidebar width", () => {
+      render(<MainLayout sidebar={<div>Sidebar Content</div>} />)
+
+      const resizeHandle = screen.getByRole("separator", { name: /resize sidebar/i })
+
+      // Start resize
+      fireEvent.mouseDown(resizeHandle)
+
+      // Move mouse below minimum
+      fireEvent.mouseMove(document, { clientX: 100 })
+
+      // Stop resize
+      fireEvent.mouseUp(document)
+
+      // Should be clamped to minimum (200)
+      expect(useAppStore.getState().sidebarWidth).toBe(200)
+    })
+
+    it("respects maximum sidebar width", () => {
+      render(<MainLayout sidebar={<div>Sidebar Content</div>} />)
+
+      const resizeHandle = screen.getByRole("separator", { name: /resize sidebar/i })
+
+      // Start resize
+      fireEvent.mouseDown(resizeHandle)
+
+      // Move mouse above maximum
+      fireEvent.mouseMove(document, { clientX: 800 })
+
+      // Stop resize
+      fireEvent.mouseUp(document)
+
+      // Should be clamped to maximum (600)
+      expect(useAppStore.getState().sidebarWidth).toBe(600)
+    })
+
+    it("applies width from store to sidebar", () => {
+      // Set a custom width
+      useAppStore.getState().setSidebarWidth(350)
+
+      render(<MainLayout sidebar={<div>Sidebar Content</div>} />)
+
+      const sidebar = screen.getByText("Sidebar Content").closest("aside")
+      expect(sidebar).toHaveStyle({ width: "350px" })
+    })
+  })
 })

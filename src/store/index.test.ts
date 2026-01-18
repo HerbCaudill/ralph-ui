@@ -21,6 +21,7 @@ describe("useAppStore", () => {
       expect(state.connectionStatus).toBe("disconnected")
       expect(state.accentColor).toBeNull()
       expect(state.sidebarOpen).toBe(true)
+      expect(state.sidebarWidth).toBe(320)
     })
   })
 
@@ -245,6 +246,14 @@ describe("useAppStore", () => {
       useAppStore.getState().toggleSidebar()
       expect(useAppStore.getState().sidebarOpen).toBe(true)
     })
+
+    it("sets sidebar width", () => {
+      useAppStore.getState().setSidebarWidth(400)
+      expect(useAppStore.getState().sidebarWidth).toBe(400)
+
+      useAppStore.getState().setSidebarWidth(250)
+      expect(useAppStore.getState().sidebarWidth).toBe(250)
+    })
   })
 
   describe("reset", () => {
@@ -261,6 +270,7 @@ describe("useAppStore", () => {
         setIteration,
         setConnectionStatus,
         setSidebarOpen,
+        setSidebarWidth,
       } = useAppStore.getState()
 
       setRalphStatus("running")
@@ -273,6 +283,7 @@ describe("useAppStore", () => {
       setIteration({ current: 5, total: 10 })
       setConnectionStatus("connected")
       setSidebarOpen(false)
+      setSidebarWidth(400)
 
       // Verify state is modified
       let state = useAppStore.getState()
@@ -286,6 +297,7 @@ describe("useAppStore", () => {
       expect(state.iteration).toEqual({ current: 5, total: 10 })
       expect(state.connectionStatus).toBe("connected")
       expect(state.sidebarOpen).toBe(false)
+      expect(state.sidebarWidth).toBe(400)
 
       // Reset
       useAppStore.getState().reset()
@@ -302,6 +314,7 @@ describe("useAppStore", () => {
       expect(state.iteration).toEqual({ current: 0, total: 0 })
       expect(state.connectionStatus).toBe("disconnected")
       expect(state.sidebarOpen).toBe(true)
+      expect(state.sidebarWidth).toBe(320)
     })
   })
 })

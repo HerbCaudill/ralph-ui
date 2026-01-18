@@ -1,7 +1,11 @@
 import { cn } from "@/lib/utils"
-import { forwardRef, useImperativeHandle, useRef } from "react"
+import { forwardRef, useImperativeHandle, useRef, useCallback, useState, useEffect } from "react"
 import { Header } from "./Header"
-import { useAppStore, selectSidebarOpen } from "@/store"
+import { useAppStore, selectSidebarOpen, selectSidebarWidth } from "@/store"
+
+// Constants for sidebar width constraints
+const MIN_SIDEBAR_WIDTH = 200
+const MAX_SIDEBAR_WIDTH = 600
 
 // Types
 
@@ -30,9 +34,56 @@ export const MainLayout = forwardRef<MainLayoutHandle, MainLayoutProps>(function
   ref,
 ) {
   const sidebarOpen = useAppStore(selectSidebarOpen)
+  const sidebarWidth = useAppStore(selectSidebarWidth)
   const toggleSidebar = useAppStore(state => state.toggleSidebar)
+  const setSidebarWidth = useAppStore(state => state.setSidebarWidth)
   const sidebarRef = useRef<HTMLDivElement>(null)
   const mainRef = useRef<HTMLDivElement>(null)
+
+  // Drag state for resizing
+  const [isResizing, setIsResizing] = useState(false)
+
+  // Handle mouse move during resize
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isResizing) return
+      const newWidth = Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, e.clientX))
+      setSidebarWidth(newWidth)
+    },
+    [isResizing, setSidebarWidth],
+  )
+
+  // Handle mouse up to stop resizing
+  const handleMouseUp = useCallback(() => {
+    setIsResizing(false)
+  }, [])
+
+  // Add/remove global mouse event listeners during resize
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener("mousemove", handleMouseMove)
+      document.addEventListener("mouseup", handleMouseUp)
+      // Prevent text selection during resize
+      document.body.style.userSelect = "none"
+      document.body.style.cursor = "col-resize"
+    } else {
+      document.body.style.userSelect = ""
+      document.body.style.cursor = ""
+    }
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove)
+      document.removeEventListener("mouseup", handleMouseUp)
+      document.body.style.userSelect = ""
+      document.body.style.cursor = ""
+    }
+  }, [isResizing, handleMouseMove, handleMouseUp])
+
+  // Start resizing on mouse down
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsResizing(true)
+  }, [])
 
   // Expose focus methods via ref
   useImperativeHandle(ref, () => ({
@@ -67,14 +118,33 @@ export const MainLayout = forwardRef<MainLayoutHandle, MainLayoutProps>(function
         <aside
           ref={sidebarRef}
           className={cn(
-            "border-sidebar-border bg-sidebar flex flex-col border-r transition-all duration-200",
-            sidebarOpen ? "w-64 md:w-72 lg:w-80" : "w-0",
+            "border-sidebar-border bg-sidebar relative flex flex-col border-r",
+            !isResizing && "transition-all duration-200",
           )}
+          style={{ width: sidebarOpen ? sidebarWidth : 0 }}
         >
           {sidebarOpen && (
             <div className="flex h-full flex-col overflow-hidden">
               <div className="flex-1 overflow-y-auto p-4">{sidebar}</div>
             </div>
+          )}
+
+          {/* Resize handle */}
+          {sidebarOpen && (
+            <div
+              className={cn(
+                "absolute top-0 right-0 z-10 h-full w-1 cursor-col-resize transition-colors",
+                "hover:bg-primary/20",
+                isResizing && "bg-primary/30",
+              )}
+              onMouseDown={handleResizeStart}
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Resize sidebar"
+              aria-valuenow={sidebarWidth}
+              aria-valuemin={MIN_SIDEBAR_WIDTH}
+              aria-valuemax={MAX_SIDEBAR_WIDTH}
+            />
           )}
         </aside>
 
@@ -82,9 +152,10 @@ export const MainLayout = forwardRef<MainLayoutHandle, MainLayoutProps>(function
         <button
           onClick={toggleSidebar}
           className={cn(
-            "bg-sidebar-accent text-sidebar-accent-foreground absolute top-1/2 left-0 z-10 -translate-y-1/2 rounded-r-md p-1 opacity-50 transition-opacity hover:opacity-100",
-            sidebarOpen && "left-64 md:left-72 lg:left-80",
+            "bg-sidebar-accent text-sidebar-accent-foreground absolute top-1/2 z-10 -translate-y-1/2 rounded-r-md p-1 opacity-50 transition-opacity hover:opacity-100",
+            !isResizing && "transition-[left] duration-200",
           )}
+          style={{ left: sidebarOpen ? sidebarWidth : 0 }}
           aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
         >
           <svg

@@ -60,6 +60,7 @@ export interface AppState {
 
   // UI State
   sidebarOpen: boolean
+  sidebarWidth: number
 
   // Theme
   theme: Theme
@@ -102,6 +103,7 @@ export interface AppActions {
   // UI State
   setSidebarOpen: (open: boolean) => void
   toggleSidebar: () => void
+  setSidebarWidth: (width: number) => void
 
   // Theme
   setTheme: (theme: Theme) => void
@@ -123,6 +125,7 @@ const initialState: AppState = {
   connectionStatus: "disconnected",
   accentColor: null,
   sidebarOpen: true,
+  sidebarWidth: 320,
   theme: "system",
 }
 
@@ -180,6 +183,7 @@ export const useAppStore = create<AppState & AppActions>(set => ({
   // UI State
   setSidebarOpen: open => set({ sidebarOpen: open }),
   toggleSidebar: () => set(state => ({ sidebarOpen: !state.sidebarOpen })),
+  setSidebarWidth: width => set({ sidebarWidth: width }),
 
   // Theme
   setTheme: theme => set({ theme }),
@@ -202,4 +206,5 @@ export const selectIsConnected = (state: AppState) => state.connectionStatus ===
 export const selectIsRalphRunning = (state: AppState) => state.ralphStatus === "running"
 export const selectAccentColor = (state: AppState) => state.accentColor
 export const selectSidebarOpen = (state: AppState) => state.sidebarOpen
+export const selectSidebarWidth = (state: AppState) => state.sidebarWidth
 export const selectTheme = (state: AppState) => state.theme
