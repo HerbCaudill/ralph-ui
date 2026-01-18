@@ -250,17 +250,15 @@ export function ToolUseCard({ event, className, defaultExpanded = false }: ToolU
   if (event.tool === "TodoWrite" && event.input?.todos && Array.isArray(event.input.todos)) {
     return (
       <div className={cn("py-1.5 pr-4 pl-4", className)}>
-        <div className="flex items-start gap-2.5">
-          <span className={cn("mt-2 size-1.5 shrink-0 rounded-full", statusColor)} />
-          <div className="flex-1">
-            <span className="text-foreground text-xs font-semibold">Update Todos</span>
-            <div className="border-muted-foreground/30 mt-1 ml-1 border-l pl-3">
-              <TodoList
-                todos={event.input.todos as Array<{ content: string; status: string }>}
-                className="text-xs"
-              />
-            </div>
-          </div>
+        <div className="flex items-center gap-2.5">
+          <span className={cn("size-1.5 shrink-0 rounded-full", statusColor)} />
+          <span className="text-foreground text-xs font-semibold">Update Todos</span>
+        </div>
+        <div className="border-muted-foreground/30 mt-1 ml-4 border-l pl-3">
+          <TodoList
+            todos={event.input.todos as Array<{ content: string; status: string }>}
+            className="text-xs"
+          />
         </div>
       </div>
     )
@@ -273,7 +271,7 @@ export function ToolUseCard({ event, className, defaultExpanded = false }: ToolU
         onClick={toggleExpanded}
         disabled={!hasExpandableContent}
         className={cn(
-          "flex w-full items-start gap-2.5 text-left",
+          "flex w-full items-center gap-2.5 text-left",
           hasExpandableContent && "cursor-pointer",
           !hasExpandableContent && "cursor-default",
         )}
@@ -281,7 +279,7 @@ export function ToolUseCard({ event, className, defaultExpanded = false }: ToolU
       >
         {/* Status indicator */}
         <span
-          className={cn("mt-2 size-1.5 shrink-0 rounded-full", statusColor)}
+          className={cn("size-1.5 shrink-0 rounded-full", statusColor)}
           aria-label={event.status ?? "pending"}
         />
 
