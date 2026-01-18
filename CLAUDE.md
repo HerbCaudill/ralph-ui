@@ -1,8 +1,55 @@
-# Agent Instructions
+# CLAUDE.md
 
-This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get started.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Quick Reference
+## Project overview
+
+Ralph-UI is a React frontend for the Ralph CLI agent (`@herbcaudill/ralph`). It provides a web interface for controlling Ralph, viewing real-time events, and managing tasks through beads (`bd`).
+
+## Commands
+
+```bash
+pnpm dev              # Start both frontend (5179) and backend (3000)
+pnpm dev:vite         # Start only the Vite dev server
+pnpm dev:server       # Start only the Express backend
+pnpm build            # Build for production
+pnpm test             # Run unit tests (Vitest)
+pnpm test -- -t "pattern"  # Run tests matching pattern
+pnpm test:pw          # Run Playwright tests
+pnpm test:pw:headed   # Run Playwright tests with visible browser
+pnpm test:pw:ui       # Run Playwright tests with interactive UI
+pnpm test:all         # Run typecheck, unit tests, and Playwright tests
+pnpm typecheck        # Type check without emitting
+pnpm storybook        # Start Storybook on port 6006
+pnpm format           # Format code with Prettier
+```
+
+## Architecture
+
+**Client (React + Vite)**
+
+- `src/store/index.ts` - Zustand store for global state (ralph status, events, tasks, UI)
+- `src/hooks/useRalphConnection.ts` - WebSocket hook that connects to server, dispatches events to store
+- `src/hooks/useWebSocket.ts` - Low-level WebSocket hook with reconnection
+- `src/hooks/useHotkeys.ts` - Global keyboard shortcuts from `src/config/hotkeys.json`
+- `src/components/events/EventStream.tsx` - Real-time event log with auto-scroll
+
+**Server (Express + WebSocket)**
+
+- `server/index.ts` - Express server with WebSocket, serves static files and API
+- `server/RalphManager.ts` - Spawns and manages Ralph CLI process (`npx @herbcaudill/ralph --json`)
+- `server/BdProxy.ts` - Proxy for beads CLI commands (task management)
+
+**Data flow**: Ralph CLI → stdout JSON → RalphManager → WebSocket → useRalphConnection → Zustand store → React components
+
+## Key patterns
+
+- Path alias: `@/` maps to `src/` (e.g., `import { cn } from "@/lib/utils"`)
+- Tailwind v4 with `@tailwindcss/vite` plugin
+- Components use shadcn/ui patterns with `class-variance-authority`
+- Unit tests use `jsdom` environment; server tests use `node` environment
+
+## Issue tracking (beads)
 
 ```bash
 bd ready              # Find available work
@@ -12,49 +59,31 @@ bd close <id>         # Complete work
 bd sync               # Sync with git
 ```
 
-## Landing the Plane (Session Completion)
+## Keyboard hotkeys
 
-**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
+Hotkeys are configured in `src/config/hotkeys.json`. The `useHotkeys` hook handles global keyboard events.
 
-**MANDATORY WORKFLOW:**
+| Hotkey      | Action                 |
+| ----------- | ---------------------- |
+| `Cmd+Enter` | Start Ralph            |
+| `Cmd+.`     | Stop Ralph             |
+| `Cmd+B`     | Toggle sidebar         |
+| `Cmd+1`     | Focus sidebar          |
+| `Cmd+2`     | Focus main content     |
+| `Cmd+K`     | Focus quick task input |
+| `Cmd+L`     | Focus chat input       |
 
-1. **File issues for remaining work** - Create issues for anything that needs follow-up
-2. **Run quality gates** (if code changed) - Tests, linters, builds
-3. **Update issue status** - Close finished work, update in-progress items
-4. **PUSH TO REMOTE** - This is MANDATORY:
+On Windows/Linux, use `Ctrl` instead of `Cmd`.
+
+## Session completion checklist
+
+Before ending a session, verify:
+
+1. Run quality gates if code changed (`pnpm test:all`)
+2. Close finished beads issues
+3. Push all changes:
    ```bash
    git pull --rebase
    bd sync
    git push
-   git status  # MUST show "up to date with origin"
    ```
-5. **Clean up** - Clear stashes, prune remote branches
-6. **Verify** - All changes committed AND pushed
-7. **Hand off** - Provide context for next session
-
-**CRITICAL RULES:**
-
-- Work is NOT complete until `git push` succeeds
-- NEVER stop before pushing - that leaves work stranded locally
-- NEVER say "ready to push when you are" - YOU must push
-- If push fails, resolve and retry until it succeeds
-
-## Keyboard Hotkeys
-
-Keyboard hotkeys are configured in `src/config/hotkeys.json`. The configuration uses a JSON schema for validation.
-
-**Available Hotkeys:**
-
-- `Cmd+Enter` - Start Ralph agent
-- `Cmd+.` - Stop Ralph agent
-- `Cmd+Shift+.` - Stop after current task (coming soon)
-- `Cmd+/` - Pause Ralph agent (coming soon)
-- `Cmd+B` - Toggle sidebar
-- `Cmd+1` - Focus sidebar
-- `Cmd+2` - Focus main content
-- `Cmd+K` - Focus quick task input
-- `Cmd+L` - Focus chat input
-
-On Windows/Linux, use `Ctrl` instead of `Cmd`.
-
-To modify hotkeys, edit `src/config/hotkeys.json`. The `useHotkeys` hook in `src/hooks/useHotkeys.ts` handles global keyboard event listening.
