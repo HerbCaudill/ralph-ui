@@ -203,7 +203,7 @@ function TodoList({
         <div key={i} className="flex items-start gap-2">
           <span
             className={cn(
-              "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border text-xs",
+              "mt-0.5 flex size-3 shrink-0 items-center justify-center rounded-sm border text-[10px]",
               todo.status === "completed" && "border-green-500 bg-green-500/20 text-green-500",
               todo.status === "in_progress" && "border-blue-500 bg-blue-500/20 text-blue-500",
               todo.status === "pending" && "border-muted-foreground",
