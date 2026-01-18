@@ -145,4 +145,3 @@ src/
 4. Click "Stop after current" → ralph finishes iteration, exits
 5. Task sidebar shows bd issues
 6. Can create/edit tasks
-
