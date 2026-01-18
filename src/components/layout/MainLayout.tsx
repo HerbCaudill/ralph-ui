@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils"
 import { useState } from "react"
+import { Header } from "./Header"
 
 // =============================================================================
 // Types
@@ -9,6 +10,8 @@ export interface MainLayoutProps {
   sidebar?: React.ReactNode
   main?: React.ReactNode
   statusBar?: React.ReactNode
+  header?: React.ReactNode
+  showHeader?: boolean
   className?: string
 }
 
@@ -17,14 +20,24 @@ export interface MainLayoutProps {
 // =============================================================================
 
 /**
- * Main application layout with sidebar, main content area, and status bar.
+ * Main application layout with header, sidebar, main content area, and status bar.
  * Responsive design: sidebar collapses on mobile.
  */
-export function MainLayout({ sidebar, main, statusBar, className }: MainLayoutProps) {
+export function MainLayout({
+  sidebar,
+  main,
+  statusBar,
+  header,
+  showHeader = true,
+  className,
+}: MainLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
   return (
     <div className={cn("bg-background flex h-screen flex-col overflow-hidden", className)}>
+      {/* Header */}
+      {showHeader && (header ?? <Header />)}
+
       {/* Main content area */}
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}

@@ -12,14 +12,15 @@ describe("App", () => {
     // Check for sidebar content
     expect(screen.getByText("Tasks")).toBeInTheDocument()
 
-    // Check for status indicators
-    expect(screen.getByText(/Disconnected|Connected|Connecting/)).toBeInTheDocument()
+    // Check for status indicators (connection status appears in both Header and StatusBar)
+    expect(screen.getAllByText(/Disconnected|Connected|Connecting/).length).toBeGreaterThan(0)
     expect(screen.getByText(/Ralph:/)).toBeInTheDocument()
   })
 
   it("shows disconnected status by default", () => {
     render(<App />)
-    expect(screen.getByText("Disconnected")).toBeInTheDocument()
+    // Connection status appears in both Header and StatusBar
+    expect(screen.getAllByText("Disconnected").length).toBeGreaterThan(0)
     expect(screen.getByText("Ralph: stopped")).toBeInTheDocument()
   })
 })

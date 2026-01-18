@@ -9,8 +9,8 @@ test("displays main layout with sidebar and content", async ({ page }) => {
   // Check for sidebar heading
   await expect(page.getByRole("heading", { name: "Tasks" })).toBeVisible()
 
-  // Check for status bar
-  await expect(page.getByText("Disconnected")).toBeVisible()
+  // Check for status bar (connection status appears in both Header and StatusBar)
+  await expect(page.getByRole("contentinfo").getByText("Disconnected")).toBeVisible()
 })
 
 test("can toggle sidebar", async ({ page }) => {
