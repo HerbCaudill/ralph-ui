@@ -21,3 +21,11 @@ export {
 export { useTheme, getStoredTheme, type UseThemeReturn } from "./useTheme"
 
 export { useTasks, type UseTasksOptions, type UseTasksResult } from "./useTasks"
+
+export {
+  useStreamingState,
+  type StreamingMessage,
+  type StreamingContentBlock,
+  type StreamingTextBlock,
+  type StreamingToolUseBlock,
+} from "./useStreamingState"

@@ -47,9 +47,33 @@ function parseJsonl(raw: string, limit = 200): Array<Record<string, unknown>> {
   return events
 }
 
+// Parse JSONL including stream events for real-time simulation
+function parseJsonlWithStreaming(raw: string, limit = 500): Array<Record<string, unknown>> {
+  const lines = raw.trim().split("\n")
+  const events: Array<Record<string, unknown>> = []
+
+  for (const line of lines) {
+    if (events.length >= limit) break
+    try {
+      const event = JSON.parse(line)
+      // Include stream events plus user messages and tool results
+      if (event.type === "stream_event" || event.type === "user" || event.type === "user_message") {
+        events.push(event)
+      }
+    } catch {
+      // Skip malformed lines
+    }
+  }
+
+  return events
+}
+
 // Parsed events from the JSONL files
 const events1 = parseJsonl(events1Raw)
 const events2 = parseJsonl(events2Raw)
+
+// Parsed events with streaming for real-time simulation
+const events1Streaming = parseJsonlWithStreaming(events1Raw)
 
 // Helper to add events to the store
 function EventLoader({
@@ -685,8 +709,8 @@ export const RealtimeSimulation: Story = {
   render: args => (
     <>
       <EventStreamer
-        events={events1 as Array<{ type: string; timestamp: number }>}
-        intervalMs={400}
+        events={events1Streaming as Array<{ type: string; timestamp: number }>}
+        intervalMs={50}
       />
       <EventStream {...args} />
     </>

@@ -4,6 +4,11 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { UserMessage, type UserMessageEvent } from "./UserMessage"
 import { AssistantText, type AssistantTextEvent } from "./AssistantText"
 import { ToolUseCard, type ToolUseEvent } from "./ToolUseCard"
+import {
+  useStreamingState,
+  type StreamingMessage,
+  type StreamingContentBlock,
+} from "@/hooks/useStreamingState"
 
 // Types
 
@@ -84,6 +89,64 @@ function renderContentBlock(
   return null
 }
 
+// Streaming content renderer
+
+function StreamingContentRenderer({ message }: { message: StreamingMessage }) {
+  return (
+    <>
+      {message.contentBlocks.map((block, index) => (
+        <StreamingBlockRenderer key={index} block={block} timestamp={message.timestamp} />
+      ))}
+    </>
+  )
+}
+
+function StreamingBlockRenderer({
+  block,
+  timestamp,
+}: {
+  block: StreamingContentBlock
+  timestamp: number
+}) {
+  if (block.type === "text") {
+    if (!block.text) return null
+    const textEvent: AssistantTextEvent = {
+      type: "text",
+      timestamp,
+      content: block.text,
+    }
+    return <AssistantText event={textEvent} />
+  }
+
+  if (block.type === "tool_use") {
+    // Parse partial JSON for display
+    let input: Record<string, unknown> = {}
+    try {
+      input = JSON.parse(block.input)
+    } catch {
+      // Partial JSON - try to extract what we can for display
+      // Look for common patterns like "command": "..."
+      const commandMatch = block.input.match(/"command"\s*:\s*"([^"]*)"?/)
+      const filePathMatch = block.input.match(/"file_path"\s*:\s*"([^"]*)"?/)
+      const patternMatch = block.input.match(/"pattern"\s*:\s*"([^"]*)"?/)
+      if (commandMatch) input = { command: commandMatch[1] }
+      else if (filePathMatch) input = { file_path: filePathMatch[1] }
+      else if (patternMatch) input = { pattern: patternMatch[1] }
+    }
+
+    const toolEvent: ToolUseEvent = {
+      type: "tool_use",
+      timestamp,
+      tool: block.name as ToolUseEvent["tool"],
+      input,
+      status: "running",
+    }
+    return <ToolUseCard event={toolEvent} />
+  }
+
+  return null
+}
+
 // EventItem Component - renders appropriate component based on event type
 
 interface EventItemProps {
@@ -144,8 +207,11 @@ export function EventStream({ className, maxEvents = 1000 }: EventStreamProps) {
   const [autoScroll, setAutoScroll] = useState(true)
   const [isAtBottom, setIsAtBottom] = useState(true)
 
+  // Process streaming events
+  const { completedEvents, streamingMessage } = useStreamingState(events)
+
   // Limit displayed events
-  const displayedEvents = events.slice(-maxEvents)
+  const displayedEvents = completedEvents.slice(-maxEvents)
 
   // Build a map of tool_use_id -> result for matching tool uses with their results
   const toolResults = new Map<string, { output?: string; error?: string }>()
@@ -229,17 +295,20 @@ export function EventStream({ className, maxEvents = 1000 }: EventStreamProps) {
         aria-label="Event stream"
         aria-live="polite"
       >
-        {displayedEvents.length === 0 ?
+        {events.length === 0 ?
           <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
             No events yet
           </div>
-        : displayedEvents.map((event, index) => (
-            <EventItem
-              key={`${event.timestamp}-${index}`}
-              event={event}
-              toolResults={toolResults}
-            />
-          ))
+        : <>
+            {displayedEvents.map((event, index) => (
+              <EventItem
+                key={`${event.timestamp}-${index}`}
+                event={event}
+                toolResults={toolResults}
+              />
+            ))}
+            {streamingMessage && <StreamingContentRenderer message={streamingMessage} />}
+          </>
         }
       </div>
 
