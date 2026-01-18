@@ -147,9 +147,9 @@ function getButtonStates(status: RalphStatus, isConnected: boolean) {
     case "running":
       return {
         start: false,
-        pause: false, // TODO: Enable when ralph supports pause
+        pause: false,
         stop: true,
-        stopAfterCurrent: false, // TODO: Enable when ralph supports stop-after-current
+        stopAfterCurrent: false,
       }
     case "stopping":
       return {
@@ -195,7 +195,7 @@ export function ControlBar({ className }: ControlBarProps) {
   }, [])
 
   const handlePause = useCallback(() => {
-    // TODO: Implement when ralph supports pause
+    // See rui-fsd: Implement when ralph supports pause
     console.log("Pause not yet implemented in ralph")
   }, [])
 
@@ -210,7 +210,7 @@ export function ControlBar({ className }: ControlBarProps) {
   }, [])
 
   const handleStopAfterCurrent = useCallback(() => {
-    // TODO: Implement when ralph supports stop-after-current
+    // See rui-4p3: Implement when ralph supports stop-after-current
     console.log("Stop-after-current not yet implemented in ralph")
   }, [])
 

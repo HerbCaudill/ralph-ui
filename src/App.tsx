@@ -146,12 +146,12 @@ export function App() {
   }, [ralphStatus, isConnected])
 
   const handleAgentPause = useCallback(() => {
-    // TODO: Implement when ralph supports pause
+    // See rui-fsd: Implement when ralph supports pause
     console.log("Pause not yet implemented in ralph")
   }, [])
 
   const handleAgentStopAfterCurrent = useCallback(() => {
-    // TODO: Implement when ralph supports stop-after-current
+    // See rui-4p3: Implement when ralph supports stop-after-current
     console.log("Stop-after-current not yet implemented in ralph")
   }, [])
 
@@ -168,7 +168,7 @@ export function App() {
   }, [])
 
   const handleFocusTaskInput = useCallback(() => {
-    // TODO: Focus quick task input when implemented
+    // See rui-7bu: Focus quick task input when wired up
     layoutRef.current?.focusSidebar()
   }, [])
 
