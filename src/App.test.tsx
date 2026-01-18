@@ -45,8 +45,8 @@ describe("App", () => {
   it("renders the main layout with sidebar and status bar", () => {
     render(<App />)
 
-    // Check for sidebar content
-    expect(screen.getByText("Tasks")).toBeInTheDocument()
+    // Check for sidebar content (TaskSidebar is a pure layout component, no heading)
+    expect(screen.getByRole("complementary", { name: "Task sidebar" })).toBeInTheDocument()
 
     // Check for status indicators (connection status appears in both Header and StatusBar)
     expect(screen.getAllByText(/Disconnected|Connected|Connecting/).length).toBeGreaterThan(0)

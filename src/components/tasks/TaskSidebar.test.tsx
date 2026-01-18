@@ -4,18 +4,6 @@ import { TaskSidebar } from "./TaskSidebar"
 
 describe("TaskSidebar", () => {
   describe("rendering", () => {
-    it("renders with tasks heading", () => {
-      render(<TaskSidebar />)
-      expect(screen.getByRole("heading", { name: "Tasks" })).toBeInTheDocument()
-    })
-
-    it("renders task icon", () => {
-      render(<TaskSidebar />)
-      // Icon has aria-hidden, so we check the parent heading area
-      const heading = screen.getByRole("heading", { name: "Tasks" })
-      expect(heading.parentElement?.querySelector("svg")).toBeInTheDocument()
-    })
-
     it("renders with complementary role", () => {
       render(<TaskSidebar />)
       expect(screen.getByRole("complementary", { name: "Task sidebar" })).toBeInTheDocument()
@@ -41,9 +29,9 @@ describe("TaskSidebar", () => {
 
     it("does not render quickInput area when not provided", () => {
       const { container } = render(<TaskSidebar />)
-      // Should only have header and task list area, no input area
+      // No border-b elements when quickInput not provided (component has no header)
       const borderBElements = container.querySelectorAll(".border-b")
-      expect(borderBElements).toHaveLength(1) // Only header has border-b
+      expect(borderBElements).toHaveLength(0)
     })
 
     it("renders taskList when provided", () => {
@@ -91,13 +79,6 @@ describe("TaskSidebar", () => {
   })
 
   describe("styling", () => {
-    it("header has correct border styling", () => {
-      render(<TaskSidebar />)
-      const heading = screen.getByRole("heading", { name: "Tasks" })
-      const headerContainer = heading.parentElement
-      expect(headerContainer).toHaveClass("border-b", "border-border")
-    })
-
     it("quick input area has correct border styling", () => {
       render(<TaskSidebar quickInput={<div>Input</div>} />)
       const inputContainer = screen.getByText("Input").parentElement
