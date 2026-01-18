@@ -156,6 +156,154 @@ export const WithDescriptions: Story = {
   },
 }
 
+/**
+ * Demonstrates the epic grouping feature.
+ * Tasks with a parent epic are grouped under their epic.
+ * Tasks without an epic are shown in status groups below.
+ */
+export const GroupedByEpic: Story = {
+  args: {
+    tasks: [
+      // Epic 1: Authentication
+      {
+        id: "rui-auth",
+        title: "User authentication",
+        status: "in_progress",
+        priority: 1,
+        issue_type: "epic",
+        description: "Implement complete user authentication flow",
+      },
+      {
+        id: "rui-auth.1",
+        title: "Login form",
+        status: "closed",
+        priority: 2,
+        parent: "rui-auth",
+        issue_type: "task",
+      },
+      {
+        id: "rui-auth.2",
+        title: "OAuth integration",
+        status: "in_progress",
+        priority: 1,
+        parent: "rui-auth",
+        issue_type: "task",
+      },
+      {
+        id: "rui-auth.3",
+        title: "Password reset flow",
+        status: "open",
+        priority: 2,
+        parent: "rui-auth",
+        issue_type: "task",
+      },
+      // Epic 2: Dashboard
+      {
+        id: "rui-dash",
+        title: "Dashboard redesign",
+        status: "open",
+        priority: 2,
+        issue_type: "epic",
+        description: "Modernize the dashboard with new widgets",
+      },
+      {
+        id: "rui-dash.1",
+        title: "Analytics widget",
+        status: "open",
+        priority: 2,
+        parent: "rui-dash",
+        issue_type: "task",
+      },
+      {
+        id: "rui-dash.2",
+        title: "Activity feed",
+        status: "blocked",
+        priority: 3,
+        parent: "rui-dash",
+        issue_type: "task",
+      },
+      // Ungrouped tasks (no parent epic)
+      {
+        id: "rui-fix-1",
+        title: "Fix navigation bug",
+        status: "open",
+        priority: 0,
+        issue_type: "bug",
+      },
+      {
+        id: "rui-fix-2",
+        title: "Update API documentation",
+        status: "open",
+        priority: 3,
+        issue_type: "task",
+      },
+      {
+        id: "rui-fix-3",
+        title: "Performance optimization",
+        status: "in_progress",
+        priority: 1,
+        issue_type: "task",
+      },
+    ],
+  },
+}
+
+/**
+ * Shows only epic-grouped tasks with no ungrouped items.
+ */
+export const OnlyEpicTasks: Story = {
+  args: {
+    tasks: [
+      {
+        id: "rui-epic-1",
+        title: "Server foundation",
+        status: "closed",
+        priority: 2,
+        issue_type: "epic",
+      },
+      {
+        id: "rui-epic-1.1",
+        title: "Set up Express server",
+        status: "closed",
+        priority: 2,
+        parent: "rui-epic-1",
+        issue_type: "task",
+      },
+      {
+        id: "rui-epic-1.2",
+        title: "WebSocket support",
+        status: "closed",
+        priority: 2,
+        parent: "rui-epic-1",
+        issue_type: "task",
+      },
+      {
+        id: "rui-epic-2",
+        title: "React shell",
+        status: "in_progress",
+        priority: 2,
+        issue_type: "epic",
+      },
+      {
+        id: "rui-epic-2.1",
+        title: "Set up Vite + React",
+        status: "closed",
+        priority: 2,
+        parent: "rui-epic-2",
+        issue_type: "task",
+      },
+      {
+        id: "rui-epic-2.2",
+        title: "Create main layout",
+        status: "in_progress",
+        priority: 2,
+        parent: "rui-epic-2",
+        issue_type: "task",
+      },
+    ],
+  },
+}
+
 export const PrioritySorting: Story = {
   args: {
     tasks: [
