@@ -3,6 +3,10 @@ import { EventStream } from "./EventStream"
 import { useAppStore } from "@/store"
 import { useEffect } from "react"
 
+// Import raw JSONL files
+import events1Raw from "../../../.ralph/events-1.jsonl?raw"
+import events2Raw from "../../../.ralph/events-2.jsonl?raw"
+
 const meta: Meta<typeof EventStream> = {
   title: "Events/EventStream",
   component: EventStream,
@@ -21,6 +25,31 @@ const meta: Meta<typeof EventStream> = {
 
 export default meta
 type Story = StoryObj<typeof meta>
+
+// Parse JSONL and filter to displayable events
+function parseJsonl(raw: string, limit = 200): Array<Record<string, unknown>> {
+  const lines = raw.trim().split("\n")
+  const events: Array<Record<string, unknown>> = []
+
+  for (const line of lines) {
+    if (events.length >= limit) break
+    try {
+      const event = JSON.parse(line)
+      // Only include events that EventStream can render
+      if (event.type === "assistant" || event.type === "user" || event.type === "user_message") {
+        events.push(event)
+      }
+    } catch {
+      // Skip malformed lines
+    }
+  }
+
+  return events
+}
+
+// Parsed events from the JSONL files
+const events1 = parseJsonl(events1Raw)
+const events2 = parseJsonl(events2Raw)
 
 // Helper to add events to the store
 function EventLoader({
@@ -600,4 +629,26 @@ export const LongConversation: Story = {
       </>
     )
   },
+}
+
+// Stories using real JSONL data from .ralph/ directory
+
+export const RealSession1: Story = {
+  name: "Real session: Test fixes",
+  render: args => (
+    <>
+      <EventLoader events={events1 as Array<{ type: string; timestamp: number }>} />
+      <EventStream {...args} />
+    </>
+  ),
+}
+
+export const RealSession2: Story = {
+  name: "Real session: All tests passing",
+  render: args => (
+    <>
+      <EventLoader events={events2 as Array<{ type: string; timestamp: number }>} />
+      <EventStream {...args} />
+    </>
+  ),
 }
