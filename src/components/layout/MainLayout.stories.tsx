@@ -28,12 +28,7 @@ const sampleTasks: TaskCardTask[] = [
 
 export const Default: Story = {
   args: {
-    sidebar: (
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold">Tasks</h2>
-        <TaskList tasks={sampleTasks} persistCollapsedState={false} />
-      </div>
-    ),
+    sidebar: <TaskList tasks={sampleTasks} persistCollapsedState={false} />,
     main: (
       <div className="space-y-4">
         <h1 className="text-2xl font-bold">Main Content Area</h1>
@@ -61,12 +56,7 @@ export const Default: Story = {
 
 export const SidebarClosed: Story = {
   args: {
-    sidebar: (
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold">Tasks</h2>
-        <TaskList tasks={sampleTasks} persistCollapsedState={false} />
-      </div>
-    ),
+    sidebar: <TaskList tasks={sampleTasks} persistCollapsedState={false} />,
     main: (
       <div className="space-y-4">
         <h1 className="text-2xl font-bold">Main Content</h1>

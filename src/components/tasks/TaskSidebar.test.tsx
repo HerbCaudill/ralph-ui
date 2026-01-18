@@ -29,9 +29,9 @@ describe("TaskSidebar", () => {
 
     it("does not render quickInput area when not provided", () => {
       const { container } = render(<TaskSidebar />)
-      // Only the header has border-b when quickInput not provided
+      // No border-b elements when quickInput is not provided
       const borderBElements = container.querySelectorAll(".border-b")
-      expect(borderBElements).toHaveLength(1)
+      expect(borderBElements).toHaveLength(0)
     })
 
     it("renders taskList when provided", () => {
