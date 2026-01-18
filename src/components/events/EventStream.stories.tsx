@@ -12,7 +12,7 @@ const meta: Meta<typeof EventStream> = {
   tags: ["autodocs"],
   decorators: [
     Story => (
-      <div className="border-border h-96 overflow-hidden rounded-md border">
+      <div className="border-border h-[600px] overflow-hidden rounded-md border">
         <Story />
       </div>
     ),
@@ -30,47 +30,211 @@ function EventLoader({
 }) {
   useEffect(() => {
     const store = useAppStore.getState()
-    // Clear existing events first
     store.clearEvents()
-    // Add new events
     events.forEach(event => store.addEvent(event))
   }, [events])
   return null
 }
 
-const sampleEvents = [
-  { type: "session_start", timestamp: Date.now() - 10000 },
+// Real events from .ralph/events-1.jsonl - formatted for the new event structure
+const realEvents = [
+  // User sends a message
   {
     type: "user_message",
-    timestamp: Date.now() - 9000,
-    message: "Can you help me fix the login bug?",
+    timestamp: Date.now() - 60000,
+    message: "Can you help me fix the test failures?",
   },
-  { type: "text", timestamp: Date.now() - 8000, content: "Of course! Let me analyze the issue." },
-  { type: "tool_use", timestamp: Date.now() - 7000, tool: "Read", file: "/src/auth/login.ts" },
-  { type: "tool_result", timestamp: Date.now() - 6500, tool: "Read", status: "success" },
+  // Assistant responds with text and runs a command
   {
-    type: "text",
-    timestamp: Date.now() - 6000,
-    content: "I found the issue. The token validation is incorrect.",
+    type: "assistant",
+    timestamp: Date.now() - 58000,
+    message: {
+      content: [
+        {
+          type: "tool_use",
+          id: "toolu_01UqFPsNRR3ZkLQBP5F6KUKJ",
+          name: "Bash",
+          input: {
+            command: "pnpm test:all",
+            description: "Run all tests to check for errors",
+            timeout: 120000,
+          },
+        },
+      ],
+    },
   },
-  { type: "tool_use", timestamp: Date.now() - 5000, tool: "Edit", file: "/src/auth/login.ts" },
-  { type: "tool_result", timestamp: Date.now() - 4500, tool: "Edit", status: "success" },
-  { type: "text", timestamp: Date.now() - 4000, content: "Fixed! Running tests now..." },
-  { type: "tool_use", timestamp: Date.now() - 3000, tool: "Bash", command: "npm test" },
-  { type: "output", timestamp: Date.now() - 2500, line: "Running tests..." },
-  { type: "output", timestamp: Date.now() - 2000, line: "All tests passed!" },
-  { type: "tool_result", timestamp: Date.now() - 1500, tool: "Bash", status: "success" },
+  // Tool result
   {
-    type: "text",
-    timestamp: Date.now() - 1000,
-    content: "All done! The login bug has been fixed.",
+    type: "user",
+    timestamp: Date.now() - 55000,
+    tool_use_result: "Exit code 1",
+    message: {
+      content: [
+        {
+          type: "tool_result",
+          tool_use_id: "toolu_01UqFPsNRR3ZkLQBP5F6KUKJ",
+          content:
+            "Exit code 1\n\nTest Files  2 failed | 23 passed (25)\n      Tests  5 failed | 455 passed (460)\n   Start at  23:28:56\n   Duration  2.02s",
+          is_error: true,
+        },
+      ],
+    },
+  },
+  // Assistant responds with text and reads files
+  {
+    type: "assistant",
+    timestamp: Date.now() - 50000,
+    message: {
+      content: [
+        {
+          type: "text",
+          text: "I found test failures. Let me examine the failing tests more closely to understand the issues:",
+        },
+        {
+          type: "tool_use",
+          id: "toolu_01QbViy1k2VVzsAc2YMugrt5",
+          name: "Read",
+          input: {
+            file_path: "/Users/herbcaudill/ralph-ui/src/components/tasks/TaskSidebar.test.tsx",
+          },
+        },
+        {
+          type: "tool_use",
+          id: "toolu_01AxR6CtAc7zmLcHBHWqfAEH",
+          name: "Read",
+          input: {
+            file_path: "/Users/herbcaudill/ralph-ui/src/App.test.tsx",
+          },
+        },
+      ],
+    },
+  },
+  // Tool results
+  {
+    type: "user",
+    timestamp: Date.now() - 45000,
+    tool_use_result: "File content",
+    message: {
+      content: [
+        {
+          type: "tool_result",
+          tool_use_id: "toolu_01QbViy1k2VVzsAc2YMugrt5",
+          content: `import { render, screen } from "@testing-library/react"
+import { describe, it, expect, vi } from "vitest"
+import { TaskSidebar } from "./TaskSidebar"
+
+describe("TaskSidebar", () => {
+  it("renders with tasks heading", () => {
+    render(<TaskSidebar />)
+    expect(screen.getByRole("heading", { name: /tasks/i })).toBeInTheDocument()
+  })
+})`,
+          is_error: false,
+        },
+        {
+          type: "tool_result",
+          tool_use_id: "toolu_01AxR6CtAc7zmLcHBHWqfAEH",
+          content: `import { render, screen } from "@testing-library/react"
+import { describe, it, expect } from "vitest"
+import App from "./App"
+
+describe("App", () => {
+  it("renders the main layout", () => {
+    render(<App />)
+    expect(screen.getByRole("main")).toBeInTheDocument()
+  })
+})`,
+          is_error: false,
+        },
+      ],
+    },
+  },
+  // Assistant analyzes and makes an edit
+  {
+    type: "assistant",
+    timestamp: Date.now() - 40000,
+    message: {
+      content: [
+        {
+          type: "text",
+          text: "I see the issue. The tests are looking for a heading that was removed in a recent refactor. Let me fix this:",
+        },
+        {
+          type: "tool_use",
+          id: "toolu_01EditFile",
+          name: "Edit",
+          input: {
+            file_path: "/Users/herbcaudill/ralph-ui/src/components/tasks/TaskSidebar.test.tsx",
+            old_string: `  it("renders with tasks heading", () => {
+    render(<TaskSidebar />)
+    expect(screen.getByRole("heading", { name: /tasks/i })).toBeInTheDocument()
+  })`,
+            new_string: `  it("renders the sidebar", () => {
+    render(<TaskSidebar />)
+    expect(screen.getByRole("complementary")).toBeInTheDocument()
+  })`,
+          },
+        },
+      ],
+    },
+  },
+  // Edit tool result
+  {
+    type: "user",
+    timestamp: Date.now() - 38000,
+    tool_use_result: "Edit applied",
+    message: {
+      content: [
+        {
+          type: "tool_result",
+          tool_use_id: "toolu_01EditFile",
+          content: "Edit applied successfully",
+          is_error: false,
+        },
+      ],
+    },
+  },
+  // Assistant updates todos
+  {
+    type: "assistant",
+    timestamp: Date.now() - 35000,
+    message: {
+      content: [
+        {
+          type: "tool_use",
+          id: "toolu_01TodoWrite",
+          name: "TodoWrite",
+          input: {
+            todos: [
+              { content: "Fix TaskSidebar.test.tsx heading assertion", status: "completed" },
+              { content: "Fix App.test.tsx layout assertion", status: "in_progress" },
+              { content: "Run tests to verify fixes", status: "pending" },
+              { content: "Commit changes", status: "pending" },
+            ],
+          },
+        },
+      ],
+    },
+  },
+  // Final assistant message
+  {
+    type: "assistant",
+    timestamp: Date.now() - 30000,
+    message: {
+      content: [
+        {
+          type: "text",
+          text: "I've fixed the first test. Now let me fix the App test and then run all tests to verify the fixes work correctly.",
+        },
+      ],
+    },
   },
 ]
 
 export const Default: Story = {
   render: args => (
     <>
-      <EventLoader events={sampleEvents} />
+      <EventLoader events={realEvents} />
       <EventStream {...args} />
     </>
   ),
@@ -85,12 +249,163 @@ export const Empty: Story = {
   ),
 }
 
-export const WithUserMessage: Story = {
+export const SingleUserMessage: Story = {
   render: args => (
     <>
       <EventLoader
         events={[
-          { type: "user_message", timestamp: Date.now(), message: "Hello, can you help me?" },
+          {
+            type: "user_message",
+            timestamp: Date.now(),
+            message: "Hello! Can you help me refactor the authentication module?",
+          },
+        ]}
+      />
+      <EventStream {...args} />
+    </>
+  ),
+}
+
+export const ConversationFlow: Story = {
+  render: args => (
+    <>
+      <EventLoader
+        events={[
+          {
+            type: "user_message",
+            timestamp: Date.now() - 30000,
+            message: "What files handle user authentication?",
+          },
+          {
+            type: "assistant",
+            timestamp: Date.now() - 28000,
+            message: {
+              content: [
+                {
+                  type: "text",
+                  text: "Let me search for authentication-related files in your codebase.",
+                },
+                {
+                  type: "tool_use",
+                  id: "toolu_grep",
+                  name: "Grep",
+                  input: { pattern: "authenticate|auth|login", path: "src" },
+                },
+              ],
+            },
+          },
+          {
+            type: "user",
+            timestamp: Date.now() - 25000,
+            tool_use_result: "Found files",
+            message: {
+              content: [
+                {
+                  type: "tool_result",
+                  tool_use_id: "toolu_grep",
+                  content: "src/auth/login.ts\nsrc/auth/middleware.ts\nsrc/hooks/useAuth.ts",
+                  is_error: false,
+                },
+              ],
+            },
+          },
+          {
+            type: "assistant",
+            timestamp: Date.now() - 22000,
+            message: {
+              content: [
+                {
+                  type: "text",
+                  text: "I found three files related to authentication:\n\n- `src/auth/login.ts` - Main login logic\n- `src/auth/middleware.ts` - Auth middleware for API routes\n- `src/hooks/useAuth.ts` - React hook for auth state\n\nWould you like me to examine any of these in detail?",
+                },
+              ],
+            },
+          },
+          {
+            type: "user_message",
+            timestamp: Date.now() - 10000,
+            message: "Yes, please show me the useAuth hook",
+          },
+          {
+            type: "assistant",
+            timestamp: Date.now() - 8000,
+            message: {
+              content: [
+                {
+                  type: "tool_use",
+                  id: "toolu_read",
+                  name: "Read",
+                  input: { file_path: "src/hooks/useAuth.ts" },
+                },
+              ],
+            },
+          },
+        ]}
+      />
+      <EventStream {...args} />
+    </>
+  ),
+}
+
+export const WithBashOutput: Story = {
+  render: args => (
+    <>
+      <EventLoader
+        events={[
+          {
+            type: "user_message",
+            timestamp: Date.now() - 20000,
+            message: "Run the tests",
+          },
+          {
+            type: "assistant",
+            timestamp: Date.now() - 18000,
+            message: {
+              content: [
+                {
+                  type: "tool_use",
+                  id: "toolu_bash",
+                  name: "Bash",
+                  input: { command: "pnpm test", description: "Run unit tests" },
+                },
+              ],
+            },
+          },
+          {
+            type: "user",
+            timestamp: Date.now() - 10000,
+            tool_use_result: "Test output",
+            message: {
+              content: [
+                {
+                  type: "tool_result",
+                  tool_use_id: "toolu_bash",
+                  content: `✓ src/components/Button.test.tsx (5 tests) 42ms
+✓ src/components/Input.test.tsx (8 tests) 38ms
+✓ src/hooks/useAuth.test.ts (12 tests) 65ms
+✓ src/utils/format.test.ts (20 tests) 23ms
+
+Test Files  4 passed (4)
+     Tests  45 passed (45)
+  Start at  14:32:10
+  Duration  1.2s`,
+                  is_error: false,
+                },
+              ],
+            },
+          },
+          {
+            type: "assistant",
+            timestamp: Date.now() - 5000,
+            message: {
+              content: [
+                {
+                  type: "text",
+                  text: "All 45 tests passed across 4 test files. The test suite completed in 1.2 seconds.",
+                },
+              ],
+            },
+          },
         ]}
       />
       <EventStream {...args} />
@@ -103,13 +418,57 @@ export const WithError: Story = {
     <>
       <EventLoader
         events={[
-          { type: "session_start", timestamp: Date.now() - 5000 },
-          { type: "tool_use", timestamp: Date.now() - 4000, tool: "Bash", command: "npm build" },
-          { type: "error", timestamp: Date.now() - 3000, error: "Build failed: Module not found" },
           {
-            type: "text",
-            timestamp: Date.now() - 2000,
-            content: "There was an error during the build. Let me investigate.",
+            type: "user_message",
+            timestamp: Date.now() - 15000,
+            message: "Build the project",
+          },
+          {
+            type: "assistant",
+            timestamp: Date.now() - 13000,
+            message: {
+              content: [
+                {
+                  type: "tool_use",
+                  id: "toolu_build",
+                  name: "Bash",
+                  input: { command: "pnpm build", description: "Build for production" },
+                },
+              ],
+            },
+          },
+          {
+            type: "user",
+            timestamp: Date.now() - 8000,
+            tool_use_result: "Build failed",
+            message: {
+              content: [
+                {
+                  type: "tool_result",
+                  tool_use_id: "toolu_build",
+                  content: `error TS2339: Property 'foo' does not exist on type 'User'.
+
+  src/components/UserCard.tsx:15:22
+    15   return <div>{user.foo}</div>
+                           ~~~
+
+Found 1 error.`,
+                  is_error: true,
+                },
+              ],
+            },
+          },
+          {
+            type: "assistant",
+            timestamp: Date.now() - 5000,
+            message: {
+              content: [
+                {
+                  type: "text",
+                  text: "The build failed due to a TypeScript error. The `User` type doesn't have a `foo` property. Let me check the `UserCard` component to fix this.",
+                },
+              ],
+            },
           },
         ]}
       />
@@ -118,80 +477,125 @@ export const WithError: Story = {
   ),
 }
 
-export const ManyEvents: Story = {
-  render: args => {
-    const manyEvents = Array.from({ length: 50 }, (_, i) => ({
-      type:
-        i % 3 === 0 ? "user_message"
-        : i % 3 === 1 ? "text"
-        : "output",
-      timestamp: Date.now() - (50 - i) * 1000,
-      ...(i % 3 === 0 ? { message: `User message ${i}` }
-      : i % 3 === 1 ? { content: `Claude response ${i}` }
-      : { line: `Output line ${i}` }),
-    }))
-    return (
-      <>
-        <EventLoader events={manyEvents} />
-        <EventStream {...args} />
-      </>
-    )
-  },
+export const TodoUpdates: Story = {
+  render: args => (
+    <>
+      <EventLoader
+        events={[
+          {
+            type: "user_message",
+            timestamp: Date.now() - 20000,
+            message: "Add dark mode to the app",
+          },
+          {
+            type: "assistant",
+            timestamp: Date.now() - 18000,
+            message: {
+              content: [
+                {
+                  type: "text",
+                  text: "I'll help you add dark mode. Let me create a plan for this implementation.",
+                },
+                {
+                  type: "tool_use",
+                  id: "toolu_todo1",
+                  name: "TodoWrite",
+                  input: {
+                    todos: [
+                      { content: "Create theme context and provider", status: "pending" },
+                      { content: "Add CSS variables for dark theme colors", status: "pending" },
+                      { content: "Create theme toggle component", status: "pending" },
+                      { content: "Update components to use theme variables", status: "pending" },
+                      { content: "Persist theme preference to localStorage", status: "pending" },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+          {
+            type: "assistant",
+            timestamp: Date.now() - 12000,
+            message: {
+              content: [
+                {
+                  type: "text",
+                  text: "Starting with the theme context...",
+                },
+                {
+                  type: "tool_use",
+                  id: "toolu_todo2",
+                  name: "TodoWrite",
+                  input: {
+                    todos: [
+                      { content: "Create theme context and provider", status: "in_progress" },
+                      { content: "Add CSS variables for dark theme colors", status: "pending" },
+                      { content: "Create theme toggle component", status: "pending" },
+                      { content: "Update components to use theme variables", status: "pending" },
+                      { content: "Persist theme preference to localStorage", status: "pending" },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+          {
+            type: "assistant",
+            timestamp: Date.now() - 5000,
+            message: {
+              content: [
+                {
+                  type: "tool_use",
+                  id: "toolu_todo3",
+                  name: "TodoWrite",
+                  input: {
+                    todos: [
+                      { content: "Create theme context and provider", status: "completed" },
+                      { content: "Add CSS variables for dark theme colors", status: "completed" },
+                      { content: "Create theme toggle component", status: "in_progress" },
+                      { content: "Update components to use theme variables", status: "pending" },
+                      { content: "Persist theme preference to localStorage", status: "pending" },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ]}
+      />
+      <EventStream {...args} />
+    </>
+  ),
 }
 
-export const LimitedEvents: Story = {
-  args: {
-    maxEvents: 5,
-  },
+export const LongConversation: Story = {
   render: args => {
-    const events = Array.from({ length: 10 }, (_, i) => ({
-      type: "output",
-      timestamp: Date.now() - (10 - i) * 1000,
-      line: `Event ${i + 1} of 10`,
-    }))
-    return (
-      <>
-        <EventLoader events={events} />
-        <EventStream {...args} />
-      </>
-    )
-  },
-}
+    const events = []
+    const baseTime = Date.now()
 
-export const RealTimeSimulation: Story = {
-  render: args => {
-    // Component that adds events over time
-    function RealTimeEvents() {
-      useEffect(() => {
-        const store = useAppStore.getState()
-        store.clearEvents()
-
-        const events = [
-          { type: "session_start", delay: 0 },
-          { type: "user_message", message: "Start the task", delay: 500 },
-          { type: "text", content: "Starting...", delay: 1000 },
-          { type: "tool_use", tool: "Read", file: "/package.json", delay: 1500 },
-          { type: "output", line: "Reading file...", delay: 2000 },
-          { type: "text", content: "Found the file.", delay: 2500 },
-        ]
-
-        const timeouts: ReturnType<typeof setTimeout>[] = []
-        events.forEach(event => {
-          const timeout = setTimeout(() => {
-            const { delay, ...eventData } = event
-            store.addEvent({ ...eventData, timestamp: Date.now() })
-          }, event.delay)
-          timeouts.push(timeout)
-        })
-
-        return () => timeouts.forEach(clearTimeout)
-      }, [])
-      return null
+    for (let i = 0; i < 20; i++) {
+      events.push({
+        type: "user_message",
+        timestamp: baseTime - (40 - i * 2) * 1000,
+        message: `User question ${i + 1}: How do I implement feature ${i + 1}?`,
+      })
+      events.push({
+        type: "assistant",
+        timestamp: baseTime - (39 - i * 2) * 1000,
+        message: {
+          content: [
+            {
+              type: "text",
+              text: `Here's how to implement feature ${i + 1}. You'll need to create a new component and connect it to the store.`,
+            },
+          ],
+        },
+      })
     }
 
     return (
       <>
-        <RealTimeEvents />
+        <EventLoader events={events} />
         <EventStream {...args} />
       </>
     )

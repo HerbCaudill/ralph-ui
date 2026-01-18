@@ -23,116 +23,189 @@ describe("EventStream", () => {
     })
   })
 
-  describe("displaying events", () => {
-    it("renders events from the store", () => {
+  describe("displaying user messages", () => {
+    it("renders user_message events", () => {
       useAppStore.getState().addEvent({
-        type: "test_event",
+        type: "user_message",
         timestamp: 1705600000000,
+        message: "Hello, can you help me?",
       })
       render(<EventStream />)
-      expect(screen.getByText("Test Event")).toBeInTheDocument()
+      expect(screen.getByText("Hello, can you help me?")).toBeInTheDocument()
     })
 
-    it("renders multiple events", () => {
+    it("renders multiple user messages", () => {
       useAppStore.getState().addEvent({
-        type: "first_event",
+        type: "user_message",
         timestamp: 1705600000000,
+        message: "First message",
       })
       useAppStore.getState().addEvent({
-        type: "second_event",
+        type: "user_message",
         timestamp: 1705600001000,
+        message: "Second message",
       })
       render(<EventStream />)
-      expect(screen.getByText("First Event")).toBeInTheDocument()
-      expect(screen.getByText("Second Event")).toBeInTheDocument()
-    })
-
-    it("formats timestamps correctly", () => {
-      // Create a date at a known time
-      const date = new Date(2024, 0, 18, 14, 30, 45, 123)
-      useAppStore.getState().addEvent({
-        type: "test",
-        timestamp: date.getTime(),
-      })
-      render(<EventStream />)
-      expect(screen.getByText("14:30:45.123")).toBeInTheDocument()
-    })
-
-    it("shows event details when present", () => {
-      useAppStore.getState().addEvent({
-        type: "test",
-        timestamp: 1705600000000,
-        message: "hello",
-      })
-      render(<EventStream />)
-      expect(screen.getByText(/hello/)).toBeInTheDocument()
-    })
-
-    it("limits displayed events to maxEvents", () => {
-      // Add 5 events
-      for (let i = 0; i < 5; i++) {
-        useAppStore.getState().addEvent({
-          type: `event_${i}`,
-          timestamp: 1705600000000 + i * 1000,
-        })
-      }
-      render(<EventStream maxEvents={3} />)
-      // Should only show the last 3 events
-      expect(screen.queryByText("Event 0")).not.toBeInTheDocument()
-      expect(screen.queryByText("Event 1")).not.toBeInTheDocument()
-      expect(screen.getByText("Event 2")).toBeInTheDocument()
-      expect(screen.getByText("Event 3")).toBeInTheDocument()
-      expect(screen.getByText("Event 4")).toBeInTheDocument()
+      expect(screen.getByText("First message")).toBeInTheDocument()
+      expect(screen.getByText("Second message")).toBeInTheDocument()
     })
   })
 
-  describe("event type styling", () => {
-    it("applies error styling to error events", () => {
+  describe("displaying assistant messages", () => {
+    it("renders assistant text content", () => {
       useAppStore.getState().addEvent({
-        type: "error_occurred",
+        type: "assistant",
         timestamp: 1705600000000,
+        message: {
+          content: [
+            {
+              type: "text",
+              text: "I can help you with that.",
+            },
+          ],
+        },
       })
       render(<EventStream />)
-      const badge = screen.getByText("Error Occurred")
-      expect(badge).toHaveClass("text-red-500")
+      expect(screen.getByText("I can help you with that.")).toBeInTheDocument()
     })
 
-    it("applies warning styling to warning events", () => {
+    it("renders assistant tool_use content", () => {
       useAppStore.getState().addEvent({
-        type: "warning_message",
+        type: "assistant",
         timestamp: 1705600000000,
+        message: {
+          content: [
+            {
+              type: "tool_use",
+              id: "toolu_123",
+              name: "Read",
+              input: { file_path: "/test/file.ts" },
+            },
+          ],
+        },
       })
       render(<EventStream />)
-      const badge = screen.getByText("Warning Message")
-      expect(badge).toHaveClass("text-yellow-500")
+      expect(screen.getByText("Read")).toBeInTheDocument()
+      expect(screen.getByText("/test/file.ts")).toBeInTheDocument()
     })
 
-    it("applies success styling to success events", () => {
+    it("renders assistant with text and tool_use mixed", () => {
       useAppStore.getState().addEvent({
-        type: "success_complete",
+        type: "assistant",
         timestamp: 1705600000000,
+        message: {
+          content: [
+            {
+              type: "text",
+              text: "Let me read that file.",
+            },
+            {
+              type: "tool_use",
+              id: "toolu_123",
+              name: "Read",
+              input: { file_path: "/test/file.ts" },
+            },
+          ],
+        },
       })
       render(<EventStream />)
-      const badge = screen.getByText("Success Complete")
-      expect(badge).toHaveClass("text-green-500")
+      expect(screen.getByText("Let me read that file.")).toBeInTheDocument()
+      expect(screen.getByText("Read")).toBeInTheDocument()
+    })
+  })
+
+  describe("tool results", () => {
+    it("shows tool result output when present", () => {
+      // Add tool use
+      useAppStore.getState().addEvent({
+        type: "assistant",
+        timestamp: 1705600000000,
+        message: {
+          content: [
+            {
+              type: "tool_use",
+              id: "toolu_123",
+              name: "Read",
+              input: { file_path: "/test/file.ts" },
+            },
+          ],
+        },
+      })
+      // Add tool result
+      useAppStore.getState().addEvent({
+        type: "user",
+        timestamp: 1705600001000,
+        tool_use_result: "File content",
+        message: {
+          content: [
+            {
+              type: "tool_result",
+              tool_use_id: "toolu_123",
+              content: "line 1\nline 2\nline 3",
+              is_error: false,
+            },
+          ],
+        },
+      })
+      render(<EventStream />)
+      // Should show line count for Read tool
+      expect(screen.getByText(/Read 3 lines/)).toBeInTheDocument()
+    })
+  })
+
+  describe("filtering events", () => {
+    it("skips stream_event events (renders nothing visible)", () => {
+      useAppStore.getState().addEvent({
+        type: "stream_event",
+        timestamp: 1705600000000,
+        event: { type: "content_block_delta" },
+      })
+      render(<EventStream />)
+      // Stream events render nothing, but the container has events so empty state doesn't show
+      const container = screen.getByRole("log")
+      // Should have no visible content (just the container)
+      expect(container.textContent?.trim()).toBe("")
     })
 
-    it("applies tool styling to tool events", () => {
+    it("skips system events (renders nothing visible)", () => {
       useAppStore.getState().addEvent({
-        type: "tool_use",
+        type: "system",
         timestamp: 1705600000000,
+        subtype: "init",
       })
       render(<EventStream />)
-      const badge = screen.getByText("Tool Use")
-      expect(badge).toHaveClass("text-blue-500")
+      // System events render nothing
+      const container = screen.getByRole("log")
+      expect(container.textContent?.trim()).toBe("")
+    })
+  })
+
+  describe("maxEvents limit", () => {
+    it("limits displayed events to maxEvents", () => {
+      // Add 5 user messages
+      for (let i = 0; i < 5; i++) {
+        useAppStore.getState().addEvent({
+          type: "user_message",
+          timestamp: 1705600000000 + i * 1000,
+          message: `Message ${i}`,
+        })
+      }
+      render(<EventStream maxEvents={3} />)
+      // Should only show the last 3 messages
+      expect(screen.queryByText("Message 0")).not.toBeInTheDocument()
+      expect(screen.queryByText("Message 1")).not.toBeInTheDocument()
+      expect(screen.getByText("Message 2")).toBeInTheDocument()
+      expect(screen.getByText("Message 3")).toBeInTheDocument()
+      expect(screen.getByText("Message 4")).toBeInTheDocument()
     })
   })
 
   describe("auto-scroll behavior", () => {
     it("shows auto-scroll indicator when enabled and events exist", () => {
       useAppStore.getState().addEvent({
-        type: "test",
+        type: "user_message",
         timestamp: 1705600000000,
+        message: "Test message",
       })
       render(<EventStream />)
       expect(screen.getByText("Auto-scroll")).toBeInTheDocument()
@@ -147,8 +220,9 @@ describe("EventStream", () => {
   describe("scroll to bottom button", () => {
     it("does not show scroll to bottom button initially", () => {
       useAppStore.getState().addEvent({
-        type: "test",
+        type: "user_message",
         timestamp: 1705600000000,
+        message: "Test message",
       })
       render(<EventStream />)
       expect(screen.queryByLabelText("Scroll to latest events")).not.toBeInTheDocument()
@@ -158,8 +232,9 @@ describe("EventStream", () => {
       // Add many events to make scrolling possible
       for (let i = 0; i < 100; i++) {
         useAppStore.getState().addEvent({
-          type: `event_${i}`,
+          type: "user_message",
           timestamp: 1705600000000 + i * 1000,
+          message: `Message ${i}`,
         })
       }
       render(<EventStream />)

@@ -1,18 +1,6 @@
 import { cn } from "@/lib/utils"
-import {
-  FileText,
-  Pencil,
-  FilePlus,
-  Terminal,
-  Search,
-  FolderSearch,
-  Globe,
-  Link,
-  ListTodo,
-  Cog,
-  type LucideIcon,
-} from "lucide-react"
 import { useState, useCallback } from "react"
+import { ChevronDown } from "lucide-react"
 
 // Types
 
@@ -32,125 +20,29 @@ export interface ToolUseEvent {
   type: "tool_use"
   timestamp: number
   tool: ToolName
-  /** Input parameters for the tool */
   input?: Record<string, unknown>
-  /** Output/result from the tool (when completed) */
   output?: string
-  /** Status of the tool use */
   status?: "pending" | "running" | "success" | "error"
-  /** Duration in milliseconds (when completed) */
   duration?: number
-  /** Error message (when status is error) */
   error?: string
-}
-
-export interface ToolUseCardProps {
-  event: ToolUseEvent
-  className?: string
-  /** Whether to show expanded details by default */
-  defaultExpanded?: boolean
-}
-
-// Tool Configuration
-
-interface ToolConfig {
-  icon: LucideIcon
-  label: string
-  color: string
-  bgColor: string
-}
-
-const toolConfig: Record<ToolName, ToolConfig> = {
-  Read: {
-    icon: FileText,
-    label: "Read",
-    color: "text-blue-500",
-    bgColor: "bg-blue-500/10",
-  },
-  Edit: {
-    icon: Pencil,
-    label: "Edit",
-    color: "text-amber-500",
-    bgColor: "bg-amber-500/10",
-  },
-  Write: {
-    icon: FilePlus,
-    label: "Write",
-    color: "text-green-500",
-    bgColor: "bg-green-500/10",
-  },
-  Bash: {
-    icon: Terminal,
-    label: "Bash",
-    color: "text-purple-500",
-    bgColor: "bg-purple-500/10",
-  },
-  Grep: {
-    icon: Search,
-    label: "Grep",
-    color: "text-cyan-500",
-    bgColor: "bg-cyan-500/10",
-  },
-  Glob: {
-    icon: FolderSearch,
-    label: "Glob",
-    color: "text-teal-500",
-    bgColor: "bg-teal-500/10",
-  },
-  WebSearch: {
-    icon: Globe,
-    label: "Web Search",
-    color: "text-indigo-500",
-    bgColor: "bg-indigo-500/10",
-  },
-  WebFetch: {
-    icon: Link,
-    label: "Web Fetch",
-    color: "text-pink-500",
-    bgColor: "bg-pink-500/10",
-  },
-  TodoWrite: {
-    icon: ListTodo,
-    label: "Todo",
-    color: "text-orange-500",
-    bgColor: "bg-orange-500/10",
-  },
-  Task: {
-    icon: Cog,
-    label: "Task",
-    color: "text-rose-500",
-    bgColor: "bg-rose-500/10",
-  },
 }
 
 // Helper Functions
 
-/**
- * Formats a timestamp as HH:MM:SS.mmm
- */
-function formatTimestamp(timestamp: number): string {
-  const date = new Date(timestamp)
-  const hours = date.getHours().toString().padStart(2, "0")
-  const minutes = date.getMinutes().toString().padStart(2, "0")
-  const seconds = date.getSeconds().toString().padStart(2, "0")
-  const millis = date.getMilliseconds().toString().padStart(3, "0")
-  return `${hours}:${minutes}:${seconds}.${millis}`
+function getStatusColor(status?: string): string {
+  switch (status) {
+    case "running":
+      return "bg-blue-500"
+    case "success":
+      return "bg-green-500"
+    case "error":
+      return "bg-red-500"
+    case "pending":
+    default:
+      return "bg-amber-500"
+  }
 }
 
-/**
- * Formats a duration in milliseconds to a human-readable string
- */
-function formatDuration(ms: number): string {
-  if (ms < 1000) return `${ms}ms`
-  if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`
-  const minutes = Math.floor(ms / 60000)
-  const seconds = Math.floor((ms % 60000) / 1000)
-  return `${minutes}m ${seconds}s`
-}
-
-/**
- * Get a summary of the tool input for display
- */
 function getToolSummary(tool: ToolName, input?: Record<string, unknown>): string {
   if (!input) return ""
 
@@ -183,165 +75,284 @@ function getToolSummary(tool: ToolName, input?: Record<string, unknown>): string
   }
 }
 
-/**
- * Get status indicator styles
- */
-function getStatusStyles(status?: string): { indicator: string; pulse: boolean } {
-  switch (status) {
-    case "running":
-      return { indicator: "bg-blue-500", pulse: true }
-    case "success":
-      return { indicator: "bg-green-500", pulse: false }
-    case "error":
-      return { indicator: "bg-red-500", pulse: false }
-    case "pending":
-    default:
-      return { indicator: "bg-gray-400", pulse: false }
+function getOutputSummary(tool: ToolName, output?: string): string | null {
+  if (!output) return null
+
+  if (tool === "Read") {
+    const lines = output.split("\n").length
+    return `Read ${lines} line${lines !== 1 ? "s" : ""}`
   }
+
+  return null
+}
+
+function parseDiff(oldString: string, newString: string): DiffLine[] {
+  const oldLines = oldString.split("\n")
+  const newLines = newString.split("\n")
+  const result: DiffLine[] = []
+
+  // Find context around the change
+  let oldIdx = 0
+  let newIdx = 0
+
+  // Simple diff: show removed lines then added lines
+  // For a more sophisticated diff, we'd use a proper diff algorithm
+
+  // Find common prefix
+  while (
+    oldIdx < oldLines.length &&
+    newIdx < newLines.length &&
+    oldLines[oldIdx] === newLines[newIdx]
+  ) {
+    oldIdx++
+    newIdx++
+  }
+
+  // Show some context before
+  const contextStart = Math.max(0, oldIdx - 1)
+  for (let i = contextStart; i < oldIdx; i++) {
+    result.push({ type: "context", lineOld: i + 1, lineNew: i + 1, content: oldLines[i] })
+  }
+
+  // Find common suffix
+  let oldEnd = oldLines.length - 1
+  let newEnd = newLines.length - 1
+  while (oldEnd > oldIdx && newEnd > newIdx && oldLines[oldEnd] === newLines[newEnd]) {
+    oldEnd--
+    newEnd--
+  }
+
+  // Show removed lines
+  for (let i = oldIdx; i <= oldEnd; i++) {
+    result.push({ type: "removed", lineOld: i + 1, content: oldLines[i] })
+  }
+
+  // Show added lines
+  for (let i = newIdx; i <= newEnd; i++) {
+    result.push({ type: "added", lineNew: i + 1, content: newLines[i] })
+  }
+
+  // Show some context after
+  const contextEnd = Math.min(oldLines.length - 1, oldEnd + 2)
+  for (let i = oldEnd + 1; i <= contextEnd; i++) {
+    const newLineNum = i - oldEnd + newEnd
+    if (i < oldLines.length && newLineNum < newLines.length) {
+      result.push({
+        type: "context",
+        lineOld: i + 1,
+        lineNew: newLineNum + 1,
+        content: oldLines[i],
+      })
+    }
+  }
+
+  return result
+}
+
+interface DiffLine {
+  type: "context" | "added" | "removed"
+  lineOld?: number
+  lineNew?: number
+  content: string
+}
+
+function DiffView({ oldString, newString }: { oldString: string; newString: string }) {
+  const lines = parseDiff(oldString, newString)
+
+  return (
+    <div className="bg-muted/30 overflow-x-auto rounded border font-mono text-xs">
+      {lines.map((line, i) => (
+        <div
+          key={i}
+          className={cn(
+            "flex",
+            line.type === "added" && "bg-green-500/20",
+            line.type === "removed" && "bg-red-500/20",
+          )}
+        >
+          <span className="text-muted-foreground w-8 shrink-0 border-r px-1 text-right select-none">
+            {line.lineOld ?? ""}
+          </span>
+          <span className="text-muted-foreground w-8 shrink-0 border-r px-1 text-right select-none">
+            {line.lineNew ?? ""}
+          </span>
+          <span className="w-4 shrink-0 text-center select-none">
+            {line.type === "added" ?
+              <span className="text-green-500">+</span>
+            : line.type === "removed" ?
+              <span className="text-red-500">-</span>
+            : ""}
+          </span>
+          <span className="flex-1 px-2 whitespace-pre">{line.content}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function TodoList({ todos }: { todos: Array<{ content: string; status: string }> }) {
+  return (
+    <div className="space-y-0.5 text-sm">
+      {todos.map((todo, i) => (
+        <div key={i} className="flex items-start gap-2">
+          <span
+            className={cn(
+              "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border text-xs",
+              todo.status === "completed" && "border-green-500 bg-green-500/20 text-green-500",
+              todo.status === "in_progress" && "border-blue-500 bg-blue-500/20 text-blue-500",
+              todo.status === "pending" && "border-muted-foreground",
+            )}
+          >
+            {todo.status === "completed" && "✓"}
+            {todo.status === "in_progress" && "•"}
+          </span>
+          <span
+            className={cn(
+              todo.status === "completed" && "text-muted-foreground line-through",
+              todo.status === "in_progress" && "text-foreground",
+              todo.status === "pending" && "text-muted-foreground",
+            )}
+          >
+            {todo.content}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
 }
 
 // ToolUseCard Component
 
-/**
- * Card component for displaying tool use events.
- * Shows tool icon, name, summary, and expandable details.
- */
 export function ToolUseCard({ event, className, defaultExpanded = false }: ToolUseCardProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded)
 
-  const config = toolConfig[event.tool] ?? {
-    icon: Cog,
-    label: event.tool,
-    color: "text-gray-500",
-    bgColor: "bg-gray-500/10",
-  }
-
-  const Icon = config.icon
   const summary = getToolSummary(event.tool, event.input)
-  const statusStyles = getStatusStyles(event.status)
+  const outputSummary = getOutputSummary(event.tool, event.output)
+  const statusColor = getStatusColor(event.status)
+
+  const hasOutput = event.output || event.error
+  const hasExpandableContent =
+    hasOutput || (event.tool === "Edit" && event.input?.old_string && event.input?.new_string)
 
   const toggleExpanded = useCallback(() => {
-    setIsExpanded(prev => !prev)
-  }, [])
+    if (hasExpandableContent) {
+      setIsExpanded(prev => !prev)
+    }
+  }, [hasExpandableContent])
 
-  const hasDetails = event.input || event.output || event.error
+  // Special handling for TodoWrite
+  if (event.tool === "TodoWrite" && event.input?.todos && Array.isArray(event.input.todos)) {
+    return (
+      <div className={cn("py-1.5 pr-4 pl-4", className)}>
+        <div className="flex items-start gap-2.5">
+          <span className={cn("mt-2 size-1.5 shrink-0 rounded-full", statusColor)} />
+          <div className="flex-1">
+            <span className="text-foreground text-sm font-semibold">Update Todos</span>
+            <div className="border-muted-foreground/30 mt-1 ml-1 border-l pl-3">
+              <TodoList todos={event.input.todos as Array<{ content: string; status: string }>} />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div
-      className={cn("border-border hover:bg-muted/50 group border-b transition-colors", className)}
-    >
+    <div className={cn("py-1.5 pr-4 pl-4", className)}>
       {/* Main row */}
       <button
         onClick={toggleExpanded}
-        disabled={!hasDetails}
+        disabled={!hasExpandableContent}
         className={cn(
-          "flex w-full items-center gap-3 px-3 py-2 text-left",
-          hasDetails && "cursor-pointer",
-          !hasDetails && "cursor-default",
+          "flex w-full items-start gap-2.5 text-left",
+          hasExpandableContent && "cursor-pointer",
+          !hasExpandableContent && "cursor-default",
         )}
         aria-expanded={isExpanded}
       >
         {/* Status indicator */}
         <span
-          className={cn(
-            "size-2 shrink-0 rounded-full",
-            statusStyles.indicator,
-            statusStyles.pulse && "animate-pulse",
-          )}
+          className={cn("mt-2 size-1.5 shrink-0 rounded-full", statusColor)}
           aria-label={event.status ?? "pending"}
         />
 
-        {/* Timestamp */}
-        <span className="text-muted-foreground shrink-0 font-mono text-xs">
-          {formatTimestamp(event.timestamp)}
-        </span>
+        {/* Content */}
+        <div className="flex min-w-0 flex-1 items-baseline gap-2">
+          {/* Tool name */}
+          <span className="text-foreground shrink-0 text-sm font-semibold">{event.tool}</span>
 
-        {/* Tool icon and name */}
-        <span
-          className={cn(
-            "flex shrink-0 items-center gap-1.5 rounded px-2 py-0.5 text-xs font-medium",
-            config.color,
-            config.bgColor,
+          {/* Summary (file path, command, etc.) */}
+          {summary && (
+            <span className="text-foreground/80 min-w-0 flex-1 truncate font-mono text-sm">
+              {summary}
+            </span>
           )}
-        >
-          <Icon size={14} />
-          <span>{config.label}</span>
-        </span>
 
-        {/* Summary */}
-        {summary && (
-          <span className="text-foreground/80 min-w-0 flex-1 truncate font-mono text-sm">
-            {summary}
-          </span>
-        )}
-
-        {/* Duration */}
-        {event.duration !== undefined && (
-          <span className="text-muted-foreground shrink-0 text-xs">
-            {formatDuration(event.duration)}
-          </span>
-        )}
-
-        {/* Expand indicator */}
-        {hasDetails && (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={cn(
-              "text-muted-foreground shrink-0 transition-transform",
-              isExpanded && "rotate-180",
-            )}
-          >
-            <path d="m6 9 6 6 6-6" />
-          </svg>
-        )}
+          {/* Expand indicator */}
+          {hasExpandableContent && (
+            <ChevronDown
+              size={14}
+              className={cn(
+                "text-muted-foreground shrink-0 transition-transform",
+                isExpanded && "rotate-180",
+              )}
+            />
+          )}
+        </div>
       </button>
 
-      {/* Expanded details */}
-      {isExpanded && hasDetails && (
-        <div className="bg-muted/30 border-border border-t px-3 py-2">
-          {/* Input */}
-          {event.input && (
-            <div className="mb-2">
-              <span className="text-muted-foreground mb-1 block text-xs font-medium uppercase">
-                Input
-              </span>
-              <pre className="bg-background overflow-x-auto rounded p-2 font-mono text-xs">
-                {JSON.stringify(event.input, null, 2)}
-              </pre>
-            </div>
-          )}
+      {/* Expanded output */}
+      {isExpanded && hasExpandableContent && (
+        <div className="border-muted-foreground/30 mt-1 ml-1 border-l pl-3">
+          <div className="text-muted-foreground flex items-center gap-1 text-sm">
+            <span>└</span>
+            <div className="flex-1">
+              {/* Edit tool: show diff */}
+              {event.tool === "Edit" &&
+                event.input?.old_string &&
+                event.input?.new_string &&
+                typeof event.input.old_string === "string" &&
+                typeof event.input.new_string === "string" && (
+                  <DiffView oldString={event.input.old_string} newString={event.input.new_string} />
+                )}
 
-          {/* Output */}
-          {event.output && (
-            <div className="mb-2">
-              <span className="text-muted-foreground mb-1 block text-xs font-medium uppercase">
-                Output
-              </span>
-              <pre className="bg-background max-h-48 overflow-auto rounded p-2 font-mono text-xs whitespace-pre-wrap">
-                {event.output}
-              </pre>
-            </div>
-          )}
+              {/* Output summary for Read */}
+              {outputSummary && <span>{outputSummary}</span>}
 
-          {/* Error */}
-          {event.error && (
-            <div>
-              <span className="mb-1 block text-xs font-medium text-red-500 uppercase">Error</span>
-              <pre className="max-h-32 overflow-auto rounded bg-red-500/10 p-2 font-mono text-xs whitespace-pre-wrap text-red-500">
-                {event.error}
-              </pre>
+              {/* Bash output */}
+              {event.tool === "Bash" && event.output && (
+                <pre className="text-foreground/80 mt-1 max-h-48 overflow-auto font-mono text-xs whitespace-pre-wrap">
+                  {event.output.length > 500 ?
+                    <>
+                      {event.output.slice(0, 200)}
+                      {"\n"}
+                      <span className="text-muted-foreground">
+                        ... +{event.output.split("\n").length - 4} lines
+                      </span>
+                    </>
+                  : event.output}
+                </pre>
+              )}
+
+              {/* Error */}
+              {event.error && <span className="text-red-500">{event.error}</span>}
             </div>
-          )}
+          </div>
+        </div>
+      )}
+
+      {/* Non-expanded output summary */}
+      {!isExpanded && outputSummary && (
+        <div className="border-muted-foreground/30 mt-1 ml-1 border-l pl-3">
+          <span className="text-muted-foreground text-sm">└ {outputSummary}</span>
         </div>
       )}
     </div>
   )
+}
+
+export type ToolUseCardProps = {
+  event: ToolUseEvent
+  className?: string
+  defaultExpanded?: boolean
 }

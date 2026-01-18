@@ -1,6 +1,9 @@
 import { cn } from "@/lib/utils"
 import { useAppStore, selectEvents, type RalphEvent } from "@/store"
 import { useCallback, useEffect, useRef, useState } from "react"
+import { UserMessage, type UserMessageEvent } from "./UserMessage"
+import { AssistantText, type AssistantTextEvent } from "./AssistantText"
+import { ToolUseCard, type ToolUseEvent } from "./ToolUseCard"
 
 // Types
 
@@ -13,112 +16,120 @@ export interface EventStreamProps {
   maxEvents?: number
 }
 
-// Helper Functions
+// Event type guards
 
-/**
- * Formats a timestamp as HH:MM:SS.mmm
- */
-function formatTimestamp(timestamp: number): string {
-  const date = new Date(timestamp)
-  const hours = date.getHours().toString().padStart(2, "0")
-  const minutes = date.getMinutes().toString().padStart(2, "0")
-  const seconds = date.getSeconds().toString().padStart(2, "0")
-  const millis = date.getMilliseconds().toString().padStart(3, "0")
-  return `${hours}:${minutes}:${seconds}.${millis}`
+function isUserMessageEvent(event: RalphEvent): event is UserMessageEvent & RalphEvent {
+  return event.type === "user_message" && typeof (event as any).message === "string"
 }
 
-/**
- * Get a display-friendly label for an event type
- */
-function getEventTypeLabel(type: string): string {
-  return type.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())
+function isAssistantMessage(event: RalphEvent): boolean {
+  return event.type === "assistant" && typeof (event as any).message === "object"
 }
 
-/**
- * Get a color class for an event type
- */
-function getEventTypeColor(type: string): string {
-  if (type === "user_message") return "text-cyan-500"
-  if (type.includes("error")) return "text-red-500"
-  if (type.includes("warning")) return "text-yellow-500"
-  if (type.includes("success") || type.includes("complete")) return "text-green-500"
-  if (type.includes("tool")) return "text-blue-500"
-  if (type.includes("text") || type.includes("message")) return "text-purple-500"
-  return "text-muted-foreground"
+function isToolResultEvent(event: RalphEvent): boolean {
+  return event.type === "user" && typeof (event as any).tool_use_result !== "undefined"
 }
 
-// EventItem Component
+// Content block types from Ralph's assistant messages
+interface TextContentBlock {
+  type: "text"
+  text: string
+}
+
+interface ToolUseContentBlock {
+  type: "tool_use"
+  id: string
+  name: string
+  input: Record<string, unknown>
+}
+
+type ContentBlock = TextContentBlock | ToolUseContentBlock
+
+// Render helper for assistant message content blocks
+
+function renderContentBlock(
+  block: ContentBlock,
+  index: number,
+  timestamp: number,
+  toolResults: Map<string, { output?: string; error?: string }>,
+) {
+  if (block.type === "text") {
+    const textEvent: AssistantTextEvent = {
+      type: "text",
+      timestamp,
+      content: block.text,
+    }
+    return <AssistantText key={`text-${index}`} event={textEvent} />
+  }
+
+  if (block.type === "tool_use") {
+    const result = toolResults.get(block.id)
+    const toolEvent: ToolUseEvent = {
+      type: "tool_use",
+      timestamp,
+      tool: block.name as ToolUseEvent["tool"],
+      input: block.input,
+      status:
+        result ?
+          result.error ?
+            "error"
+          : "success"
+        : "success",
+      output: result?.output,
+      error: result?.error,
+    }
+    return <ToolUseCard key={`tool-${block.id}`} event={toolEvent} />
+  }
+
+  return null
+}
+
+// EventItem Component - renders appropriate component based on event type
 
 interface EventItemProps {
   event: RalphEvent
+  toolResults: Map<string, { output?: string; error?: string }>
 }
 
-/**
- * Format event details for display
- */
-function formatEventDetails(type: string, rest: Record<string, unknown>): string {
-  // For user messages, show just the message text
-  if (type === "user_message" && typeof rest.message === "string") {
-    return rest.message
+function EventItem({ event, toolResults }: EventItemProps) {
+  // User message from chat input
+  if (isUserMessageEvent(event)) {
+    return <UserMessage event={event as unknown as UserMessageEvent} />
   }
 
-  // For output events, show the line
-  if (type === "output" && typeof rest.line === "string") {
-    return rest.line
-  }
+  // Assistant message with content blocks (text and/or tool_use)
+  if (isAssistantMessage(event)) {
+    const message = (event as any).message
+    const content = message?.content as ContentBlock[] | undefined
 
-  // For errors, show the error message
-  if ((type === "error" || type === "server_error") && typeof rest.error === "string") {
-    return rest.error
-  }
+    if (!content || content.length === 0) return null
 
-  // Default: show JSON
-  return JSON.stringify(rest)
-}
-
-function EventItem({ event }: EventItemProps) {
-  const { type, timestamp, ...rest } = event
-  const hasDetails = Object.keys(rest).length > 0
-  const isUserMessage = type === "user_message"
-
-  return (
-    <div
-      className={cn(
-        "border-border group border-b px-3 py-2 transition-colors last:border-b-0",
-        isUserMessage ? "bg-cyan-500/5 hover:bg-cyan-500/10" : "hover:bg-muted/50",
-      )}
-    >
-      <div className="flex items-start gap-3">
-        {/* Timestamp */}
-        <span className="text-muted-foreground shrink-0 font-mono text-xs">
-          {formatTimestamp(timestamp)}
-        </span>
-
-        {/* Event type badge */}
-        <span
-          className={cn(
-            "shrink-0 rounded px-1.5 py-0.5 text-xs font-medium",
-            getEventTypeColor(type),
-            "bg-current/10",
-          )}
-        >
-          {isUserMessage ? "You" : getEventTypeLabel(type)}
-        </span>
-
-        {/* Event details (if any) */}
-        {hasDetails && (
-          <span
-            className={cn(
-              "min-w-0 flex-1 truncate text-sm",
-              isUserMessage ? "text-foreground font-medium" : "text-foreground/80",
-            )}
-          >
-            {formatEventDetails(type, rest)}
-          </span>
+    return (
+      <>
+        {content.map((block, index) =>
+          renderContentBlock(block, index, event.timestamp, toolResults),
         )}
-      </div>
-    </div>
-  )
+      </>
+    )
+  }
+
+  // Skip tool result events (they're used to populate toolResults map)
+  if (isToolResultEvent(event)) {
+    return null
+  }
+
+  // Skip stream events (intermediate streaming data)
+  if (event.type === "stream_event") {
+    return null
+  }
+
+  // Skip system events
+  if (event.type === "system") {
+    return null
+  }
+
+  // Fallback for unknown event types - show minimal debug info
+  return null
 }
 
 // EventStream Component
@@ -135,6 +146,29 @@ export function EventStream({ className, maxEvents = 1000 }: EventStreamProps) {
 
   // Limit displayed events
   const displayedEvents = events.slice(-maxEvents)
+
+  // Build a map of tool_use_id -> result for matching tool uses with their results
+  const toolResults = new Map<string, { output?: string; error?: string }>()
+  for (const event of displayedEvents) {
+    if (isToolResultEvent(event)) {
+      const content = (event as any).message?.content
+      if (Array.isArray(content)) {
+        for (const item of content) {
+          if (item.type === "tool_result" && item.tool_use_id) {
+            toolResults.set(item.tool_use_id, {
+              output: typeof item.content === "string" ? item.content : undefined,
+              error:
+                item.is_error ?
+                  typeof item.content === "string" ?
+                    item.content
+                  : "Error"
+                : undefined,
+            })
+          }
+        }
+      }
+    }
+  }
 
   // Check if user is at the bottom of the scroll container
   const checkIsAtBottom = useCallback(() => {
@@ -190,7 +224,7 @@ export function EventStream({ className, maxEvents = 1000 }: EventStreamProps) {
         onScroll={handleScroll}
         onWheel={handleUserScroll}
         onTouchMove={handleUserScroll}
-        className="bg-background flex-1 overflow-y-auto"
+        className="bg-background flex-1 overflow-y-auto py-2"
         role="log"
         aria-label="Event stream"
         aria-live="polite"
@@ -200,7 +234,11 @@ export function EventStream({ className, maxEvents = 1000 }: EventStreamProps) {
             No events yet
           </div>
         : displayedEvents.map((event, index) => (
-            <EventItem key={`${event.timestamp}-${index}`} event={event} />
+            <EventItem
+              key={`${event.timestamp}-${index}`}
+              event={event}
+              toolResults={toolResults}
+            />
           ))
         }
       </div>

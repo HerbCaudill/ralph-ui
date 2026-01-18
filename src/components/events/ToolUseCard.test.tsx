@@ -19,12 +19,6 @@ describe("ToolUseCard", () => {
       expect(screen.getByText("Read")).toBeInTheDocument()
     })
 
-    it("renders timestamp", () => {
-      const date = new Date(2024, 0, 18, 14, 30, 45, 123)
-      render(<ToolUseCard event={createToolEvent("Read", { timestamp: date.getTime() })} />)
-      expect(screen.getByText("14:30:45.123")).toBeInTheDocument()
-    })
-
     it("renders file path summary for Read tool", () => {
       render(
         <ToolUseCard
@@ -91,17 +85,6 @@ describe("ToolUseCard", () => {
       expect(screen.getByText("https://example.com")).toBeInTheDocument()
     })
 
-    it("renders todo count summary for TodoWrite tool", () => {
-      render(
-        <ToolUseCard
-          event={createToolEvent("TodoWrite", {
-            input: { todos: [{ content: "Task 1" }, { content: "Task 2" }] },
-          })}
-        />,
-      )
-      expect(screen.getByText("2 todo(s)")).toBeInTheDocument()
-    })
-
     it("renders description summary for Task tool", () => {
       render(
         <ToolUseCard
@@ -112,80 +95,66 @@ describe("ToolUseCard", () => {
       )
       expect(screen.getByText("Run tests")).toBeInTheDocument()
     })
-
-    it("renders duration when present", () => {
-      render(
-        <ToolUseCard
-          event={createToolEvent("Read", {
-            duration: 1234,
-          })}
-        />,
-      )
-      expect(screen.getByText("1.2s")).toBeInTheDocument()
-    })
-
-    it("renders duration in ms for short durations", () => {
-      render(
-        <ToolUseCard
-          event={createToolEvent("Read", {
-            duration: 456,
-          })}
-        />,
-      )
-      expect(screen.getByText("456ms")).toBeInTheDocument()
-    })
-
-    it("renders duration in minutes for long durations", () => {
-      render(
-        <ToolUseCard
-          event={createToolEvent("Bash", {
-            duration: 125000, // 2 minutes 5 seconds
-          })}
-        />,
-      )
-      expect(screen.getByText("2m 5s")).toBeInTheDocument()
-    })
   })
 
-  describe("tool-specific icons and colors", () => {
-    const tools: ToolName[] = [
-      "Read",
-      "Edit",
-      "Write",
-      "Bash",
-      "Grep",
-      "Glob",
-      "WebSearch",
-      "WebFetch",
-      "TodoWrite",
-      "Task",
-    ]
+  describe("TodoWrite tool", () => {
+    it("renders Update Todos label", () => {
+      render(
+        <ToolUseCard
+          event={createToolEvent("TodoWrite", {
+            input: {
+              todos: [
+                { content: "Task 1", status: "completed" },
+                { content: "Task 2", status: "pending" },
+              ],
+            },
+          })}
+        />,
+      )
+      expect(screen.getByText("Update Todos")).toBeInTheDocument()
+    })
 
-    it.each(tools)("renders %s tool with appropriate styling", tool => {
-      render(<ToolUseCard event={createToolEvent(tool)} />)
-      // Just verify the tool renders without errors
-      expect(
-        screen.getByText(
-          tool === "WebSearch" ? "Web Search"
-          : tool === "WebFetch" ? "Web Fetch"
-          : tool === "TodoWrite" ? "Todo"
-          : tool,
-        ),
-      ).toBeInTheDocument()
+    it("renders todo items", () => {
+      render(
+        <ToolUseCard
+          event={createToolEvent("TodoWrite", {
+            input: {
+              todos: [
+                { content: "Task 1", status: "completed" },
+                { content: "Task 2", status: "pending" },
+              ],
+            },
+          })}
+        />,
+      )
+      expect(screen.getByText("Task 1")).toBeInTheDocument()
+      expect(screen.getByText("Task 2")).toBeInTheDocument()
+    })
+
+    it("shows checkmark for completed todos", () => {
+      render(
+        <ToolUseCard
+          event={createToolEvent("TodoWrite", {
+            input: {
+              todos: [{ content: "Task 1", status: "completed" }],
+            },
+          })}
+        />,
+      )
+      expect(screen.getByText("✓")).toBeInTheDocument()
     })
   })
 
   describe("status indicator", () => {
-    it("shows gray indicator for pending status", () => {
+    it("shows amber indicator for pending status", () => {
       render(<ToolUseCard event={createToolEvent("Read", { status: "pending" })} />)
-      expect(screen.getByLabelText("pending")).toHaveClass("bg-gray-400")
+      expect(screen.getByLabelText("pending")).toHaveClass("bg-amber-500")
     })
 
-    it("shows blue pulsing indicator for running status", () => {
+    it("shows blue indicator for running status", () => {
       render(<ToolUseCard event={createToolEvent("Read", { status: "running" })} />)
       const indicator = screen.getByLabelText("running")
       expect(indicator).toHaveClass("bg-blue-500")
-      expect(indicator).toHaveClass("animate-pulse")
     })
 
     it("shows green indicator for success status", () => {
@@ -199,119 +168,112 @@ describe("ToolUseCard", () => {
     })
   })
 
-  describe("expand/collapse behavior", () => {
-    it("does not show expand button when no details", () => {
-      const { container } = render(<ToolUseCard event={createToolEvent("Read")} />)
-      // No chevron icon should be present
-      const chevrons = container.querySelectorAll("svg")
-      // Should only have the tool icon, no chevron
-      expect(chevrons.length).toBe(1)
-    })
-
-    it("shows expand button when input is present", () => {
+  describe("expand/collapse behavior for Bash tool", () => {
+    it("shows expand button when output is present", () => {
       const { container } = render(
         <ToolUseCard
-          event={createToolEvent("Read", {
-            input: { file_path: "/test.ts" },
+          event={createToolEvent("Bash", {
+            input: { command: "echo test" },
+            output: "test output",
           })}
         />,
       )
-      // Should have tool icon + chevron
-      const chevrons = container.querySelectorAll("svg")
-      expect(chevrons.length).toBe(2)
+      const svgs = container.querySelectorAll("svg")
+      expect(svgs.length).toBeGreaterThan(0)
     })
 
-    it("expands to show input details on click", () => {
+    it("expands to show output on click", () => {
       render(
         <ToolUseCard
-          event={createToolEvent("Read", {
-            input: { file_path: "/test.ts" },
+          event={createToolEvent("Bash", {
+            input: { command: "echo test" },
+            output: "test output here",
           })}
         />,
       )
 
-      // Input details should not be visible initially
-      expect(screen.queryByText("Input")).not.toBeInTheDocument()
+      // Output should not be fully visible initially
+      expect(screen.queryByText("test output here")).not.toBeInTheDocument()
 
       // Click to expand
       fireEvent.click(screen.getByRole("button"))
 
-      // Input details should now be visible
-      expect(screen.getByText("Input")).toBeInTheDocument()
-      expect(screen.getByText(/file_path/)).toBeInTheDocument()
+      // Output should now be visible
+      expect(screen.getByText("test output here")).toBeInTheDocument()
     })
 
-    it("shows output when expanded", () => {
+    it("shows error when status is error", () => {
       render(
         <ToolUseCard
-          event={createToolEvent("Read", {
-            output: "File contents here",
-          })}
-        />,
-      )
-
-      fireEvent.click(screen.getByRole("button"))
-
-      expect(screen.getByText("Output")).toBeInTheDocument()
-      expect(screen.getByText("File contents here")).toBeInTheDocument()
-    })
-
-    it("shows error when expanded", () => {
-      render(
-        <ToolUseCard
-          event={createToolEvent("Read", {
+          event={createToolEvent("Bash", {
+            input: { command: "exit 1" },
             status: "error",
-            error: "File not found",
+            error: "Command failed",
           })}
         />,
       )
 
       fireEvent.click(screen.getByRole("button"))
 
-      expect(screen.getByText("Error")).toBeInTheDocument()
-      expect(screen.getByText("File not found")).toBeInTheDocument()
+      expect(screen.getByText("Command failed")).toBeInTheDocument()
     })
+  })
 
-    it("collapses on second click", () => {
+  describe("Read tool output summary", () => {
+    it("shows read line count when output is present", () => {
       render(
         <ToolUseCard
           event={createToolEvent("Read", {
             input: { file_path: "/test.ts" },
+            output: "line 1\nline 2\nline 3",
           })}
         />,
       )
 
-      const button = screen.getByRole("button")
-
-      // Expand
-      fireEvent.click(button)
-      expect(screen.getByText("Input")).toBeInTheDocument()
-
-      // Collapse
-      fireEvent.click(button)
-      expect(screen.queryByText("Input")).not.toBeInTheDocument()
+      expect(screen.getByText(/Read 3 lines/)).toBeInTheDocument()
     })
 
-    it("starts expanded when defaultExpanded is true", () => {
+    it("shows singular line for single line output", () => {
       render(
         <ToolUseCard
           event={createToolEvent("Read", {
             input: { file_path: "/test.ts" },
+            output: "single line",
+          })}
+        />,
+      )
+
+      expect(screen.getByText(/Read 1 line/)).toBeInTheDocument()
+    })
+  })
+
+  describe("Edit tool diff view", () => {
+    it("shows diff when old_string and new_string are present", () => {
+      render(
+        <ToolUseCard
+          event={createToolEvent("Edit", {
+            input: {
+              file_path: "/test.ts",
+              old_string: "const x = 1",
+              new_string: "const x = 2",
+            },
           })}
           defaultExpanded
         />,
       )
 
-      expect(screen.getByText("Input")).toBeInTheDocument()
+      expect(screen.getByText("const x = 1")).toBeInTheDocument()
+      expect(screen.getByText("const x = 2")).toBeInTheDocument()
     })
   })
 
   describe("aria attributes", () => {
-    it("has aria-expanded attribute", () => {
+    it("has aria-expanded attribute on expandable cards", () => {
       render(
         <ToolUseCard
-          event={createToolEvent("Read", {
-            input: { file_path: "/test.ts" },
+          event={createToolEvent("Bash", {
+            input: { command: "test" },
+            output: "test output",
           })}
         />,
       )
