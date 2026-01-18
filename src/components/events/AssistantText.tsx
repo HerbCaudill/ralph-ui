@@ -10,10 +10,7 @@ export interface AssistantTextEvent {
 
 export function AssistantText({ event, className }: Props) {
   return (
-    <div className={cn("flex items-start gap-2.5 py-1.5 pr-4 pl-4", className)}>
-      {/* Bullet indicator */}
-      <span className="bg-foreground/70 mt-1.5 size-1.5 shrink-0 rounded-full" />
-
+    <div className={cn("py-1.5 pr-4 pl-4", className)}>
       {/* Content */}
       <div
         className={cn(
