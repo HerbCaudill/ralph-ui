@@ -42,6 +42,7 @@ function getEventTypeLabel(type: string): string {
  * Get a color class for an event type
  */
 function getEventTypeColor(type: string): string {
+  if (type === "user_message") return "text-cyan-500"
   if (type.includes("error")) return "text-red-500"
   if (type.includes("warning")) return "text-yellow-500"
   if (type.includes("success") || type.includes("complete")) return "text-green-500"
@@ -58,12 +59,41 @@ interface EventItemProps {
   event: RalphEvent
 }
 
+/**
+ * Format event details for display
+ */
+function formatEventDetails(type: string, rest: Record<string, unknown>): string {
+  // For user messages, show just the message text
+  if (type === "user_message" && typeof rest.message === "string") {
+    return rest.message
+  }
+
+  // For output events, show the line
+  if (type === "output" && typeof rest.line === "string") {
+    return rest.line
+  }
+
+  // For errors, show the error message
+  if ((type === "error" || type === "server_error") && typeof rest.error === "string") {
+    return rest.error
+  }
+
+  // Default: show JSON
+  return JSON.stringify(rest)
+}
+
 function EventItem({ event }: EventItemProps) {
   const { type, timestamp, ...rest } = event
   const hasDetails = Object.keys(rest).length > 0
+  const isUserMessage = type === "user_message"
 
   return (
-    <div className="hover:bg-muted/50 border-border group border-b px-3 py-2 transition-colors last:border-b-0">
+    <div
+      className={cn(
+        "border-border group border-b px-3 py-2 transition-colors last:border-b-0",
+        isUserMessage ? "bg-cyan-500/5 hover:bg-cyan-500/10" : "hover:bg-muted/50",
+      )}
+    >
       <div className="flex items-start gap-3">
         {/* Timestamp */}
         <span className="text-muted-foreground shrink-0 font-mono text-xs">
@@ -78,13 +108,18 @@ function EventItem({ event }: EventItemProps) {
             "bg-current/10",
           )}
         >
-          {getEventTypeLabel(type)}
+          {isUserMessage ? "You" : getEventTypeLabel(type)}
         </span>
 
         {/* Event details (if any) */}
         {hasDetails && (
-          <span className="text-foreground/80 min-w-0 flex-1 truncate text-sm">
-            {JSON.stringify(rest)}
+          <span
+            className={cn(
+              "min-w-0 flex-1 truncate text-sm",
+              isUserMessage ? "text-foreground font-medium" : "text-foreground/80",
+            )}
+          >
+            {formatEventDetails(type, rest)}
           </span>
         )}
       </div>

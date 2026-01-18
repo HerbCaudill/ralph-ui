@@ -1,5 +1,13 @@
 import { MainLayout } from "./components/layout"
-import { useAppStore, selectConnectionStatus, selectRalphStatus } from "./store"
+import { ChatInput } from "./components/chat/ChatInput"
+import { EventStream } from "./components/events"
+import {
+  useAppStore,
+  selectConnectionStatus,
+  selectRalphStatus,
+  selectIsRalphRunning,
+} from "./store"
+import { useRalphConnection } from "./hooks"
 
 // =============================================================================
 // Placeholder Components (to be replaced with actual implementations)
@@ -15,10 +23,29 @@ function TasksSidebar() {
 }
 
 function AgentView() {
+  const { sendMessage, isConnected } = useRalphConnection()
+  const isRalphRunning = useAppStore(selectIsRalphRunning)
+
   return (
-    <div className="flex h-full flex-col items-center justify-center text-center">
-      <h1 className="text-2xl font-bold">Ralph UI</h1>
-      <p className="text-muted-foreground mt-2">Agent monitoring dashboard</p>
+    <div className="flex h-full flex-col">
+      {/* Event stream */}
+      <div className="min-h-0 flex-1">
+        <EventStream />
+      </div>
+
+      {/* Chat input */}
+      <div className="border-border border-t p-4">
+        <ChatInput
+          onSubmit={sendMessage}
+          disabled={!isConnected || !isRalphRunning}
+          placeholder={
+            !isConnected ? "Connecting..."
+            : !isRalphRunning ?
+              "Start Ralph to send messages..."
+            : "Type a message..."
+          }
+        />
+      </div>
     </div>
   )
 }

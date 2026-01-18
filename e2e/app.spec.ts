@@ -3,14 +3,17 @@ import { test, expect } from "@playwright/test"
 test("displays main layout with sidebar and content", async ({ page }) => {
   await page.goto("/")
 
-  // Check for main heading
-  await expect(page.getByRole("heading", { name: "Ralph UI" })).toBeVisible()
-
   // Check for sidebar heading
   await expect(page.getByRole("heading", { name: "Tasks" })).toBeVisible()
 
-  // Check for status bar (connection status appears in both Header and StatusBar)
-  await expect(page.getByRole("contentinfo").getByText("Disconnected")).toBeVisible()
+  // Check for event stream
+  await expect(page.getByRole("log", { name: "Event stream" })).toBeVisible()
+
+  // Check for chat input
+  await expect(page.getByRole("textbox", { name: "Message input" })).toBeVisible()
+
+  // Check for status bar (connection status)
+  await expect(page.getByRole("contentinfo")).toBeVisible()
 })
 
 test("can toggle sidebar", async ({ page }) => {

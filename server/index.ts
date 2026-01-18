@@ -237,6 +237,36 @@ function handleWsMessage(ws: WebSocket, data: RawData): void {
         ws.send(JSON.stringify({ type: "pong", timestamp: Date.now() }))
         break
 
+      case "chat_message": {
+        // Forward user message to ralph stdin
+        const manager = getRalphManager()
+        const chatMessage = message.message as string | undefined
+        if (!chatMessage) {
+          ws.send(
+            JSON.stringify({ type: "error", error: "Message is required", timestamp: Date.now() }),
+          )
+          return
+        }
+
+        if (!manager.isRunning) {
+          ws.send(
+            JSON.stringify({ type: "error", error: "Ralph is not running", timestamp: Date.now() }),
+          )
+          return
+        }
+
+        // Send to ralph
+        manager.send(chatMessage)
+
+        // Broadcast user message to all clients so it appears in event stream
+        broadcast({
+          type: "user_message",
+          message: chatMessage,
+          timestamp: Date.now(),
+        })
+        break
+      }
+
       default:
         console.log("[ws] unknown message type:", message.type)
     }
