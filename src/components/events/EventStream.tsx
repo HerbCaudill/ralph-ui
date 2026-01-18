@@ -2,9 +2,7 @@ import { cn } from "@/lib/utils"
 import { useAppStore, selectEvents, type RalphEvent } from "@/store"
 import { useCallback, useEffect, useRef, useState } from "react"
 
-// =============================================================================
 // Types
-// =============================================================================
 
 export interface EventStreamProps {
   className?: string
@@ -15,9 +13,7 @@ export interface EventStreamProps {
   maxEvents?: number
 }
 
-// =============================================================================
 // Helper Functions
-// =============================================================================
 
 /**
  * Formats a timestamp as HH:MM:SS.mmm
@@ -51,9 +47,7 @@ function getEventTypeColor(type: string): string {
   return "text-muted-foreground"
 }
 
-// =============================================================================
 // EventItem Component
-// =============================================================================
 
 interface EventItemProps {
   event: RalphEvent
@@ -127,9 +121,7 @@ function EventItem({ event }: EventItemProps) {
   )
 }
 
-// =============================================================================
 // EventStream Component
-// =============================================================================
 
 /**
  * Scrollable container displaying real-time events from ralph.

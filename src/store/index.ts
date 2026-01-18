@@ -1,9 +1,7 @@
 import { create } from "zustand"
 import type { ConnectionStatus } from "../hooks/useWebSocket"
 
-// =============================================================================
 // Types
-// =============================================================================
 
 export type RalphStatus = "stopped" | "starting" | "running" | "stopping"
 export type Theme = "system" | "light" | "dark"
@@ -30,9 +28,7 @@ export interface IterationInfo {
   total: number
 }
 
-// =============================================================================
 // Store State
-// =============================================================================
 
 export interface AppState {
   // Ralph process status
@@ -69,9 +65,7 @@ export interface AppState {
   theme: Theme
 }
 
-// =============================================================================
 // Store Actions
-// =============================================================================
 
 export interface AppActions {
   // Ralph status
@@ -116,9 +110,7 @@ export interface AppActions {
   reset: () => void
 }
 
-// =============================================================================
 // Initial State
-// =============================================================================
 
 const initialState: AppState = {
   ralphStatus: "stopped",
@@ -134,9 +126,7 @@ const initialState: AppState = {
   theme: "system",
 }
 
-// =============================================================================
 // Store
-// =============================================================================
 
 export const useAppStore = create<AppState & AppActions>(set => ({
   ...initialState,
@@ -198,9 +188,7 @@ export const useAppStore = create<AppState & AppActions>(set => ({
   reset: () => set(initialState),
 }))
 
-// =============================================================================
 // Selectors
-// =============================================================================
 
 export const selectRalphStatus = (state: AppState) => state.ralphStatus
 export const selectEvents = (state: AppState) => state.events

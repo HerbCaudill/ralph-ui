@@ -5,9 +5,7 @@ import type { TaskCardTask } from "./TaskCard"
 
 const STORAGE_KEY = "ralph-ui-task-list-collapsed-state"
 
-// =============================================================================
 // Test Fixtures
-// =============================================================================
 
 const sampleTasks: TaskCardTask[] = [
   { id: "task-1", title: "Open task 1", status: "open", priority: 2 },
@@ -18,9 +16,7 @@ const sampleTasks: TaskCardTask[] = [
   { id: "task-6", title: "Closed task", status: "closed", priority: 2 },
 ]
 
-// =============================================================================
 // Tests
-// =============================================================================
 
 describe("TaskList", () => {
   describe("rendering", () => {

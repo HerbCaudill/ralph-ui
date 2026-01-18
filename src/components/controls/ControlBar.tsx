@@ -4,17 +4,13 @@ import { Button } from "@/components/ui/button"
 import { useAppStore, selectRalphStatus, selectIsConnected } from "@/store"
 import type { RalphStatus } from "@/store"
 
-// =============================================================================
 // Types
-// =============================================================================
 
 export interface ControlBarProps {
   className?: string
 }
 
-// =============================================================================
 // API Functions
-// =============================================================================
 
 async function startRalph(iterations?: number): Promise<{ ok: boolean; error?: string }> {
   try {
@@ -41,9 +37,7 @@ async function stopRalph(): Promise<{ ok: boolean; error?: string }> {
   }
 }
 
-// =============================================================================
 // Icons
-// =============================================================================
 
 function PlayIcon({ className }: { className?: string }) {
   return (
@@ -111,9 +105,7 @@ function StopAfterIcon({ className }: { className?: string }) {
   )
 }
 
-// =============================================================================
 // Helper Functions
-// =============================================================================
 
 /**
  * Determines which buttons should be enabled based on current status.
@@ -168,9 +160,7 @@ function getButtonStates(status: RalphStatus, isConnected: boolean) {
   }
 }
 
-// =============================================================================
 // ControlBar Component
-// =============================================================================
 
 /**
  * Control bar with buttons for Start, Pause, Stop, and Stop-after-current.

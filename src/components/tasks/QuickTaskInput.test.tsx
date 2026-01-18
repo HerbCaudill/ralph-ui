@@ -2,9 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react"
 import { QuickTaskInput } from "./QuickTaskInput"
 
-// =============================================================================
 // Mock fetch
-// =============================================================================
 
 const mockFetch = vi.fn()
 
@@ -17,9 +15,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-// =============================================================================
 // Helper functions
-// =============================================================================
 
 function mockSuccessResponse(issue: object) {
   mockFetch.mockResolvedValueOnce({
@@ -40,9 +36,7 @@ function typeInInput(input: HTMLElement, value: string) {
   fireEvent.change(input, { target: { value } })
 }
 
-// =============================================================================
 // Tests
-// =============================================================================
 
 describe("QuickTaskInput", () => {
   describe("rendering", () => {

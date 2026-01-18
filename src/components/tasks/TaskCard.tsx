@@ -10,9 +10,7 @@ import {
   type LucideIcon,
 } from "lucide-react"
 
-// =============================================================================
 // Types
-// =============================================================================
 
 export type TaskStatus = "open" | "in_progress" | "blocked" | "deferred" | "closed"
 
@@ -46,9 +44,7 @@ export interface TaskCardProps {
   onClick?: (id: string) => void
 }
 
-// =============================================================================
 // Status Configuration
-// =============================================================================
 
 interface StatusConfig {
   icon: LucideIcon
@@ -90,9 +86,7 @@ const statusConfig: Record<TaskStatus, StatusConfig> = {
   },
 }
 
-// =============================================================================
 // Priority Configuration
-// =============================================================================
 
 const priorityLabels: Record<number, { label: string; color: string }> = {
   0: { label: "P0", color: "text-red-600 bg-red-100 dark:bg-red-900/30" },
@@ -102,15 +96,11 @@ const priorityLabels: Record<number, { label: string; color: string }> = {
   4: { label: "P4", color: "text-gray-600 bg-gray-100 dark:bg-gray-900/30" },
 }
 
-// =============================================================================
 // Available Statuses for Transition
-// =============================================================================
 
 const availableStatuses: TaskStatus[] = ["open", "in_progress", "blocked", "deferred", "closed"]
 
-// =============================================================================
 // TaskCard Component
-// =============================================================================
 
 /**
  * Card component for displaying an individual task.

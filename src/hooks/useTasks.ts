@@ -1,9 +1,7 @@
 import { useState, useEffect, useCallback } from "react"
 import type { TaskCardTask, TaskStatus } from "@/components/tasks/TaskCard"
 
-// =============================================================================
 // Types
-// =============================================================================
 
 export interface UseTasksOptions {
   /** Filter by status */
@@ -27,9 +25,7 @@ export interface UseTasksResult {
   refresh: () => Promise<void>
 }
 
-// =============================================================================
 // API Functions
-// =============================================================================
 
 interface TasksResponse {
   ok: boolean
@@ -60,9 +56,7 @@ async function fetchTasks(options: UseTasksOptions = {}): Promise<TasksResponse>
   }
 }
 
-// =============================================================================
 // Hook
-// =============================================================================
 
 /**
  * Hook to fetch and manage tasks from the beads API.

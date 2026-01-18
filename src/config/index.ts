@@ -1,8 +1,6 @@
 import hotkeysConfig from "./hotkeys.json"
 
-// =============================================================================
 // Types
-// =============================================================================
 
 export type HotkeyModifier = "cmd" | "ctrl" | "alt" | "shift"
 
@@ -25,8 +23,6 @@ export type HotkeyAction =
 
 export type HotkeysConfig = Record<HotkeyAction, HotkeyConfig>
 
-// =============================================================================
 // Config
-// =============================================================================
 
 export const hotkeys: HotkeysConfig = hotkeysConfig.hotkeys as HotkeysConfig

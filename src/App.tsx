@@ -14,9 +14,7 @@ import {
 } from "./store"
 import { useRalphConnection, useHotkeys, useTheme, useTasks } from "./hooks"
 
-// =============================================================================
 // API Functions (for hotkeys)
-// =============================================================================
 
 async function startRalph(): Promise<{ ok: boolean; error?: string }> {
   try {
@@ -43,9 +41,7 @@ async function stopRalph(): Promise<{ ok: boolean; error?: string }> {
   }
 }
 
-// =============================================================================
 // Tasks Sidebar
-// =============================================================================
 
 function TasksSidebarPanel() {
   const { tasks, refresh } = useTasks({ all: true })
@@ -121,9 +117,7 @@ function StatusBar() {
   )
 }
 
-// =============================================================================
 // App Component
-// =============================================================================
 
 export function App() {
   const layoutRef = useRef<MainLayoutHandle>(null)

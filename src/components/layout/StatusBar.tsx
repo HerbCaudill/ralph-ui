@@ -8,17 +8,13 @@ import {
   selectIteration,
 } from "@/store"
 
-// =============================================================================
 // Types
-// =============================================================================
 
 export interface StatusBarProps {
   className?: string
 }
 
-// =============================================================================
 // Helper Functions
-// =============================================================================
 
 /**
  * Formats a token count with k/M suffixes for readability.
@@ -41,9 +37,7 @@ function getRepoName(workspace: string | null): string | null {
   return workspace.split("/").pop() || workspace
 }
 
-// =============================================================================
 // StatusIndicator Component
-// =============================================================================
 
 function StatusIndicator() {
   const status = useAppStore(selectRalphStatus)
@@ -77,9 +71,7 @@ function StatusIndicator() {
   )
 }
 
-// =============================================================================
 // RepoBranch Component
-// =============================================================================
 
 function RepoBranch() {
   const workspace = useAppStore(selectWorkspace)
@@ -122,9 +114,7 @@ function RepoBranch() {
   )
 }
 
-// =============================================================================
 // TokenUsage Component
-// =============================================================================
 
 function TokenUsageDisplay() {
   const tokenUsage = useAppStore(selectTokenUsage)
@@ -146,9 +136,7 @@ function TokenUsageDisplay() {
   )
 }
 
-// =============================================================================
 // IterationProgress Component
-// =============================================================================
 
 function IterationProgress() {
   const iteration = useAppStore(selectIteration)
@@ -176,9 +164,7 @@ function IterationProgress() {
   )
 }
 
-// =============================================================================
 // StatusBar Component
-// =============================================================================
 
 /**
  * Bottom status bar showing run status, repo/branch, token usage, and iteration progress.

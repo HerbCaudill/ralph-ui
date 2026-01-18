@@ -4,9 +4,7 @@ import express, { type Express, type Request, type Response } from "express"
 import { EventEmitter } from "node:events"
 import { RalphManager, type RalphManagerOptions } from "./RalphManager.js"
 
-// =============================================================================
 // Test setup - create app with mock RalphManager
-// =============================================================================
 
 function createMockChildProcess() {
   const proc = new EventEmitter() as EventEmitter & {
@@ -101,9 +99,7 @@ function createTestApp(getManager: () => RalphManager): Express {
   return app
 }
 
-// =============================================================================
 // Tests
-// =============================================================================
 
 describe("REST API endpoints", () => {
   let server: Server

@@ -3,9 +3,7 @@ import { forwardRef, useImperativeHandle, useRef } from "react"
 import { Header } from "./Header"
 import { useAppStore, selectSidebarOpen } from "@/store"
 
-// =============================================================================
 // Types
-// =============================================================================
 
 export interface MainLayoutProps {
   sidebar?: React.ReactNode
@@ -21,9 +19,7 @@ export interface MainLayoutHandle {
   focusMain: () => void
 }
 
-// =============================================================================
 // MainLayout Component
-// =============================================================================
 
 /**
  * Main application layout with header, sidebar, main content area, and status bar.

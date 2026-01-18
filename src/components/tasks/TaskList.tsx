@@ -3,16 +3,12 @@ import { useState, useCallback, useMemo, useEffect } from "react"
 import { ChevronDown, Layers } from "lucide-react"
 import { TaskCard, type TaskCardTask, type TaskStatus } from "./TaskCard"
 
-// =============================================================================
 // Constants
-// =============================================================================
 
 const STATUS_STORAGE_KEY = "ralph-ui-task-list-collapsed-state"
 const EPIC_STORAGE_KEY = "ralph-ui-task-list-epic-collapsed-state"
 
-// =============================================================================
 // Types
-// =============================================================================
 
 /** Task status groups for display in the task list. */
 export type TaskGroup = "ready" | "in_progress" | "blocked" | "other"
@@ -34,9 +30,7 @@ export interface TaskListProps {
   persistCollapsedState?: boolean
 }
 
-// =============================================================================
 // Group Configuration
-// =============================================================================
 
 interface GroupConfig {
   key: TaskGroup
@@ -67,9 +61,7 @@ const groupConfigs: GroupConfig[] = [
   },
 ]
 
-// =============================================================================
 // TaskGroupHeader Component
-// =============================================================================
 
 interface TaskGroupHeaderProps {
   label: string
@@ -115,9 +107,7 @@ function TaskGroupHeader({ label, count, isCollapsed, onToggle }: TaskGroupHeade
   )
 }
 
-// =============================================================================
 // EpicGroupHeader Component
-// =============================================================================
 
 interface EpicGroupHeaderProps {
   epicId: string
@@ -174,9 +164,7 @@ function EpicGroupHeader({
   )
 }
 
-// =============================================================================
 // TaskList Component
-// =============================================================================
 
 /**
  * List component for displaying tasks grouped by epic and status.

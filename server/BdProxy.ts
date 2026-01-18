@@ -1,8 +1,6 @@
 import { spawn, type SpawnOptions } from "node:child_process"
 
-// =============================================================================
 // Types
-// =============================================================================
 
 export interface BdIssue {
   id: string
@@ -97,9 +95,7 @@ export interface BdInfo {
   config?: Record<string, string>
 }
 
-// =============================================================================
 // BdProxy
-// =============================================================================
 
 /**
  * Proxy class to spawn bd commands and parse JSON output.

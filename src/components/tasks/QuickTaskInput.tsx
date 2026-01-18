@@ -2,9 +2,7 @@ import { cn } from "@/lib/utils"
 import { useCallback, useState, type FormEvent, type KeyboardEvent } from "react"
 import { Plus, Loader2 } from "lucide-react"
 
-// =============================================================================
 // Types
-// =============================================================================
 
 export interface QuickTaskInputProps {
   /**
@@ -44,9 +42,7 @@ export interface CreatedIssue {
   issue_type: string
 }
 
-// =============================================================================
 // QuickTaskInput Component
-// =============================================================================
 
 /**
  * Text input for quickly adding tasks.

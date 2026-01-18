@@ -1,9 +1,7 @@
 import { spawn, type ChildProcess, type SpawnOptions } from "node:child_process"
 import { EventEmitter } from "node:events"
 
-// =============================================================================
 // Types
-// =============================================================================
 
 export type RalphStatus = "stopped" | "starting" | "running" | "stopping"
 
@@ -28,9 +26,7 @@ export interface RalphManagerOptions {
   spawn?: SpawnFn
 }
 
-// =============================================================================
 // RalphManager
-// =============================================================================
 
 /**
  * Manages a ralph CLI child process.

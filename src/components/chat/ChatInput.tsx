@@ -9,9 +9,7 @@ import {
   type KeyboardEvent,
 } from "react"
 
-// =============================================================================
 // Types
-// =============================================================================
 
 export interface ChatInputProps {
   /**
@@ -41,9 +39,7 @@ export interface ChatInputHandle {
   focus: () => void
 }
 
-// =============================================================================
 // ChatInput Component
-// =============================================================================
 
 /**
  * Text input for sending messages to a running agent.

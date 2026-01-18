@@ -7,9 +7,7 @@ import { RalphManager, type RalphEvent, type RalphStatus } from "./RalphManager.
 import { BdProxy, type BdCreateOptions } from "./BdProxy.js"
 import { getAliveWorkspaces } from "./registry.js"
 
-// =============================================================================
 // Peacock Color Reader
-// =============================================================================
 
 /**
  * Read the peacock accent color from .vscode/settings.json in the workspace.
@@ -27,9 +25,7 @@ export async function readPeacockColor(workspacePath: string): Promise<string | 
   }
 }
 
-// =============================================================================
 // Configuration
-// =============================================================================
 
 export interface ServerConfig {
   host: string
@@ -45,9 +41,7 @@ function getConfig(): ServerConfig {
   }
 }
 
-// =============================================================================
 // Express App
-// =============================================================================
 
 function createApp(config: ServerConfig): Express {
   const app = express()
@@ -298,9 +292,7 @@ function createApp(config: ServerConfig): Express {
   return app
 }
 
-// =============================================================================
 // WebSocket Server
-// =============================================================================
 
 export interface WsClient {
   ws: WebSocket
@@ -429,9 +421,7 @@ export function broadcast(message: unknown): void {
   }
 }
 
-// =============================================================================
 // BdProxy Integration
-// =============================================================================
 
 // Singleton BdProxy instance
 let bdProxy: BdProxy | null = null
@@ -460,9 +450,7 @@ export function switchWorkspace(workspacePath: string): void {
   bdProxy = new BdProxy({ cwd: workspacePath })
 }
 
-// =============================================================================
 // RalphManager Integration
-// =============================================================================
 
 // Singleton RalphManager instance
 let ralphManager: RalphManager | null = null
@@ -542,9 +530,7 @@ export function resetRalphManager(): void {
   }
 }
 
-// =============================================================================
 // Port availability check
-// =============================================================================
 
 async function findAvailablePort(
   host: string,
@@ -578,9 +564,7 @@ function checkPortAvailable(host: string, port: number): Promise<boolean> {
   })
 }
 
-// =============================================================================
 // Main entry point
-// =============================================================================
 
 async function startServer(config: ServerConfig): Promise<void> {
   const app = createApp(config)

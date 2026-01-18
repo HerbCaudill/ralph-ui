@@ -2,9 +2,7 @@ import { render, screen, fireEvent } from "@testing-library/react"
 import { describe, it, expect, vi } from "vitest"
 import { TaskCard, type TaskCardTask, type TaskStatus } from "./TaskCard"
 
-// =============================================================================
 // Test Fixtures
-// =============================================================================
 
 const baseTask: TaskCardTask = {
   id: "rui-4rt.5",
@@ -22,9 +20,7 @@ const fullTask: TaskCardTask = {
   parent: "rui-4rt",
 }
 
-// =============================================================================
 // Tests
-// =============================================================================
 
 describe("TaskCard", () => {
   describe("rendering", () => {

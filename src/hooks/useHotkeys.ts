@@ -1,9 +1,7 @@
 import { useEffect, useCallback, useRef } from "react"
 import { hotkeys, type HotkeyAction, type HotkeyConfig } from "@/config"
 
-// =============================================================================
 // Types
-// =============================================================================
 
 export type HotkeyHandler = () => void
 
@@ -21,9 +19,7 @@ export interface UseHotkeysReturn {
   registeredHotkeys: Array<{ action: HotkeyAction; display: string; description: string }>
 }
 
-// =============================================================================
 // Helpers
-// =============================================================================
 
 /**
  * Check if the current platform is macOS
@@ -129,9 +125,7 @@ function isInputElement(target: EventTarget | null): boolean {
   )
 }
 
-// =============================================================================
 // Hook
-// =============================================================================
 
 /**
  * Hook for global keyboard hotkeys.

@@ -3,9 +3,7 @@ import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { MessageSquare } from "lucide-react"
 
-// =============================================================================
 // Types
-// =============================================================================
 
 export interface TextEvent {
   type: "text"
@@ -21,9 +19,7 @@ export interface TextBlockProps {
   className?: string
 }
 
-// =============================================================================
 // Helper Functions
-// =============================================================================
 
 /**
  * Formats a timestamp as HH:MM:SS.mmm
@@ -64,9 +60,7 @@ function getRoleStyles(role?: string): { color: string; bgColor: string; label: 
   }
 }
 
-// =============================================================================
 // TextBlock Component
-// =============================================================================
 
 /**
  * Component for displaying Claude's text output with markdown rendering.

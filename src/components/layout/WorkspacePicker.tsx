@@ -2,9 +2,7 @@ import { cn } from "@/lib/utils"
 import { useAppStore, selectWorkspace, selectAccentColor } from "@/store"
 import { useState, useRef, useEffect, useCallback } from "react"
 
-// =============================================================================
 // Types
-// =============================================================================
 
 export interface WorkspaceInfo {
   path: string
@@ -30,9 +28,7 @@ export interface WorkspacePickerProps {
   className?: string
 }
 
-// =============================================================================
 // Icons
-// =============================================================================
 
 function FolderIcon({ className }: { className?: string }) {
   return (
@@ -133,9 +129,7 @@ function RefreshIcon({ className }: { className?: string }) {
   )
 }
 
-// =============================================================================
 // WorkspacePicker Component
-// =============================================================================
 
 /**
  * Dropdown component to display and switch between bd workspaces.

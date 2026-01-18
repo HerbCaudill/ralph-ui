@@ -2,9 +2,7 @@ import { useCallback, useEffect } from "react"
 import { useWebSocket, type ConnectionStatus } from "./useWebSocket"
 import { useAppStore } from "../store"
 
-// =============================================================================
 // Types
-// =============================================================================
 
 export interface UseRalphConnectionOptions {
   /**
@@ -48,9 +46,7 @@ export interface UseRalphConnectionReturn {
   disconnect: () => void
 }
 
-// =============================================================================
 // Hook
-// =============================================================================
 
 /**
  * Hook for managing the WebSocket connection to the ralph-ui server.

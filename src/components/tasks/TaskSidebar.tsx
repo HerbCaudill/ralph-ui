@@ -1,9 +1,7 @@
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
 
-// =============================================================================
 // Types
-// =============================================================================
 
 export interface TaskSidebarProps {
   /**
@@ -22,9 +20,7 @@ export interface TaskSidebarProps {
   className?: string
 }
 
-// =============================================================================
 // TaskSidebar Component
-// =============================================================================
 
 /**
  * Sidebar container for task management.

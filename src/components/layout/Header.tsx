@@ -5,24 +5,18 @@ import { WorkspacePicker } from "./WorkspacePicker"
 import { Button } from "@/components/ui/button"
 import { Sun, Moon, Monitor } from "lucide-react"
 
-// =============================================================================
 // Constants
-// =============================================================================
 
 /** Default accent color (black) when peacock color is not set */
 const DEFAULT_ACCENT_COLOR = "#000000"
 
-// =============================================================================
 // Types
-// =============================================================================
 
 export interface HeaderProps {
   className?: string
 }
 
-// =============================================================================
 // ThemeToggle Component
-// =============================================================================
 
 function ThemeToggle() {
   const { theme, cycleTheme } = useTheme()
@@ -49,9 +43,7 @@ function ThemeToggle() {
   )
 }
 
-// =============================================================================
 // ConnectionIndicator Component
-// =============================================================================
 
 function ConnectionIndicator() {
   const connectionStatus = useAppStore(selectConnectionStatus)
@@ -81,9 +73,7 @@ function ConnectionIndicator() {
   )
 }
 
-// =============================================================================
 // Logo Component
-// =============================================================================
 
 function Logo() {
   return (
@@ -112,9 +102,7 @@ function Logo() {
   )
 }
 
-// =============================================================================
 // Header Component
-// =============================================================================
 
 /**
  * Application header with logo, workspace picker, and connection status.

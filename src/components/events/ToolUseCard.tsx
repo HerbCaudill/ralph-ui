@@ -14,9 +14,7 @@ import {
 } from "lucide-react"
 import { useState, useCallback } from "react"
 
-// =============================================================================
 // Types
-// =============================================================================
 
 export type ToolName =
   | "Read"
@@ -53,9 +51,7 @@ export interface ToolUseCardProps {
   defaultExpanded?: boolean
 }
 
-// =============================================================================
 // Tool Configuration
-// =============================================================================
 
 interface ToolConfig {
   icon: LucideIcon
@@ -127,9 +123,7 @@ const toolConfig: Record<ToolName, ToolConfig> = {
   },
 }
 
-// =============================================================================
 // Helper Functions
-// =============================================================================
 
 /**
  * Formats a timestamp as HH:MM:SS.mmm
@@ -206,9 +200,7 @@ function getStatusStyles(status?: string): { indicator: string; pulse: boolean }
   }
 }
 
-// =============================================================================
 // ToolUseCard Component
-// =============================================================================
 
 /**
  * Card component for displaying tool use events.
