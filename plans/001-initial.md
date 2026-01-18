@@ -146,6 +146,3 @@ src/
 5. Task sidebar shows bd issues
 6. Can create/edit tasks
 
-## Unresolved questions
-
-None - ready to implement.
