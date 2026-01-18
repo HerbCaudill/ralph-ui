@@ -190,9 +190,15 @@ function DiffView({ oldString, newString }: { oldString: string; newString: stri
   )
 }
 
-function TodoList({ todos }: { todos: Array<{ content: string; status: string }> }) {
+function TodoList({
+  todos,
+  className,
+}: {
+  todos: Array<{ content: string; status: string }>
+  className?: string
+}) {
   return (
-    <div className="space-y-0.5 text-sm">
+    <div className={cn("space-y-0.5", className)}>
       {todos.map((todo, i) => (
         <div key={i} className="flex items-start gap-2">
           <span
@@ -247,9 +253,12 @@ export function ToolUseCard({ event, className, defaultExpanded = false }: ToolU
         <div className="flex items-start gap-2.5">
           <span className={cn("mt-2 size-1.5 shrink-0 rounded-full", statusColor)} />
           <div className="flex-1">
-            <span className="text-foreground text-sm font-semibold">Update Todos</span>
+            <span className="text-foreground text-xs font-semibold">Update Todos</span>
             <div className="border-muted-foreground/30 mt-1 ml-1 border-l pl-3">
-              <TodoList todos={event.input.todos as Array<{ content: string; status: string }>} />
+              <TodoList
+                todos={event.input.todos as Array<{ content: string; status: string }>}
+                className="text-xs"
+              />
             </div>
           </div>
         </div>
@@ -279,11 +288,11 @@ export function ToolUseCard({ event, className, defaultExpanded = false }: ToolU
         {/* Content */}
         <div className="flex min-w-0 flex-1 items-baseline gap-2">
           {/* Tool name */}
-          <span className="text-foreground shrink-0 text-sm font-semibold">{event.tool}</span>
+          <span className="text-foreground shrink-0 text-xs font-semibold">{event.tool}</span>
 
           {/* Summary (file path, command, etc.) */}
           {summary && (
-            <span className="text-foreground/80 min-w-0 flex-1 truncate font-mono text-sm">
+            <span className="text-foreground/80 min-w-0 flex-1 truncate font-mono text-xs">
               {summary}
             </span>
           )}
@@ -304,7 +313,7 @@ export function ToolUseCard({ event, className, defaultExpanded = false }: ToolU
       {/* Expanded output */}
       {isExpanded && hasExpandableContent && (
         <div className="border-muted-foreground/30 mt-1 ml-1 border-l pl-3">
-          <div className="text-muted-foreground flex items-center gap-1 text-sm">
+          <div className="text-muted-foreground flex items-center gap-1 text-xs">
             <span>└</span>
             <div className="flex-1">
               {/* Edit tool: show diff */}
@@ -344,7 +353,7 @@ export function ToolUseCard({ event, className, defaultExpanded = false }: ToolU
       {/* Non-expanded output summary */}
       {!isExpanded && outputSummary && (
         <div className="border-muted-foreground/30 mt-1 ml-1 border-l pl-3">
-          <span className="text-muted-foreground text-sm">└ {outputSummary}</span>
+          <span className="text-muted-foreground text-xs">└ {outputSummary}</span>
         </div>
       )}
     </div>
