@@ -3,6 +3,7 @@ import { createServer, type Server } from "node:http"
 import path from "node:path"
 import { WebSocketServer, type WebSocket, type RawData } from "ws"
 import { RalphManager, type RalphEvent, type RalphStatus } from "./RalphManager.js"
+import { BdProxy, type BdCreateOptions } from "./BdProxy.js"
 
 // =============================================================================
 // Configuration
@@ -101,6 +102,41 @@ function createApp(config: ServerConfig): Express {
   app.get("/api/status", (_req: Request, res: Response) => {
     const manager = getRalphManager()
     res.status(200).json({ ok: true, status: manager.status })
+  })
+
+  // Task management endpoints
+  app.post("/api/tasks", async (req: Request, res: Response) => {
+    try {
+      const { title, description, priority, type, assignee, parent, labels } = req.body as {
+        title?: string
+        description?: string
+        priority?: number
+        type?: string
+        assignee?: string
+        parent?: string
+        labels?: string[]
+      }
+
+      if (!title?.trim()) {
+        res.status(400).json({ ok: false, error: "Title is required" })
+        return
+      }
+
+      const bdProxy = getBdProxy()
+      const options: BdCreateOptions = { title: title.trim() }
+      if (description) options.description = description
+      if (priority !== undefined) options.priority = priority
+      if (type) options.type = type
+      if (assignee) options.assignee = assignee
+      if (parent) options.parent = parent
+      if (labels) options.labels = labels
+
+      const issue = await bdProxy.create(options)
+      res.status(201).json({ ok: true, issue })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to create task"
+      res.status(500).json({ ok: false, error: message })
+    }
   })
 
   // Static assets from dist (built by Vite)
@@ -219,6 +255,30 @@ export function broadcast(message: unknown): void {
       client.ws.send(payload)
     }
   }
+}
+
+// =============================================================================
+// BdProxy Integration
+// =============================================================================
+
+// Singleton BdProxy instance
+let bdProxy: BdProxy | null = null
+
+/**
+ * Get the singleton BdProxy instance, creating it if needed.
+ */
+export function getBdProxy(): BdProxy {
+  if (!bdProxy) {
+    bdProxy = new BdProxy()
+  }
+  return bdProxy
+}
+
+/**
+ * Reset the BdProxy singleton (for testing).
+ */
+export function resetBdProxy(): void {
+  bdProxy = null
 }
 
 // =============================================================================
