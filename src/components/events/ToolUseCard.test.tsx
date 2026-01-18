@@ -182,7 +182,7 @@ describe("ToolUseCard", () => {
       expect(screen.getByText("test output")).toBeInTheDocument()
     })
 
-    it("shows truncated preview with expand button for long output", () => {
+    it("shows truncated preview and expands on click anywhere in output", () => {
       const longOutput = "line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8"
       render(
         <ToolUseCard
@@ -202,8 +202,8 @@ describe("ToolUseCard", () => {
       // Line 8 should not be visible initially
       expect(screen.queryByText("line 8")).not.toBeInTheDocument()
 
-      // Click to expand
-      fireEvent.click(screen.getByText(/\.\.\. \+3 lines/))
+      // Click anywhere on the output to expand
+      fireEvent.click(screen.getByText(/line 1/))
 
       // All lines should now be visible
       expect(screen.getByText(/line 8/)).toBeInTheDocument()
@@ -274,7 +274,7 @@ describe("ToolUseCard", () => {
   })
 
   describe("accessibility", () => {
-    it("has clickable expand button for long output", () => {
+    it("shows expand indicator and expands on click", () => {
       const longOutput = "line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7"
       render(
         <ToolUseCard
@@ -285,8 +285,15 @@ describe("ToolUseCard", () => {
         />,
       )
 
-      const expandButton = screen.getByRole("button")
-      expect(expandButton).toHaveTextContent(/\.\.\. \+2 lines/)
+      // Expand indicator should be visible
+      expect(screen.getByText(/\.\.\. \+2 lines/)).toBeInTheDocument()
+
+      // Click on the output area to expand
+      const outputArea = screen.getByText(/line 1/)
+      fireEvent.click(outputArea)
+
+      // All content should now be visible
+      expect(screen.getByText(/line 7/)).toBeInTheDocument()
     })
   })
 

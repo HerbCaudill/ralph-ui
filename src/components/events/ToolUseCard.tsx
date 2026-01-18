@@ -320,17 +320,24 @@ export function ToolUseCard({ event, className, defaultExpanded = false }: ToolU
 
               {/* Bash output */}
               {bashPreviewInfo && (
-                <pre className="bg-muted/30 text-foreground/80 mt-1 overflow-auto rounded border p-2 font-mono text-xs whitespace-pre-wrap">
+                <pre
+                  onClick={
+                    !isExpanded && bashPreviewInfo.remainingLines > 0 ?
+                      () => setIsExpanded(true)
+                    : undefined
+                  }
+                  className={cn(
+                    "bg-muted/30 text-foreground/80 mt-1 overflow-auto rounded border p-2 font-mono text-xs whitespace-pre-wrap",
+                    !isExpanded && bashPreviewInfo.remainingLines > 0 && "cursor-pointer",
+                  )}
+                >
                   {isExpanded ? event.output : bashPreviewInfo.preview}
                   {!isExpanded && bashPreviewInfo.remainingLines > 0 && (
                     <>
                       {"\n"}
-                      <button
-                        onClick={() => setIsExpanded(true)}
-                        className="text-muted-foreground hover:text-foreground cursor-pointer"
-                      >
+                      <span className="text-muted-foreground">
                         ... +{bashPreviewInfo.remainingLines} lines
-                      </button>
+                      </span>
                     </>
                   )}
                 </pre>
