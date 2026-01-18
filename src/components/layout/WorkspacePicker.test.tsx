@@ -181,7 +181,28 @@ describe("WorkspacePicker", () => {
     fireEvent.click(workspaceButton)
 
     await waitFor(() => {
-      expect(screen.getByText("Failed to fetch workspace info")).toBeInTheDocument()
+      // Fetch failures are treated as server not running (shows in button and dropdown)
+      expect(screen.getAllByText("Server not running")).toHaveLength(2)
+    })
+  })
+
+  it("shows server not running message with help text when server is down", async () => {
+    mockFetch.mockRejectedValueOnce(new Error("Failed to fetch"))
+
+    render(<WorkspacePicker />)
+
+    await waitFor(() => {
+      // Button should show server not running
+      expect(screen.getByText("Server not running")).toBeInTheDocument()
+    })
+
+    // Open dropdown
+    const workspaceButton = screen.getByRole("button")
+    fireEvent.click(workspaceButton)
+
+    // Should show help text
+    await waitFor(() => {
+      expect(screen.getByText(/pnpm dev/)).toBeInTheDocument()
     })
   })
 

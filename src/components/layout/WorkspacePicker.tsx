@@ -165,7 +165,11 @@ export function WorkspacePicker({ className }: WorkspacePickerProps) {
         throw new Error(data.error || "Unknown error")
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch workspace")
+      // Detect connection refused (server not running)
+      const message = err instanceof Error ? err.message : "Failed to fetch workspace"
+      const isConnectionError =
+        message.includes("fetch") || message.includes("ECONNREFUSED") || message.includes("network")
+      setError(isConnectionError ? "Server not running" : message)
     } finally {
       setIsLoading(false)
     }
@@ -188,9 +192,14 @@ export function WorkspacePicker({ className }: WorkspacePickerProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
+  // Check if server is not running
+  const isServerDown = error === "Server not running"
+
   // Display name: use workspaceInfo name, or derive from workspace path, or fallback
   const displayName =
-    workspaceInfo?.name || (workspace ? workspace.split("/").pop() : null) || "No workspace"
+    isServerDown ? "Server not running" : (
+      workspaceInfo?.name || (workspace ? workspace.split("/").pop() : null) || "No workspace"
+    )
 
   // Issue count badge
   const issueCount = workspaceInfo?.issueCount
@@ -204,12 +213,13 @@ export function WorkspacePicker({ className }: WorkspacePickerProps) {
           "bg-secondary hover:bg-secondary/80 transition-colors",
           "text-sm font-medium",
           isLoading && "opacity-70",
+          isServerDown && "bg-red-500/10 text-red-500 hover:bg-red-500/20",
         )}
         aria-expanded={isOpen}
         aria-haspopup="true"
         disabled={isLoading}
       >
-        <FolderIcon className="text-muted-foreground" />
+        <FolderIcon className={cn("text-muted-foreground", isServerDown && "text-red-500")} />
         <span className="max-w-[200px] truncate">{displayName}</span>
         {issueCount !== undefined && (
           <span className="bg-muted text-muted-foreground rounded-full px-1.5 py-0.5 text-xs">
@@ -231,15 +241,23 @@ export function WorkspacePicker({ className }: WorkspacePickerProps) {
               Current Workspace
             </div>
             {error ?
-              <div className="flex items-center gap-2 px-3 py-2 text-sm text-red-500">
-                <span>{error}</span>
-                <button
-                  onClick={fetchWorkspaceInfo}
-                  className="text-muted-foreground hover:text-foreground"
-                  title="Retry"
-                >
-                  <RefreshIcon />
-                </button>
+              <div className="px-3 py-2">
+                <div className="flex items-center gap-2 text-sm text-red-500">
+                  <span>{error}</span>
+                  <button
+                    onClick={fetchWorkspaceInfo}
+                    className="text-red-400 hover:text-red-300"
+                    title="Retry"
+                  >
+                    <RefreshIcon />
+                  </button>
+                </div>
+                {isServerDown && (
+                  <p className="text-muted-foreground mt-2 text-xs">
+                    Run <code className="bg-muted rounded px-1">pnpm dev</code> to start both
+                    servers
+                  </p>
+                )}
               </div>
             : workspaceInfo ?
               <div className="px-3 py-2">
