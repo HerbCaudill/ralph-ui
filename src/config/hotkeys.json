@@ -1,0 +1,50 @@
+{
+  "$schema": "./hotkeys.schema.json",
+  "hotkeys": {
+    "agentStart": {
+      "key": "Enter",
+      "modifiers": ["cmd"],
+      "description": "Start Ralph agent"
+    },
+    "agentStop": {
+      "key": ".",
+      "modifiers": ["cmd"],
+      "description": "Stop Ralph agent"
+    },
+    "agentPause": {
+      "key": "/",
+      "modifiers": ["cmd"],
+      "description": "Pause Ralph agent (coming soon)"
+    },
+    "agentStopAfterCurrent": {
+      "key": ".",
+      "modifiers": ["cmd", "shift"],
+      "description": "Stop after current task (coming soon)"
+    },
+    "toggleSidebar": {
+      "key": "b",
+      "modifiers": ["cmd"],
+      "description": "Toggle sidebar visibility"
+    },
+    "focusSidebar": {
+      "key": "1",
+      "modifiers": ["cmd"],
+      "description": "Focus sidebar"
+    },
+    "focusMain": {
+      "key": "2",
+      "modifiers": ["cmd"],
+      "description": "Focus main content"
+    },
+    "focusTaskInput": {
+      "key": "k",
+      "modifiers": ["cmd"],
+      "description": "Focus quick task input"
+    },
+    "focusChatInput": {
+      "key": "l",
+      "modifiers": ["cmd"],
+      "description": "Focus chat input"
+    }
+  }
+}

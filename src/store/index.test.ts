@@ -20,6 +20,7 @@ describe("useAppStore", () => {
       expect(state.iteration).toEqual({ current: 0, total: 0 })
       expect(state.connectionStatus).toBe("disconnected")
       expect(state.accentColor).toBeNull()
+      expect(state.sidebarOpen).toBe(true)
     })
   })
 
@@ -225,6 +226,27 @@ describe("useAppStore", () => {
     })
   })
 
+  describe("sidebar state", () => {
+    it("sets sidebar open state", () => {
+      useAppStore.getState().setSidebarOpen(false)
+      expect(useAppStore.getState().sidebarOpen).toBe(false)
+
+      useAppStore.getState().setSidebarOpen(true)
+      expect(useAppStore.getState().sidebarOpen).toBe(true)
+    })
+
+    it("toggles sidebar state", () => {
+      // Initial state is true
+      expect(useAppStore.getState().sidebarOpen).toBe(true)
+
+      useAppStore.getState().toggleSidebar()
+      expect(useAppStore.getState().sidebarOpen).toBe(false)
+
+      useAppStore.getState().toggleSidebar()
+      expect(useAppStore.getState().sidebarOpen).toBe(true)
+    })
+  })
+
   describe("reset", () => {
     it("resets all state to initial values", () => {
       // Modify all state
@@ -238,6 +260,7 @@ describe("useAppStore", () => {
         setTokenUsage,
         setIteration,
         setConnectionStatus,
+        setSidebarOpen,
       } = useAppStore.getState()
 
       setRalphStatus("running")
@@ -249,6 +272,7 @@ describe("useAppStore", () => {
       setTokenUsage({ input: 1000, output: 500 })
       setIteration({ current: 5, total: 10 })
       setConnectionStatus("connected")
+      setSidebarOpen(false)
 
       // Verify state is modified
       let state = useAppStore.getState()
@@ -261,6 +285,7 @@ describe("useAppStore", () => {
       expect(state.tokenUsage).toEqual({ input: 1000, output: 500 })
       expect(state.iteration).toEqual({ current: 5, total: 10 })
       expect(state.connectionStatus).toBe("connected")
+      expect(state.sidebarOpen).toBe(false)
 
       // Reset
       useAppStore.getState().reset()
@@ -276,6 +301,7 @@ describe("useAppStore", () => {
       expect(state.tokenUsage).toEqual({ input: 0, output: 0 })
       expect(state.iteration).toEqual({ current: 0, total: 0 })
       expect(state.connectionStatus).toBe("disconnected")
+      expect(state.sidebarOpen).toBe(true)
     })
   })
 })

@@ -10,3 +10,10 @@ export {
   type UseRalphConnectionOptions,
   type UseRalphConnectionReturn,
 } from "./useRalphConnection"
+
+export {
+  useHotkeys,
+  type HotkeyHandler,
+  type UseHotkeysOptions,
+  type UseHotkeysReturn,
+} from "./useHotkeys"

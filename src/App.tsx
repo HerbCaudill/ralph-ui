@@ -1,13 +1,44 @@
-import { MainLayout } from "./components/layout"
-import { ChatInput } from "./components/chat/ChatInput"
+import { useRef, useCallback } from "react"
+import { MainLayout, type MainLayoutHandle } from "./components/layout"
+import { ChatInput, type ChatInputHandle } from "./components/chat/ChatInput"
 import { EventStream } from "./components/events"
 import {
   useAppStore,
   selectConnectionStatus,
   selectRalphStatus,
   selectIsRalphRunning,
+  selectIsConnected,
 } from "./store"
-import { useRalphConnection } from "./hooks"
+import { useRalphConnection, useHotkeys } from "./hooks"
+
+// =============================================================================
+// API Functions (for hotkeys)
+// =============================================================================
+
+async function startRalph(): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const response = await fetch("/api/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    })
+    return await response.json()
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Failed to start" }
+  }
+}
+
+async function stopRalph(): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const response = await fetch("/api/stop", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    })
+    return await response.json()
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Failed to stop" }
+  }
+}
 
 // =============================================================================
 // Placeholder Components (to be replaced with actual implementations)
@@ -22,7 +53,11 @@ function TasksSidebar() {
   )
 }
 
-function AgentView() {
+interface AgentViewProps {
+  chatInputRef?: React.RefObject<ChatInputHandle | null>
+}
+
+function AgentView({ chatInputRef }: AgentViewProps) {
   const { sendMessage, isConnected } = useRalphConnection()
   const isRalphRunning = useAppStore(selectIsRalphRunning)
 
@@ -36,6 +71,7 @@ function AgentView() {
       {/* Chat input */}
       <div className="border-border border-t p-4">
         <ChatInput
+          ref={chatInputRef}
           onSubmit={sendMessage}
           disabled={!isConnected || !isRalphRunning}
           placeholder={
@@ -85,5 +121,79 @@ function StatusBar() {
 // =============================================================================
 
 export function App() {
-  return <MainLayout sidebar={<TasksSidebar />} main={<AgentView />} statusBar={<StatusBar />} />
+  const layoutRef = useRef<MainLayoutHandle>(null)
+  const chatInputRef = useRef<ChatInputHandle>(null)
+
+  // Get state for hotkey conditions
+  const ralphStatus = useAppStore(selectRalphStatus)
+  const isConnected = useAppStore(selectIsConnected)
+  const toggleSidebar = useAppStore(state => state.toggleSidebar)
+
+  // Hotkey handlers
+  const handleAgentStart = useCallback(async () => {
+    // Only start if stopped and connected
+    if (ralphStatus !== "stopped" || !isConnected) return
+    await startRalph()
+  }, [ralphStatus, isConnected])
+
+  const handleAgentStop = useCallback(async () => {
+    // Only stop if running and connected
+    if (ralphStatus !== "running" || !isConnected) return
+    await stopRalph()
+  }, [ralphStatus, isConnected])
+
+  const handleAgentPause = useCallback(() => {
+    // TODO: Implement when ralph supports pause
+    console.log("Pause not yet implemented in ralph")
+  }, [])
+
+  const handleAgentStopAfterCurrent = useCallback(() => {
+    // TODO: Implement when ralph supports stop-after-current
+    console.log("Stop-after-current not yet implemented in ralph")
+  }, [])
+
+  const handleToggleSidebar = useCallback(() => {
+    toggleSidebar()
+  }, [toggleSidebar])
+
+  const handleFocusSidebar = useCallback(() => {
+    layoutRef.current?.focusSidebar()
+  }, [])
+
+  const handleFocusMain = useCallback(() => {
+    layoutRef.current?.focusMain()
+  }, [])
+
+  const handleFocusTaskInput = useCallback(() => {
+    // TODO: Focus quick task input when implemented
+    layoutRef.current?.focusSidebar()
+  }, [])
+
+  const handleFocusChatInput = useCallback(() => {
+    chatInputRef.current?.focus()
+  }, [])
+
+  // Register hotkeys
+  useHotkeys({
+    handlers: {
+      agentStart: handleAgentStart,
+      agentStop: handleAgentStop,
+      agentPause: handleAgentPause,
+      agentStopAfterCurrent: handleAgentStopAfterCurrent,
+      toggleSidebar: handleToggleSidebar,
+      focusSidebar: handleFocusSidebar,
+      focusMain: handleFocusMain,
+      focusTaskInput: handleFocusTaskInput,
+      focusChatInput: handleFocusChatInput,
+    },
+  })
+
+  return (
+    <MainLayout
+      ref={layoutRef}
+      sidebar={<TasksSidebar />}
+      main={<AgentView chatInputRef={chatInputRef} />}
+      statusBar={<StatusBar />}
+    />
+  )
 }

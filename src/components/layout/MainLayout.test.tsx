@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from "@testing-library/react"
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest"
 import { MainLayout } from "./MainLayout"
+import { useAppStore } from "@/store"
 
 // Mock fetch for WorkspacePicker
 const mockFetch = vi.fn()
@@ -9,6 +10,8 @@ const mockFetch = vi.fn()
 describe("MainLayout", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Reset the store before each test
+    useAppStore.getState().reset()
     mockFetch.mockResolvedValue({
       ok: true,
       json: () =>

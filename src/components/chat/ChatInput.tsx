@@ -1,5 +1,13 @@
 import { cn } from "@/lib/utils"
-import { useCallback, useState, type FormEvent, type KeyboardEvent } from "react"
+import {
+  forwardRef,
+  useCallback,
+  useImperativeHandle,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react"
 
 // =============================================================================
 // Types
@@ -29,6 +37,10 @@ export interface ChatInputProps {
   className?: string
 }
 
+export interface ChatInputHandle {
+  focus: () => void
+}
+
 // =============================================================================
 // ChatInput Component
 // =============================================================================
@@ -37,13 +49,18 @@ export interface ChatInputProps {
  * Text input for sending messages to a running agent.
  * Submits on Enter key, clears after send.
  */
-export function ChatInput({
-  onSubmit,
-  placeholder = "Type a message...",
-  disabled = false,
-  className,
-}: ChatInputProps) {
+export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function ChatInput(
+  { onSubmit, placeholder = "Type a message...", disabled = false, className },
+  ref,
+) {
   const [message, setMessage] = useState("")
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      inputRef.current?.focus()
+    },
+  }))
 
   const handleSubmit = useCallback(
     (e?: FormEvent) => {
@@ -71,6 +88,7 @@ export function ChatInput({
   return (
     <form onSubmit={handleSubmit} className={cn("flex gap-2", className)}>
       <input
+        ref={inputRef}
         type="text"
         value={message}
         onChange={e => setMessage(e.target.value)}
@@ -115,4 +133,4 @@ export function ChatInput({
       </button>
     </form>
   )
-}
+})

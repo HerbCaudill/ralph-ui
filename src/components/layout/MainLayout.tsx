@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils"
-import { useState } from "react"
+import { forwardRef, useImperativeHandle, useRef } from "react"
 import { Header } from "./Header"
+import { useAppStore, selectSidebarOpen } from "@/store"
 
 // =============================================================================
 // Types
@@ -15,6 +16,11 @@ export interface MainLayoutProps {
   className?: string
 }
 
+export interface MainLayoutHandle {
+  focusSidebar: () => void
+  focusMain: () => void
+}
+
 // =============================================================================
 // MainLayout Component
 // =============================================================================
@@ -23,15 +29,36 @@ export interface MainLayoutProps {
  * Main application layout with header, sidebar, main content area, and status bar.
  * Responsive design: sidebar collapses on mobile.
  */
-export function MainLayout({
-  sidebar,
-  main,
-  statusBar,
-  header,
-  showHeader = true,
-  className,
-}: MainLayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+export const MainLayout = forwardRef<MainLayoutHandle, MainLayoutProps>(function MainLayout(
+  { sidebar, main, statusBar, header, showHeader = true, className },
+  ref,
+) {
+  const sidebarOpen = useAppStore(selectSidebarOpen)
+  const toggleSidebar = useAppStore(state => state.toggleSidebar)
+  const sidebarRef = useRef<HTMLDivElement>(null)
+  const mainRef = useRef<HTMLDivElement>(null)
+
+  // Expose focus methods via ref
+  useImperativeHandle(ref, () => ({
+    focusSidebar: () => {
+      if (sidebarRef.current) {
+        // Find the first focusable element in the sidebar
+        const focusable = sidebarRef.current.querySelector<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        )
+        focusable?.focus()
+      }
+    },
+    focusMain: () => {
+      if (mainRef.current) {
+        // Find the first focusable element in main
+        const focusable = mainRef.current.querySelector<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        )
+        focusable?.focus()
+      }
+    },
+  }))
 
   return (
     <div className={cn("bg-background flex h-screen flex-col overflow-hidden", className)}>
@@ -42,6 +69,7 @@ export function MainLayout({
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <aside
+          ref={sidebarRef}
           className={cn(
             "border-sidebar-border bg-sidebar flex flex-col border-r transition-all duration-200",
             sidebarOpen ? "w-64 md:w-72 lg:w-80" : "w-0",
@@ -56,7 +84,7 @@ export function MainLayout({
 
         {/* Toggle button */}
         <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
+          onClick={toggleSidebar}
           className={cn(
             "bg-sidebar-accent text-sidebar-accent-foreground absolute top-1/2 left-0 z-10 -translate-y-1/2 rounded-r-md p-1 opacity-50 transition-opacity hover:opacity-100",
             sidebarOpen && "left-64 md:left-72 lg:left-80",
@@ -80,7 +108,7 @@ export function MainLayout({
         </button>
 
         {/* Main content */}
-        <main className="flex flex-1 flex-col overflow-hidden">
+        <main ref={mainRef} className="flex flex-1 flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto p-4 md:p-6">{main}</div>
         </main>
       </div>
@@ -91,4 +119,4 @@ export function MainLayout({
       )}
     </div>
   )
-}
+})

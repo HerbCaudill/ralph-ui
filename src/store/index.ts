@@ -60,6 +60,9 @@ export interface AppState {
 
   // Accent color from peacock settings (null means use default/black)
   accentColor: string | null
+
+  // UI State
+  sidebarOpen: boolean
 }
 
 // =============================================================================
@@ -98,6 +101,10 @@ export interface AppActions {
   // Connection
   setConnectionStatus: (status: ConnectionStatus) => void
 
+  // UI State
+  setSidebarOpen: (open: boolean) => void
+  toggleSidebar: () => void
+
   // Reset
   reset: () => void
 }
@@ -116,6 +123,7 @@ const initialState: AppState = {
   iteration: { current: 0, total: 0 },
   connectionStatus: "disconnected",
   accentColor: null,
+  sidebarOpen: true,
 }
 
 // =============================================================================
@@ -171,6 +179,10 @@ export const useAppStore = create<AppState & AppActions>(set => ({
   // Connection
   setConnectionStatus: status => set({ connectionStatus: status }),
 
+  // UI State
+  setSidebarOpen: open => set({ sidebarOpen: open }),
+  toggleSidebar: () => set(state => ({ sidebarOpen: !state.sidebarOpen })),
+
   // Reset
   reset: () => set(initialState),
 }))
@@ -190,3 +202,4 @@ export const selectConnectionStatus = (state: AppState) => state.connectionStatu
 export const selectIsConnected = (state: AppState) => state.connectionStatus === "connected"
 export const selectIsRalphRunning = (state: AppState) => state.ralphStatus === "running"
 export const selectAccentColor = (state: AppState) => state.accentColor
+export const selectSidebarOpen = (state: AppState) => state.sidebarOpen

@@ -38,3 +38,23 @@ bd sync               # Sync with git
 - NEVER stop before pushing - that leaves work stranded locally
 - NEVER say "ready to push when you are" - YOU must push
 - If push fails, resolve and retry until it succeeds
+
+## Keyboard Hotkeys
+
+Keyboard hotkeys are configured in `src/config/hotkeys.json`. The configuration uses a JSON schema for validation.
+
+**Available Hotkeys:**
+
+- `Cmd+Enter` - Start Ralph agent
+- `Cmd+.` - Stop Ralph agent
+- `Cmd+Shift+.` - Stop after current task (coming soon)
+- `Cmd+/` - Pause Ralph agent (coming soon)
+- `Cmd+B` - Toggle sidebar
+- `Cmd+1` - Focus sidebar
+- `Cmd+2` - Focus main content
+- `Cmd+K` - Focus quick task input
+- `Cmd+L` - Focus chat input
+
+On Windows/Linux, use `Ctrl` instead of `Cmd`.
+
+To modify hotkeys, edit `src/config/hotkeys.json`. The `useHotkeys` hook in `src/hooks/useHotkeys.ts` handles global keyboard event listening.
