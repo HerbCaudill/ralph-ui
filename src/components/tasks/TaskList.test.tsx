@@ -1,7 +1,9 @@
 import { render, screen, fireEvent } from "@testing-library/react"
-import { describe, it, expect, vi } from "vitest"
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { TaskList, type TaskGroup } from "./TaskList"
 import type { TaskCardTask } from "./TaskCard"
+
+const STORAGE_KEY = "ralph-ui-task-list-collapsed-state"
 
 // =============================================================================
 // Test Fixtures
@@ -44,7 +46,13 @@ describe("TaskList", () => {
     })
 
     it("renders tasks within groups", () => {
-      render(<TaskList tasks={sampleTasks} />)
+      // Override defaults to expand all groups for this test
+      render(
+        <TaskList
+          tasks={sampleTasks}
+          defaultCollapsed={{ ready: false, in_progress: false, blocked: false, other: false }}
+        />,
+      )
       expect(screen.getByText("Open task 1")).toBeInTheDocument()
       expect(screen.getByText("Open task 2")).toBeInTheDocument()
       expect(screen.getByText("In progress task")).toBeInTheDocument()
@@ -160,30 +168,31 @@ describe("TaskList", () => {
 
   describe("collapse/expand", () => {
     it("expands Ready group by default", () => {
-      render(<TaskList tasks={sampleTasks} />)
+      render(<TaskList tasks={sampleTasks} persistCollapsedState={false} />)
       // Tasks should be visible
       expect(screen.getByText("Open task 1")).toBeInTheDocument()
     })
 
     it("expands In Progress group by default", () => {
-      render(<TaskList tasks={sampleTasks} />)
+      render(<TaskList tasks={sampleTasks} persistCollapsedState={false} />)
       expect(screen.getByText("In progress task")).toBeInTheDocument()
     })
 
-    it("expands Blocked group by default", () => {
-      render(<TaskList tasks={sampleTasks} />)
-      expect(screen.getByText("Blocked task")).toBeInTheDocument()
+    it("collapses Blocked group by default", () => {
+      render(<TaskList tasks={sampleTasks} persistCollapsedState={false} />)
+      // Blocked tasks should not be visible when collapsed
+      expect(screen.queryByText("Blocked task")).not.toBeInTheDocument()
     })
 
     it("collapses Other group by default", () => {
-      render(<TaskList tasks={sampleTasks} />)
+      render(<TaskList tasks={sampleTasks} persistCollapsedState={false} />)
       // Other group (deferred/closed) tasks should not be visible
       expect(screen.queryByText("Deferred task")).not.toBeInTheDocument()
       expect(screen.queryByText("Closed task")).not.toBeInTheDocument()
     })
 
     it("toggles group on header click", () => {
-      render(<TaskList tasks={sampleTasks} />)
+      render(<TaskList tasks={sampleTasks} persistCollapsedState={false} />)
 
       const readyHeader = screen.getByLabelText(/Ready section/)
 
@@ -200,7 +209,7 @@ describe("TaskList", () => {
     })
 
     it("toggles group on Enter key", () => {
-      render(<TaskList tasks={sampleTasks} />)
+      render(<TaskList tasks={sampleTasks} persistCollapsedState={false} />)
 
       const readyHeader = screen.getByLabelText(/Ready section/)
       expect(screen.getByText("Open task 1")).toBeInTheDocument()
@@ -210,7 +219,7 @@ describe("TaskList", () => {
     })
 
     it("toggles group on Space key", () => {
-      render(<TaskList tasks={sampleTasks} />)
+      render(<TaskList tasks={sampleTasks} persistCollapsedState={false} />)
 
       const readyHeader = screen.getByLabelText(/Ready section/)
       expect(screen.getByText("Open task 1")).toBeInTheDocument()
@@ -238,13 +247,101 @@ describe("TaskList", () => {
     })
 
     it("updates aria-expanded on toggle", () => {
-      render(<TaskList tasks={sampleTasks} />)
+      render(<TaskList tasks={sampleTasks} persistCollapsedState={false} />)
 
       const readyHeader = screen.getByLabelText(/Ready section/)
       expect(readyHeader).toHaveAttribute("aria-expanded", "true")
 
       fireEvent.click(readyHeader)
       expect(readyHeader).toHaveAttribute("aria-expanded", "false")
+    })
+  })
+
+  describe("localStorage persistence", () => {
+    beforeEach(() => {
+      localStorage.clear()
+    })
+
+    afterEach(() => {
+      localStorage.clear()
+    })
+
+    it("persists collapsed state to localStorage", () => {
+      render(<TaskList tasks={sampleTasks} />)
+
+      // Click to collapse Ready group
+      const readyHeader = screen.getByLabelText(/Ready section/)
+      fireEvent.click(readyHeader)
+
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}")
+      expect(stored.ready).toBe(true)
+    })
+
+    it("restores collapsed state from localStorage", () => {
+      // Pre-set localStorage with Ready collapsed
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          ready: true,
+          in_progress: false,
+          blocked: false, // Override default
+          other: false,
+        }),
+      )
+
+      render(<TaskList tasks={sampleTasks} />)
+
+      // Ready should be collapsed (from localStorage)
+      expect(screen.queryByText("Open task 1")).not.toBeInTheDocument()
+
+      // Blocked should be expanded (overriding default from localStorage)
+      expect(screen.getByText("Blocked task")).toBeInTheDocument()
+    })
+
+    it("does not persist when persistCollapsedState is false", () => {
+      render(<TaskList tasks={sampleTasks} persistCollapsedState={false} />)
+
+      const readyHeader = screen.getByLabelText(/Ready section/)
+      fireEvent.click(readyHeader)
+
+      expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
+    })
+
+    it("does not read from localStorage when persistCollapsedState is false", () => {
+      // Pre-set localStorage with Ready collapsed
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          ready: true,
+          in_progress: false,
+          blocked: false,
+          other: false,
+        }),
+      )
+
+      render(<TaskList tasks={sampleTasks} persistCollapsedState={false} />)
+
+      // Ready should be expanded (ignoring localStorage, using defaults)
+      expect(screen.getByText("Open task 1")).toBeInTheDocument()
+    })
+
+    it("defaultCollapsed prop overrides localStorage", () => {
+      // Pre-set localStorage with Ready expanded
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          ready: false,
+          in_progress: false,
+          blocked: false,
+          other: false,
+        }),
+      )
+
+      // But defaultCollapsed says Ready should be collapsed
+      render(<TaskList tasks={sampleTasks} defaultCollapsed={{ ready: true }} />)
+
+      // defaultCollapsed should win
+      expect(screen.queryByText("Open task 1")).not.toBeInTheDocument()
     })
   })
 

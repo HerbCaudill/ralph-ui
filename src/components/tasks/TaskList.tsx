@@ -1,7 +1,13 @@
 import { cn } from "@/lib/utils"
-import { useState, useCallback, useMemo } from "react"
+import { useState, useCallback, useMemo, useEffect } from "react"
 import { ChevronDown } from "lucide-react"
 import { TaskCard, type TaskCardTask, type TaskStatus } from "./TaskCard"
+
+// =============================================================================
+// Constants
+// =============================================================================
+
+const STORAGE_KEY = "ralph-ui-task-list-collapsed-state"
 
 // =============================================================================
 // Types
@@ -19,10 +25,12 @@ export interface TaskListProps {
   onStatusChange?: (id: string, status: TaskStatus) => void
   /** Callback when a task is clicked */
   onTaskClick?: (id: string) => void
-  /** Initial collapsed state for groups (default: all expanded) */
+  /** Initial collapsed state for groups (overrides localStorage and defaults) */
   defaultCollapsed?: Partial<Record<TaskGroup, boolean>>
   /** Whether to show empty groups (default: false) */
   showEmptyGroups?: boolean
+  /** Whether to persist collapsed state to localStorage (default: true) */
+  persistCollapsedState?: boolean
 }
 
 // =============================================================================
@@ -115,6 +123,38 @@ function TaskGroupHeader({ label, count, isCollapsed, onToggle }: TaskGroupHeade
  * Groups: Ready (open), In Progress, Blocked, Other (deferred/closed).
  * Each group is collapsible with task count.
  */
+// Default collapsed state: Ready + In Progress expanded, Blocked + Other collapsed
+const DEFAULT_COLLAPSED_STATE: Record<TaskGroup, boolean> = {
+  ready: false,
+  in_progress: false,
+  blocked: true, // Collapsed by default per requirements
+  other: true, // Collapsed by default
+}
+
+/** Load collapsed state from localStorage */
+function loadCollapsedState(): Record<TaskGroup, boolean> | null {
+  if (typeof window === "undefined") return null
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored) {
+      return JSON.parse(stored) as Record<TaskGroup, boolean>
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  return null
+}
+
+/** Save collapsed state to localStorage */
+function saveCollapsedState(state: Record<TaskGroup, boolean>): void {
+  if (typeof window === "undefined") return
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  } catch {
+    // Ignore storage errors
+  }
+}
+
 export function TaskList({
   tasks,
   className,
@@ -122,13 +162,26 @@ export function TaskList({
   onTaskClick,
   defaultCollapsed = {},
   showEmptyGroups = false,
+  persistCollapsedState = true,
 }: TaskListProps) {
-  const [collapsedState, setCollapsedState] = useState<Record<TaskGroup, boolean>>({
-    ready: defaultCollapsed.ready ?? false,
-    in_progress: defaultCollapsed.in_progress ?? false,
-    blocked: defaultCollapsed.blocked ?? false,
-    other: defaultCollapsed.other ?? true, // Default collapsed for other/completed
+  // Initialize state: props override -> localStorage -> defaults
+  const [collapsedState, setCollapsedState] = useState<Record<TaskGroup, boolean>>(() => {
+    const stored = persistCollapsedState ? loadCollapsedState() : null
+    const base = stored ?? DEFAULT_COLLAPSED_STATE
+    return {
+      ready: defaultCollapsed.ready ?? base.ready,
+      in_progress: defaultCollapsed.in_progress ?? base.in_progress,
+      blocked: defaultCollapsed.blocked ?? base.blocked,
+      other: defaultCollapsed.other ?? base.other,
+    }
   })
+
+  // Persist collapsed state to localStorage when it changes
+  useEffect(() => {
+    if (persistCollapsedState) {
+      saveCollapsedState(collapsedState)
+    }
+  }, [collapsedState, persistCollapsedState])
 
   const toggleGroup = useCallback((group: TaskGroup) => {
     setCollapsedState(prev => ({
