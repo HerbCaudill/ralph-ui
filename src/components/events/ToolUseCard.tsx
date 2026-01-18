@@ -336,8 +336,8 @@ export function ToolUseCard({ event, className, defaultExpanded = false }: ToolU
                 </pre>
               )}
 
-              {/* Error */}
-              {event.error && <span className="text-red-500">{event.error}</span>}
+              {/* Error - show first line only */}
+              {event.error && <span className="text-red-500">{event.error.split("\n")[0]}</span>}
             </div>
           </div>
         </div>
