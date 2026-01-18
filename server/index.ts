@@ -2,6 +2,7 @@ import express, { type Express, type Request, type Response } from "express"
 import { createServer, type Server } from "node:http"
 import path from "node:path"
 import { WebSocketServer, type WebSocket, type RawData } from "ws"
+import { RalphManager, type RalphEvent, type RalphStatus } from "./RalphManager.js"
 
 // =============================================================================
 // Configuration
@@ -77,12 +78,19 @@ function createApp(config: ServerConfig): Express {
 // WebSocket Server
 // =============================================================================
 
-interface WsClient {
+export interface WsClient {
   ws: WebSocket
   isAlive: boolean
 }
 
 const clients = new Set<WsClient>()
+
+/**
+ * Get the number of connected WebSocket clients.
+ */
+export function getClientCount(): number {
+  return clients.size
+}
 
 function attachWsServer(httpServer: Server): WebSocketServer {
   const wss = new WebSocketServer({ server: httpServer, path: "/ws" })
@@ -164,6 +172,88 @@ export function broadcast(message: unknown): void {
     if (client.ws.readyState === client.ws.OPEN) {
       client.ws.send(payload)
     }
+  }
+}
+
+// =============================================================================
+// RalphManager Integration
+// =============================================================================
+
+// Singleton RalphManager instance
+let ralphManager: RalphManager | null = null
+
+/**
+ * Get the singleton RalphManager instance, creating it if needed.
+ */
+export function getRalphManager(): RalphManager {
+  if (!ralphManager) {
+    ralphManager = createRalphManager()
+  }
+  return ralphManager
+}
+
+/**
+ * Create a RalphManager and wire up event broadcasting.
+ */
+function createRalphManager(): RalphManager {
+  const manager = new RalphManager()
+
+  // Broadcast ralph events to all WebSocket clients
+  manager.on("event", (event: RalphEvent) => {
+    broadcast({
+      type: "ralph:event",
+      event,
+      timestamp: Date.now(),
+    })
+  })
+
+  // Broadcast status changes
+  manager.on("status", (status: RalphStatus) => {
+    broadcast({
+      type: "ralph:status",
+      status,
+      timestamp: Date.now(),
+    })
+  })
+
+  // Broadcast non-JSON output lines
+  manager.on("output", (line: string) => {
+    broadcast({
+      type: "ralph:output",
+      line,
+      timestamp: Date.now(),
+    })
+  })
+
+  // Broadcast errors
+  manager.on("error", (error: Error) => {
+    broadcast({
+      type: "ralph:error",
+      error: error.message,
+      timestamp: Date.now(),
+    })
+  })
+
+  // Broadcast exit events
+  manager.on("exit", (info: { code: number | null; signal: string | null }) => {
+    broadcast({
+      type: "ralph:exit",
+      code: info.code,
+      signal: info.signal,
+      timestamp: Date.now(),
+    })
+  })
+
+  return manager
+}
+
+/**
+ * Reset the RalphManager singleton (for testing).
+ */
+export function resetRalphManager(): void {
+  if (ralphManager) {
+    ralphManager.removeAllListeners()
+    ralphManager = null
   }
 }
 
