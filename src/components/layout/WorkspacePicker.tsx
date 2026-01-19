@@ -30,21 +30,24 @@ export interface WorkspacePickerProps {
 
 // Icons
 
-function FolderIcon({ className }: { className?: string }) {
+interface FolderIconProps {
+  className?: string
+  color?: string | null
+  size?: number
+}
+
+function FolderFilledIcon({ className, color, size = 16 }: FolderIconProps) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width="16"
-      height="16"
+      width={size}
+      height={size}
       viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      fill={color || "currentColor"}
+      stroke="none"
       className={className}
     >
-      <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
+      <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z" />
     </svg>
   )
 }
@@ -276,7 +279,10 @@ export function WorkspacePicker({ className }: WorkspacePickerProps) {
         aria-haspopup="true"
         disabled={isLoading}
       >
-        <FolderIcon className={cn("text-muted-foreground", isServerDown && "text-red-500")} />
+        <FolderFilledIcon
+          color={isServerDown ? undefined : accentColor}
+          className={cn(isServerDown && "text-red-500", !accentColor && "text-muted-foreground")}
+        />
         <span className="max-w-[200px] truncate">{displayName}</span>
         {issueCount !== undefined && (
           <span className="bg-muted text-muted-foreground rounded-full px-1.5 py-0.5 text-xs">
@@ -339,10 +345,11 @@ export function WorkspacePicker({ className }: WorkspacePickerProps) {
                       ws.isActive && "bg-accent/50",
                     )}
                   >
-                    {/* Accent color indicator */}
-                    <span
-                      className="size-2.5 shrink-0 rounded-full"
-                      style={{ backgroundColor: ws.accentColor || "#666" }}
+                    {/* Accent color folder icon */}
+                    <FolderFilledIcon
+                      color={ws.accentColor}
+                      size={14}
+                      className={cn(!ws.accentColor && "text-muted-foreground")}
                     />
                     <div className="flex min-w-0 flex-1 items-center gap-2">
                       <span className="truncate text-sm font-medium">{ws.name}</span>
