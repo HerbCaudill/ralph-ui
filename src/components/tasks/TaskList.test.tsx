@@ -397,4 +397,78 @@ describe("TaskList", () => {
       expect(screen.getByRole("group", { name: "Ready tasks" })).toBeInTheDocument()
     })
   })
+
+  describe("epic grouping", () => {
+    const epicWithSubtasks: TaskCardTask[] = [
+      { id: "epic-1", title: "Epic with tasks", status: "open", issue_type: "epic" },
+      { id: "task-1", title: "Child task 1", status: "open", parent: "epic-1" },
+      { id: "task-2", title: "Child task 2", status: "in_progress", parent: "epic-1" },
+    ]
+
+    const epicWithoutSubtasks: TaskCardTask[] = [
+      { id: "epic-1", title: "Empty epic", status: "open", issue_type: "epic" },
+    ]
+
+    const mixedEpics: TaskCardTask[] = [
+      { id: "epic-1", title: "Epic with tasks", status: "open", issue_type: "epic" },
+      { id: "task-1", title: "Child task", status: "open", parent: "epic-1" },
+      { id: "epic-2", title: "Empty epic", status: "open", issue_type: "epic" },
+    ]
+
+    it("renders epic header with chevron when epic has subtasks", () => {
+      render(<TaskList tasks={epicWithSubtasks} persistCollapsedState={false} />)
+      const epicHeader = screen.getByLabelText("Epic with tasks epic, 2 tasks")
+      expect(epicHeader).toBeInTheDocument()
+      expect(epicHeader).toHaveAttribute("role", "button")
+      expect(epicHeader).toHaveAttribute("tabIndex", "0")
+    })
+
+    it("renders epic header without chevron when epic has no subtasks", () => {
+      render(<TaskList tasks={epicWithoutSubtasks} persistCollapsedState={false} />)
+      const epicHeader = screen.getByLabelText("Empty epic epic")
+      expect(epicHeader).toBeInTheDocument()
+      // Should not have button role or tabIndex when not interactive
+      expect(epicHeader).not.toHaveAttribute("role", "button")
+      expect(epicHeader).not.toHaveAttribute("tabIndex", "0")
+    })
+
+    it("does not show task count badge for epics with no subtasks", () => {
+      render(<TaskList tasks={mixedEpics} persistCollapsedState={false} />)
+      // Epic with tasks should show count
+      expect(screen.getByLabelText("Epic with tasks epic, 1 task")).toBeInTheDocument()
+      // Epic without tasks should not show count in aria-label
+      expect(screen.getByLabelText("Empty epic epic")).toBeInTheDocument()
+    })
+
+    it("allows toggling epic with subtasks", () => {
+      render(<TaskList tasks={epicWithSubtasks} persistCollapsedState={false} />)
+      const epicHeader = screen.getByLabelText("Epic with tasks epic, 2 tasks")
+
+      // Initially expanded
+      expect(screen.getByText("Child task 1")).toBeInTheDocument()
+
+      // Click to collapse
+      fireEvent.click(epicHeader)
+      expect(screen.queryByText("Child task 1")).not.toBeInTheDocument()
+
+      // Click to expand
+      fireEvent.click(epicHeader)
+      expect(screen.getByText("Child task 1")).toBeInTheDocument()
+    })
+
+    it("does not toggle epic without subtasks on click", () => {
+      render(<TaskList tasks={epicWithoutSubtasks} persistCollapsedState={false} />)
+      const epicHeader = screen.getByLabelText("Empty epic epic")
+
+      // Click should not cause any errors or state changes
+      fireEvent.click(epicHeader)
+      // Header should still be there
+      expect(screen.getByLabelText("Empty epic epic")).toBeInTheDocument()
+    })
+
+    it("does not show 'No tasks in this epic' message for empty epics", () => {
+      render(<TaskList tasks={epicWithoutSubtasks} persistCollapsedState={false} />)
+      expect(screen.queryByText("No tasks in this epic")).not.toBeInTheDocument()
+    })
+  })
 })

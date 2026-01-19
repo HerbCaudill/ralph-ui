@@ -325,3 +325,54 @@ export const WithoutStatusHandler: Story = {
     onStatusChange: undefined,
   },
 }
+
+/**
+ * Demonstrates epics with no subtasks.
+ * Epics without subtasks don't show the collapse/expand chevron or task count.
+ */
+export const EpicsWithNoSubtasks: Story = {
+  args: {
+    tasks: [
+      // Epic with subtasks - shows chevron and count
+      {
+        id: "rui-with-tasks",
+        title: "Epic with tasks",
+        status: "in_progress",
+        priority: 1,
+        issue_type: "epic",
+      },
+      {
+        id: "rui-with-tasks.1",
+        title: "Child task 1",
+        status: "open",
+        priority: 2,
+        parent: "rui-with-tasks",
+        issue_type: "task",
+      },
+      {
+        id: "rui-with-tasks.2",
+        title: "Child task 2",
+        status: "in_progress",
+        priority: 2,
+        parent: "rui-with-tasks",
+        issue_type: "task",
+      },
+      // Epic without subtasks - no chevron or count
+      {
+        id: "rui-empty-1",
+        title: "Empty epic (no collapse UI)",
+        status: "open",
+        priority: 2,
+        issue_type: "epic",
+      },
+      // Another epic without subtasks
+      {
+        id: "rui-empty-2",
+        title: "Another empty epic",
+        status: "open",
+        priority: 3,
+        issue_type: "epic",
+      },
+    ],
+  },
+}

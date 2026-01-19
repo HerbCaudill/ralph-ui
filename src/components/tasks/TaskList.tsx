@@ -124,42 +124,60 @@ function EpicGroupHeader({
   isCollapsed,
   onToggle,
 }: EpicGroupHeaderProps) {
+  const hasSubtasks = taskCount > 0
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
+      if (!hasSubtasks) return
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault()
         onToggle()
       }
     },
-    [onToggle],
+    [onToggle, hasSubtasks],
   )
+
+  const handleClick = useCallback(() => {
+    if (hasSubtasks) {
+      onToggle()
+    }
+  }, [hasSubtasks, onToggle])
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={onToggle}
+      role={hasSubtasks ? "button" : undefined}
+      tabIndex={hasSubtasks ? 0 : undefined}
+      onClick={handleClick}
       onKeyDown={handleKeyDown}
       className={cn(
-        "bg-muted/30 hover:bg-muted/50 border-border flex cursor-pointer items-center gap-2 border-b px-3 py-2",
+        "bg-muted/30 border-border flex items-center gap-2 border-b px-3 py-2",
         "transition-colors",
+        hasSubtasks && "hover:bg-muted/50 cursor-pointer",
       )}
-      aria-expanded={!isCollapsed}
-      aria-label={`${epicTitle} epic, ${taskCount} task${taskCount === 1 ? "" : "s"}`}
+      aria-expanded={hasSubtasks ? !isCollapsed : undefined}
+      aria-label={
+        hasSubtasks ?
+          `${epicTitle} epic, ${taskCount} task${taskCount === 1 ? "" : "s"}`
+        : `${epicTitle} epic`
+      }
     >
-      <ChevronDown
-        size={14}
-        className={cn(
-          "text-muted-foreground shrink-0 transition-transform",
-          isCollapsed && "-rotate-90",
-        )}
-      />
+      {hasSubtasks && (
+        <ChevronDown
+          size={14}
+          className={cn(
+            "text-muted-foreground shrink-0 transition-transform",
+            isCollapsed && "-rotate-90",
+          )}
+        />
+      )}
       <Layers size={14} className="text-primary shrink-0" />
       <span className="text-muted-foreground shrink-0 font-mono text-xs">{epicId}</span>
       <span className="min-w-0 flex-1 truncate text-sm font-medium">{epicTitle}</span>
-      <span className="text-muted-foreground bg-muted shrink-0 rounded px-1.5 py-0.5 text-xs">
-        {taskCount}
-      </span>
+      {hasSubtasks && (
+        <span className="text-muted-foreground bg-muted shrink-0 rounded px-1.5 py-0.5 text-xs">
+          {taskCount}
+        </span>
+      )}
     </div>
   )
 }
@@ -389,6 +407,7 @@ export function TaskList({
       {/* Epic groups */}
       {epicGroups.map(({ epic, tasks: epicTasks }) => {
         const isCollapsed = epicCollapsedState[epic.id] ?? false
+        const hasSubtasks = epicTasks.length > 0
 
         return (
           <div key={epic.id} role="listitem" aria-label={`${epic.title} epic group`}>
@@ -399,22 +418,18 @@ export function TaskList({
               isCollapsed={isCollapsed}
               onToggle={() => toggleEpicGroup(epic.id)}
             />
-            {!isCollapsed && (
+            {/* Only show expandable content if epic has subtasks */}
+            {hasSubtasks && !isCollapsed && (
               <div role="group" aria-label={`${epic.title} tasks`}>
-                {epicTasks.length > 0 ?
-                  epicTasks.map(task => (
-                    <TaskCard
-                      key={task.id}
-                      task={task}
-                      onStatusChange={onStatusChange}
-                      onClick={onTaskClick}
-                      className="pl-6"
-                    />
-                  ))
-                : <div className="text-muted-foreground px-3 py-3 pl-6 text-center text-xs italic">
-                    No tasks in this epic
-                  </div>
-                }
+                {epicTasks.map(task => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onStatusChange={onStatusChange}
+                    onClick={onTaskClick}
+                    className="pl-6"
+                  />
+                ))}
               </div>
             )}
           </div>
