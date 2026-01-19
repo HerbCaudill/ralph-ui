@@ -4,6 +4,7 @@ import {
   selectTaskChatMessages,
   selectTaskChatLoading,
   selectIsConnected,
+  selectTaskChatStreamingText,
   type TaskChatMessage,
 } from "@/store"
 import { useCallback, useEffect, useRef, useState } from "react"
@@ -175,7 +176,8 @@ export function TaskChatPanel({ className, onClose }: TaskChatPanelProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [autoScroll, setAutoScroll] = useState(true)
   const [isAtBottom, setIsAtBottom] = useState(true)
-  const [streamingText, setStreamingText] = useState("")
+  const streamingText = useAppStore(selectTaskChatStreamingText)
+  const setStreamingText = useAppStore(state => state.setTaskChatStreamingText)
 
   // Check if user is at the bottom of the scroll container
   const checkIsAtBottom = useCallback(() => {
@@ -237,14 +239,13 @@ export function TaskChatPanel({ className, onClose }: TaskChatPanelProps) {
       setLoading(true)
       setStreamingText("")
 
-      // Send to server
+      // Send to server - loading state and response handled via WebSocket events
       const result = await sendTaskChatMessage(message)
 
-      setLoading(false)
-      setStreamingText("")
-
       if (!result.ok) {
-        // Show error as a system message
+        // API request itself failed (network error, etc.)
+        // Server errors come via WebSocket task-chat:error event
+        setLoading(false)
         const errorMessage: TaskChatMessage = {
           id: `error-${Date.now()}`,
           role: "assistant",
@@ -254,8 +255,9 @@ export function TaskChatPanel({ className, onClose }: TaskChatPanelProps) {
         addMessage(errorMessage)
       }
       // Note: The assistant message is added via WebSocket event (task-chat:message)
+      // Loading state is cleared via WebSocket event (task-chat:status or task-chat:message)
     },
-    [addMessage, setLoading],
+    [addMessage, setLoading, setStreamingText],
   )
 
   // Handle clearing chat history
@@ -263,12 +265,9 @@ export function TaskChatPanel({ className, onClose }: TaskChatPanelProps) {
     const result = await clearTaskChatHistory()
     if (result.ok) {
       clearMessages()
+      setStreamingText("")
     }
-  }, [clearMessages])
-
-  // TODO: WebSocket streaming integration will be added in rui-4vp.7
-  // The task-chat:chunk and task-chat:message events are broadcast by the server
-  // and will be handled when wiring up the TaskChatPanel in App.tsx
+  }, [clearMessages, setStreamingText])
 
   return (
     <div className={cn("flex h-full flex-col", className)}>

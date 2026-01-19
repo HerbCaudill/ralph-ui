@@ -179,6 +179,7 @@ export interface AppState {
   taskChatWidth: number
   taskChatMessages: TaskChatMessage[]
   taskChatLoading: boolean
+  taskChatStreamingText: string
 }
 
 // Store Actions
@@ -241,6 +242,8 @@ export interface AppActions {
   addTaskChatMessage: (message: TaskChatMessage) => void
   clearTaskChatMessages: () => void
   setTaskChatLoading: (loading: boolean) => void
+  setTaskChatStreamingText: (text: string) => void
+  appendTaskChatStreamingText: (text: string) => void
 
   // Reset
   reset: () => void
@@ -274,6 +277,7 @@ const initialState: AppState = {
   taskChatWidth: defaultTaskChatWidth,
   taskChatMessages: [],
   taskChatLoading: false,
+  taskChatStreamingText: "",
 }
 
 // Create the store with localStorage initialization
@@ -386,6 +390,9 @@ export const useAppStore = create<AppState & AppActions>(set => ({
     })),
   clearTaskChatMessages: () => set({ taskChatMessages: [] }),
   setTaskChatLoading: loading => set({ taskChatLoading: loading }),
+  setTaskChatStreamingText: text => set({ taskChatStreamingText: text }),
+  appendTaskChatStreamingText: text =>
+    set(state => ({ taskChatStreamingText: state.taskChatStreamingText + text })),
 
   // Reset
   reset: () => set(initialState),
@@ -419,3 +426,4 @@ export const selectTaskChatOpen = (state: AppState) => state.taskChatOpen
 export const selectTaskChatWidth = (state: AppState) => state.taskChatWidth
 export const selectTaskChatMessages = (state: AppState) => state.taskChatMessages
 export const selectTaskChatLoading = (state: AppState) => state.taskChatLoading
+export const selectTaskChatStreamingText = (state: AppState) => state.taskChatStreamingText

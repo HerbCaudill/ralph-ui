@@ -32,6 +32,7 @@ describe("useAppStore", () => {
       expect(state.taskChatWidth).toBe(400)
       expect(state.taskChatMessages).toEqual([])
       expect(state.taskChatLoading).toBe(false)
+      expect(state.taskChatStreamingText).toBe("")
     })
   })
 
@@ -408,6 +409,23 @@ describe("useAppStore", () => {
       useAppStore.getState().setTaskChatLoading(false)
       expect(useAppStore.getState().taskChatLoading).toBe(false)
     })
+
+    it("sets task chat streaming text", () => {
+      useAppStore.getState().setTaskChatStreamingText("Hello")
+      expect(useAppStore.getState().taskChatStreamingText).toBe("Hello")
+
+      useAppStore.getState().setTaskChatStreamingText("")
+      expect(useAppStore.getState().taskChatStreamingText).toBe("")
+    })
+
+    it("appends to task chat streaming text", () => {
+      useAppStore.getState().setTaskChatStreamingText("Hello")
+      useAppStore.getState().appendTaskChatStreamingText(" World")
+      expect(useAppStore.getState().taskChatStreamingText).toBe("Hello World")
+
+      useAppStore.getState().appendTaskChatStreamingText("!")
+      expect(useAppStore.getState().taskChatStreamingText).toBe("Hello World!")
+    })
   })
 
   describe("sidebar width localStorage persistence", () => {
@@ -598,6 +616,7 @@ describe("useAppStore", () => {
       expect(state.taskChatWidth).toBe(400)
       expect(state.taskChatMessages).toEqual([])
       expect(state.taskChatLoading).toBe(false)
+      expect(state.taskChatStreamingText).toBe("")
     })
   })
 })

@@ -151,6 +151,58 @@ function handleMessage(event: MessageEvent): void {
         // Ping response, ignore
         break
 
+      // Task chat events
+      case "task-chat:message":
+        // Complete assistant message received
+        if (data.message && typeof data.message === "object") {
+          const msg = data.message as { role: string; content: string; timestamp: number }
+          if (msg.role === "assistant") {
+            store.addTaskChatMessage({
+              id: `assistant-${msg.timestamp || Date.now()}`,
+              role: "assistant",
+              content: msg.content,
+              timestamp: msg.timestamp || Date.now(),
+            })
+            // Clear streaming text since message is complete
+            store.setTaskChatStreamingText("")
+            store.setTaskChatLoading(false)
+          }
+        }
+        break
+
+      case "task-chat:chunk":
+        // Streaming text chunk received
+        if (typeof data.text === "string") {
+          store.appendTaskChatStreamingText(data.text)
+        }
+        break
+
+      case "task-chat:status":
+        // Task chat status change (idle, processing, streaming, error)
+        if (typeof data.status === "string") {
+          const isProcessing = data.status === "processing" || data.status === "streaming"
+          store.setTaskChatLoading(isProcessing)
+          // Clear streaming text when idle or error
+          if (data.status === "idle" || data.status === "error") {
+            store.setTaskChatStreamingText("")
+          }
+        }
+        break
+
+      case "task-chat:error":
+        // Task chat error
+        store.setTaskChatLoading(false)
+        store.setTaskChatStreamingText("")
+        if (typeof data.error === "string") {
+          store.addTaskChatMessage({
+            id: `error-${Date.now()}`,
+            role: "assistant",
+            content: `Error: ${data.error}`,
+            timestamp: Date.now(),
+          })
+        }
+        break
+
       default:
         console.log("[ralphConnection] unknown message type:", type)
     }

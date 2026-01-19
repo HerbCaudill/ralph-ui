@@ -6,7 +6,15 @@ import { TaskSidebar } from "./components/tasks/TaskSidebar"
 import { TaskList } from "./components/tasks/TaskList"
 import { TaskDetailsDialog } from "./components/tasks/TaskDetailsDialog"
 import { QuickTaskInput, type QuickTaskInputHandle } from "./components/tasks/QuickTaskInput"
-import { useAppStore, selectRalphStatus, selectIsRalphRunning, selectIsConnected } from "./store"
+import {
+  useAppStore,
+  selectRalphStatus,
+  selectIsRalphRunning,
+  selectIsConnected,
+  selectTaskChatOpen,
+  selectTaskChatWidth,
+} from "./store"
+import { TaskChatPanel } from "./components/chat/TaskChatPanel"
 import { useRalphConnection, useHotkeys, useTheme, useTasks, useTaskDialog } from "./hooks"
 import { TaskDialogProvider } from "./contexts"
 
@@ -160,6 +168,24 @@ export function App() {
   const toggleSidebar = useAppStore(state => state.toggleSidebar)
   const toggleTaskChat = useAppStore(state => state.toggleTaskChat)
 
+  // Task chat panel state
+  const taskChatOpen = useAppStore(selectTaskChatOpen)
+  const taskChatWidth = useAppStore(selectTaskChatWidth)
+  const setTaskChatWidth = useAppStore(state => state.setTaskChatWidth)
+
+  // Handle task chat panel width change
+  const handleTaskChatWidthChange = useCallback(
+    (width: number) => {
+      setTaskChatWidth(width)
+    },
+    [setTaskChatWidth],
+  )
+
+  // Handle task chat panel close
+  const handleTaskChatClose = useCallback(() => {
+    toggleTaskChat()
+  }, [toggleTaskChat])
+
   // Hotkey handlers
   const handleAgentStart = useCallback(async () => {
     // Only start if stopped and connected
@@ -289,6 +315,10 @@ export function App() {
         }
         main={<AgentView chatInputRef={chatInputRef} />}
         statusBar={<StatusBar />}
+        rightPanel={<TaskChatPanel onClose={handleTaskChatClose} />}
+        rightPanelOpen={taskChatOpen}
+        rightPanelWidth={taskChatWidth}
+        onRightPanelWidthChange={handleTaskChatWidthChange}
       />
       <TaskDetailsDialog
         task={taskDialog.selectedTask}
