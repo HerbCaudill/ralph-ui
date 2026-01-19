@@ -26,7 +26,7 @@ export interface ChatInputProps {
 
   /**
    * Placeholder text for the input.
-   * @default "Type a message..."
+   * @default "Send Ralph a message..."
    */
   placeholder?: string
 
@@ -53,7 +53,7 @@ export interface ChatInputHandle {
  * Submits on Enter key, clears after send.
  */
 export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function ChatInput(
-  { onSubmit, placeholder = "Type a message...", disabled = false, className },
+  { onSubmit, placeholder = "Send Ralph a message...", disabled = false, className },
   ref,
 ) {
   const accentColor = useAppStore(selectAccentColor)

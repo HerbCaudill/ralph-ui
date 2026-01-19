@@ -12,7 +12,7 @@ describe("ChatInput", () => {
   describe("rendering", () => {
     it("renders input with default placeholder", () => {
       render(<ChatInput />)
-      expect(screen.getByPlaceholderText("Type a message...")).toBeInTheDocument()
+      expect(screen.getByPlaceholderText("Send Ralph a message...")).toBeInTheDocument()
     })
 
     it("renders input with custom placeholder", () => {

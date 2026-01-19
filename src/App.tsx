@@ -121,7 +121,7 @@ function AgentView({ chatInputRef }: AgentViewProps) {
             !isConnected ? "Connecting..."
             : !isRalphRunning ?
               "Start Ralph to send messages..."
-            : "Type a message..."
+            : "Send Ralph a message..."
           }
         />
       </div>
