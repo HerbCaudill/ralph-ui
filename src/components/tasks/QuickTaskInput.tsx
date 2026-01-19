@@ -11,6 +11,7 @@ import {
   type KeyboardEvent,
 } from "react"
 import { Loader2 } from "lucide-react"
+import { IconSquareRoundedPlusFilled } from "@tabler/icons-react"
 
 // Constants
 
@@ -177,7 +178,7 @@ export const QuickTaskInput = forwardRef<QuickTaskInputHandle, QuickTaskInputPro
             type="submit"
             disabled={isDisabled || !title.trim()}
             className={cn(
-              "inline-flex shrink-0 items-center justify-center gap-1 rounded-md px-3 py-1.5 text-sm font-medium",
+              "inline-flex shrink-0 items-center justify-center rounded-md p-1.5",
               "focus-visible:ring-ring/50 focus:outline-none focus-visible:ring-[3px]",
               "disabled:pointer-events-none disabled:opacity-50",
               "transition-opacity",
@@ -189,11 +190,8 @@ export const QuickTaskInput = forwardRef<QuickTaskInputHandle, QuickTaskInputPro
             aria-label={isSubmitting ? "Creating task..." : "Add task"}
           >
             {isSubmitting ?
-              <>
-                <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-                Adding...
-              </>
-            : "Add"}
+              <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+            : <IconSquareRoundedPlusFilled size={20} aria-hidden="true" />}
           </button>
         </div>
       </form>
