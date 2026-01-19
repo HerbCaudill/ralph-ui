@@ -22,14 +22,14 @@ test("can toggle sidebar", async ({ page }) => {
   // Sidebar should be visible initially
   await expect(page.getByRole("complementary", { name: "Task sidebar" })).toBeVisible()
 
-  // Click the collapse button
-  await page.getByRole("button", { name: /collapse sidebar/i }).click()
+  // Use keyboard shortcut to collapse sidebar (Cmd+B on Mac, Ctrl+B on Windows/Linux)
+  await page.keyboard.press("Meta+b")
 
   // Sidebar content should be hidden
   await expect(page.getByRole("complementary", { name: "Task sidebar" })).not.toBeVisible()
 
-  // Click again to expand
-  await page.getByRole("button", { name: /expand sidebar/i }).click()
+  // Use keyboard shortcut to expand sidebar again
+  await page.keyboard.press("Meta+b")
 
   // Sidebar should be visible again
   await expect(page.getByRole("complementary", { name: "Task sidebar" })).toBeVisible()

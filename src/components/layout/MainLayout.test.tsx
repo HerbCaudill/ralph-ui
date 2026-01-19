@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react"
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react"
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest"
 import { MainLayout } from "./MainLayout"
 import { useAppStore } from "@/store"
@@ -85,7 +85,7 @@ describe("MainLayout", () => {
     })
   })
 
-  it("toggles sidebar visibility when button is clicked", async () => {
+  it("toggles sidebar visibility via store", async () => {
     render(<MainLayout sidebar={<div>Sidebar Content</div>} />)
 
     // Wait for workspace fetch to complete to avoid act() warning
@@ -96,16 +96,18 @@ describe("MainLayout", () => {
     // Sidebar should be visible initially
     expect(screen.getByText("Sidebar Content")).toBeInTheDocument()
 
-    // Click the collapse button
-    const toggleButton = screen.getByRole("button", { name: /collapse sidebar/i })
-    fireEvent.click(toggleButton)
+    // Toggle sidebar via store (as would happen with Cmd+B hotkey)
+    act(() => {
+      useAppStore.getState().toggleSidebar()
+    })
 
     // Sidebar content should be hidden
     expect(screen.queryByText("Sidebar Content")).not.toBeInTheDocument()
 
-    // Click again to expand
-    const expandButton = screen.getByRole("button", { name: /expand sidebar/i })
-    fireEvent.click(expandButton)
+    // Toggle again to expand
+    act(() => {
+      useAppStore.getState().toggleSidebar()
+    })
 
     // Sidebar should be visible again
     expect(screen.getByText("Sidebar Content")).toBeInTheDocument()
@@ -140,9 +142,10 @@ describe("MainLayout", () => {
         expect(screen.getByText("workspace")).toBeInTheDocument()
       })
 
-      // Close the sidebar
-      const toggleButton = screen.getByRole("button", { name: /collapse sidebar/i })
-      fireEvent.click(toggleButton)
+      // Close the sidebar via store (as would happen with Cmd+B hotkey)
+      act(() => {
+        useAppStore.getState().toggleSidebar()
+      })
 
       expect(screen.queryByRole("separator", { name: /resize sidebar/i })).not.toBeInTheDocument()
     })

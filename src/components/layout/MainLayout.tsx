@@ -3,6 +3,8 @@ import { forwardRef, useImperativeHandle, useRef, useCallback, useState, useEffe
 import { Header } from "./Header"
 import { useAppStore, selectSidebarOpen, selectSidebarWidth } from "@/store"
 
+// Note: Sidebar toggle removed from UI - use Cmd+B hotkey to toggle
+
 // Constants for sidebar width constraints
 const MIN_SIDEBAR_WIDTH = 200
 const MAX_SIDEBAR_WIDTH = 600
@@ -35,7 +37,6 @@ export const MainLayout = forwardRef<MainLayoutHandle, MainLayoutProps>(function
 ) {
   const sidebarOpen = useAppStore(selectSidebarOpen)
   const sidebarWidth = useAppStore(selectSidebarWidth)
-  const toggleSidebar = useAppStore(state => state.toggleSidebar)
   const setSidebarWidth = useAppStore(state => state.setSidebarWidth)
   const sidebarRef = useRef<HTMLDivElement>(null)
   const mainRef = useRef<HTMLDivElement>(null)
@@ -147,32 +148,6 @@ export const MainLayout = forwardRef<MainLayoutHandle, MainLayoutProps>(function
             />
           )}
         </aside>
-
-        {/* Toggle button */}
-        <button
-          onClick={toggleSidebar}
-          className={cn(
-            "bg-sidebar-accent text-sidebar-accent-foreground absolute top-1/2 z-10 -translate-y-1/2 rounded-r-md p-1 opacity-50 transition-opacity hover:opacity-100",
-            !isResizing && "transition-[left] duration-200",
-          )}
-          style={{ left: sidebarOpen ? sidebarWidth : 0 }}
-          aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={cn("transition-transform", sidebarOpen && "rotate-180")}
-          >
-            <path d="m9 18 6-6-6-6" />
-          </svg>
-        </button>
 
         {/* Main content */}
         <main ref={mainRef} className="flex flex-1 flex-col overflow-hidden">
