@@ -9,6 +9,7 @@ import { RalphManager, type RalphEvent, type RalphStatus } from "./RalphManager.
 import { BdProxy, type BdCreateOptions } from "./BdProxy.js"
 import { getAliveWorkspaces } from "./registry.js"
 import { getEventLogStore, type EventLogMetadata } from "./EventLogStore.js"
+import { TaskChatManager, type TaskChatMessage, type TaskChatStatus } from "./TaskChatManager.js"
 
 const execFileAsync = promisify(execFile)
 
@@ -509,6 +510,85 @@ function createApp(config: ServerConfig): Express {
     }
   })
 
+  // Task chat endpoints
+  app.post("/api/task-chat/message", async (req: Request, res: Response) => {
+    try {
+      const { message } = req.body as { message?: string }
+
+      if (!message?.trim()) {
+        res.status(400).json({ ok: false, error: "Message is required" })
+        return
+      }
+
+      const taskChatManager = getTaskChatManager()
+
+      if (taskChatManager.isProcessing) {
+        res.status(409).json({ ok: false, error: "A request is already in progress" })
+        return
+      }
+
+      const response = await taskChatManager.sendMessage(message.trim())
+      res.status(200).json({
+        ok: true,
+        response,
+        messages: taskChatManager.messages,
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to send message"
+      res.status(500).json({ ok: false, error: message })
+    }
+  })
+
+  app.get("/api/task-chat/messages", (_req: Request, res: Response) => {
+    try {
+      const taskChatManager = getTaskChatManager()
+      res.status(200).json({
+        ok: true,
+        messages: taskChatManager.messages,
+        status: taskChatManager.status,
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to get messages"
+      res.status(500).json({ ok: false, error: message })
+    }
+  })
+
+  app.post("/api/task-chat/clear", (_req: Request, res: Response) => {
+    try {
+      const taskChatManager = getTaskChatManager()
+      taskChatManager.clearHistory()
+      res.status(200).json({ ok: true })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to clear history"
+      res.status(500).json({ ok: false, error: message })
+    }
+  })
+
+  app.post("/api/task-chat/cancel", (_req: Request, res: Response) => {
+    try {
+      const taskChatManager = getTaskChatManager()
+      taskChatManager.cancel()
+      res.status(200).json({ ok: true, status: taskChatManager.status })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to cancel request"
+      res.status(500).json({ ok: false, error: message })
+    }
+  })
+
+  app.get("/api/task-chat/status", (_req: Request, res: Response) => {
+    try {
+      const taskChatManager = getTaskChatManager()
+      res.status(200).json({
+        ok: true,
+        status: taskChatManager.status,
+        messageCount: taskChatManager.messages.length,
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to get status"
+      res.status(500).json({ ok: false, error: message })
+    }
+  })
+
   // Static assets from dist (built by Vite)
   app.use(express.static(config.appDir))
 
@@ -703,6 +783,12 @@ export async function switchWorkspace(workspacePath: string): Promise<void> {
   }
   ralphManager = createRalphManager({ cwd: workspacePath, watch: true })
 
+  // Create a new TaskChatManager for the new workspace
+  if (taskChatManager) {
+    taskChatManager.removeAllListeners()
+  }
+  taskChatManager = createTaskChatManager({ cwd: workspacePath })
+
   // Start Ralph in watch mode
   try {
     await ralphManager.start()
@@ -789,6 +875,79 @@ export function resetRalphManager(): void {
   if (ralphManager) {
     ralphManager.removeAllListeners()
     ralphManager = null
+  }
+}
+
+// TaskChatManager Integration
+
+// Singleton TaskChatManager instance
+let taskChatManager: TaskChatManager | null = null
+
+/**
+ * Get the singleton TaskChatManager instance, creating it if needed.
+ */
+export function getTaskChatManager(): TaskChatManager {
+  if (!taskChatManager) {
+    taskChatManager = createTaskChatManager()
+  }
+  return taskChatManager
+}
+
+/**
+ * Create a TaskChatManager and wire up event broadcasting.
+ */
+function createTaskChatManager(options?: { cwd?: string }): TaskChatManager {
+  const manager = new TaskChatManager({
+    ...options,
+    getBdProxy: () => getBdProxy(),
+  })
+
+  // Broadcast task chat messages to all WebSocket clients
+  manager.on("message", (message: TaskChatMessage) => {
+    broadcast({
+      type: "task-chat:message",
+      message,
+      timestamp: Date.now(),
+    })
+  })
+
+  // Broadcast streaming chunks
+  manager.on("chunk", (text: string) => {
+    broadcast({
+      type: "task-chat:chunk",
+      text,
+      timestamp: Date.now(),
+    })
+  })
+
+  // Broadcast status changes
+  manager.on("status", (status: TaskChatStatus) => {
+    broadcast({
+      type: "task-chat:status",
+      status,
+      timestamp: Date.now(),
+    })
+  })
+
+  // Broadcast errors
+  manager.on("error", (error: Error) => {
+    broadcast({
+      type: "task-chat:error",
+      error: error.message,
+      timestamp: Date.now(),
+    })
+  })
+
+  return manager
+}
+
+/**
+ * Reset the TaskChatManager singleton (for testing).
+ */
+export function resetTaskChatManager(): void {
+  if (taskChatManager) {
+    taskChatManager.removeAllListeners()
+    taskChatManager = null
   }
 }
 
