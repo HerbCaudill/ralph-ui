@@ -399,4 +399,99 @@ describe("RalphManager", () => {
       expect(() => manager.resume()).toThrow("Ralph is not running")
     })
   })
+
+  describe("stopAfterCurrent", () => {
+    it("sends stop_after_current message to stdin", async () => {
+      const startPromise = manager.start()
+      mockProcess.emit("spawn")
+      await startPromise
+
+      manager.stopAfterCurrent()
+
+      expect(mockProcess.stdin.write).toHaveBeenCalledWith('{"type":"stop_after_current"}\n')
+    })
+
+    it("transitions to stopping_after_current status", async () => {
+      const statusChanges: string[] = []
+      manager.on("status", status => statusChanges.push(status))
+
+      const startPromise = manager.start()
+      mockProcess.emit("spawn")
+      await startPromise
+
+      manager.stopAfterCurrent()
+
+      expect(manager.status).toBe("stopping_after_current")
+      expect(statusChanges).toContain("stopping_after_current")
+    })
+
+    it("throws if not running", () => {
+      expect(() => manager.stopAfterCurrent()).toThrow("Ralph is not running")
+    })
+
+    it("throws if in wrong state", async () => {
+      const startPromise = manager.start()
+      mockProcess.emit("spawn")
+      await startPromise
+
+      const stopPromise = manager.stop()
+      mockProcess.emit("exit", 0, null)
+      await stopPromise
+
+      expect(() => manager.stopAfterCurrent()).toThrow("Ralph is not running")
+    })
+
+    it("works when paused", async () => {
+      const startPromise = manager.start()
+      mockProcess.emit("spawn")
+      await startPromise
+
+      manager.pause()
+      manager.stopAfterCurrent()
+
+      expect(manager.status).toBe("stopping_after_current")
+      expect(mockProcess.stdin.write).toHaveBeenCalledWith('{"type":"stop_after_current"}\n')
+    })
+  })
+
+  describe("cancelStopAfterCurrent", () => {
+    it("sends cancel_stop_after_current message to stdin", async () => {
+      const startPromise = manager.start()
+      mockProcess.emit("spawn")
+      await startPromise
+
+      manager.stopAfterCurrent()
+      manager.cancelStopAfterCurrent()
+
+      expect(mockProcess.stdin.write).toHaveBeenCalledWith('{"type":"cancel_stop_after_current"}\n')
+    })
+
+    it("transitions back to running status", async () => {
+      const statusChanges: string[] = []
+      manager.on("status", status => statusChanges.push(status))
+
+      const startPromise = manager.start()
+      mockProcess.emit("spawn")
+      await startPromise
+
+      manager.stopAfterCurrent()
+      manager.cancelStopAfterCurrent()
+
+      expect(manager.status).toBe("running")
+    })
+
+    it("throws if not in stopping_after_current state", async () => {
+      const startPromise = manager.start()
+      mockProcess.emit("spawn")
+      await startPromise
+
+      expect(() => manager.cancelStopAfterCurrent()).toThrow(
+        "Cannot cancel stop-after-current in running state",
+      )
+    })
+
+    it("throws if not running", () => {
+      expect(() => manager.cancelStopAfterCurrent()).toThrow("Ralph is not running")
+    })
+  })
 })

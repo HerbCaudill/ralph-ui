@@ -108,10 +108,9 @@ describe("ControlBar", () => {
       expect(screen.getByRole("button", { name: "Stop" })).not.toBeDisabled()
     })
 
-    it("disables Stop after current button when running (not yet implemented)", () => {
-      // Stop-after-current is not yet implemented in ralph
+    it("enables Stop after current button when running", () => {
       render(<ControlBar />)
-      expect(screen.getByRole("button", { name: "Stop after current" })).toBeDisabled()
+      expect(screen.getByRole("button", { name: "Stop after current" })).not.toBeDisabled()
     })
   })
 
@@ -136,9 +135,9 @@ describe("ControlBar", () => {
       expect(screen.getByRole("button", { name: "Stop" })).not.toBeDisabled()
     })
 
-    it("disables Stop after current button when paused", () => {
+    it("enables Stop after current button when paused", () => {
       render(<ControlBar />)
-      expect(screen.getByRole("button", { name: "Stop after current" })).toBeDisabled()
+      expect(screen.getByRole("button", { name: "Stop after current" })).not.toBeDisabled()
     })
   })
 
@@ -311,6 +310,105 @@ describe("ControlBar", () => {
       await waitFor(() => {
         expect(screen.getByText("Failed to resume ralph")).toBeInTheDocument()
       })
+    })
+  })
+
+  describe("Stop after current button action", () => {
+    beforeEach(() => {
+      useAppStore.getState().setConnectionStatus("connected")
+      useAppStore.getState().setRalphStatus("running")
+    })
+
+    it("calls /api/stop-after-current when Stop after current is clicked", async () => {
+      mockFetch.mockResolvedValueOnce({
+        json: () => Promise.resolve({ ok: true, status: "stopping_after_current" }),
+      })
+
+      render(<ControlBar />)
+      fireEvent.click(screen.getByRole("button", { name: "Stop after current" }))
+
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith("/api/stop-after-current", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        })
+      })
+    })
+
+    it("shows error when Stop after current fails", async () => {
+      mockFetch.mockResolvedValueOnce({
+        json: () => Promise.resolve({ ok: false, error: "Failed to stop after current" }),
+      })
+
+      render(<ControlBar />)
+      fireEvent.click(screen.getByRole("button", { name: "Stop after current" }))
+
+      await waitFor(() => {
+        expect(screen.getByText("Failed to stop after current")).toBeInTheDocument()
+      })
+    })
+  })
+
+  describe("Cancel stop after current button action", () => {
+    beforeEach(() => {
+      useAppStore.getState().setConnectionStatus("connected")
+      useAppStore.getState().setRalphStatus("stopping_after_current")
+    })
+
+    it("calls /api/cancel-stop-after-current when button is clicked in stopping_after_current state", async () => {
+      mockFetch.mockResolvedValueOnce({
+        json: () => Promise.resolve({ ok: true, status: "running" }),
+      })
+
+      render(<ControlBar />)
+      fireEvent.click(screen.getByRole("button", { name: "Cancel stop after current" }))
+
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith("/api/cancel-stop-after-current", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        })
+      })
+    })
+
+    it("shows error when cancel fails", async () => {
+      mockFetch.mockResolvedValueOnce({
+        json: () => Promise.resolve({ ok: false, error: "Failed to cancel" }),
+      })
+
+      render(<ControlBar />)
+      fireEvent.click(screen.getByRole("button", { name: "Cancel stop after current" }))
+
+      await waitFor(() => {
+        expect(screen.getByText("Failed to cancel")).toBeInTheDocument()
+      })
+    })
+  })
+
+  describe("button states when stopping_after_current", () => {
+    beforeEach(() => {
+      useAppStore.getState().setConnectionStatus("connected")
+      useAppStore.getState().setRalphStatus("stopping_after_current")
+    })
+
+    it("disables Start button when stopping_after_current", () => {
+      render(<ControlBar />)
+      expect(screen.getByRole("button", { name: "Start" })).toBeDisabled()
+    })
+
+    it("disables Pause button when stopping_after_current", () => {
+      render(<ControlBar />)
+      expect(screen.getByRole("button", { name: "Pause" })).toBeDisabled()
+    })
+
+    it("enables Stop button when stopping_after_current", () => {
+      render(<ControlBar />)
+      expect(screen.getByRole("button", { name: "Stop" })).not.toBeDisabled()
+    })
+
+    it("enables Stop after current button (to cancel) when stopping_after_current", () => {
+      render(<ControlBar />)
+      expect(screen.getByRole("button", { name: "Cancel stop after current" })).not.toBeDisabled()
     })
   })
 })

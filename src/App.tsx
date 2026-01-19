@@ -65,6 +65,18 @@ async function resumeRalph(): Promise<{ ok: boolean; error?: string }> {
   }
 }
 
+async function stopAfterCurrentRalph(): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const response = await fetch("/api/stop-after-current", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    })
+    return await response.json()
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Failed to stop after current" }
+  }
+}
+
 // Tasks Sidebar
 
 function TasksSidebarPanel() {
@@ -177,10 +189,11 @@ export function App() {
     }
   }, [ralphStatus, isConnected])
 
-  const handleAgentStopAfterCurrent = useCallback(() => {
-    // See rui-4p3: Implement when ralph supports stop-after-current
-    console.log("Stop-after-current not yet implemented in ralph")
-  }, [])
+  const handleAgentStopAfterCurrent = useCallback(async () => {
+    // Only stop-after-current if running or paused and connected
+    if ((ralphStatus !== "running" && ralphStatus !== "paused") || !isConnected) return
+    await stopAfterCurrentRalph()
+  }, [ralphStatus, isConnected])
 
   const handleToggleSidebar = useCallback(() => {
     toggleSidebar()

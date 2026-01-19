@@ -63,6 +63,10 @@ function StatusIndicator() {
       color: "bg-yellow-500 animate-pulse",
       label: "Stopping",
     },
+    stopping_after_current: {
+      color: "bg-yellow-500",
+      label: "Stopping after task",
+    },
   }
 
   const config = statusConfig[status]

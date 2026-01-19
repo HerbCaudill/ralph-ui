@@ -61,6 +61,33 @@ async function resumeRalph(): Promise<{ ok: boolean; error?: string }> {
   }
 }
 
+async function stopAfterCurrentRalph(): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const response = await fetch("/api/stop-after-current", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    })
+    return await response.json()
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Failed to stop after current" }
+  }
+}
+
+async function cancelStopAfterCurrentRalph(): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const response = await fetch("/api/cancel-stop-after-current", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    })
+    return await response.json()
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Failed to cancel stop after current",
+    }
+  }
+}
+
 // Icons
 
 function PlayIcon({ className }: { className?: string }) {
@@ -165,14 +192,14 @@ function getButtonStates(status: RalphStatus, isConnected: boolean) {
         start: false,
         pause: true,
         stop: true,
-        stopAfterCurrent: false,
+        stopAfterCurrent: true,
       }
     case "paused":
       return {
         start: false,
         pause: true, // Acts as resume when paused
         stop: true,
-        stopAfterCurrent: false,
+        stopAfterCurrent: true,
       }
     case "stopping":
       return {
@@ -180,6 +207,13 @@ function getButtonStates(status: RalphStatus, isConnected: boolean) {
         pause: false,
         stop: false,
         stopAfterCurrent: false,
+      }
+    case "stopping_after_current":
+      return {
+        start: false,
+        pause: false,
+        stop: true, // Allow immediate stop to cancel
+        stopAfterCurrent: true, // Allow canceling the stop-after-current
       }
     default:
       return {
@@ -236,10 +270,24 @@ export function ControlBar({ className }: ControlBarProps) {
     }
   }, [])
 
-  const handleStopAfterCurrent = useCallback(() => {
-    // See rui-4p3: Implement when ralph supports stop-after-current
-    console.log("Stop-after-current not yet implemented in ralph")
-  }, [])
+  const handleStopAfterCurrent = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+    // Toggle between stop-after-current and cancel based on current status
+    const result =
+      status === "stopping_after_current" ?
+        await cancelStopAfterCurrentRalph()
+      : await stopAfterCurrentRalph()
+    setIsLoading(false)
+    if (!result.ok) {
+      setError(
+        result.error ||
+          (status === "stopping_after_current" ?
+            "Failed to cancel stop after current"
+          : "Failed to stop after current"),
+      )
+    }
+  }, [status])
 
   return (
     <div className={cn("flex items-center gap-2", className)}>
@@ -283,12 +331,18 @@ export function ControlBar({ className }: ControlBarProps) {
 
       {/* Stop after current button */}
       <Button
-        variant="outline"
+        variant={status === "stopping_after_current" ? "default" : "outline"}
         size="icon-sm"
         onClick={handleStopAfterCurrent}
         disabled={!buttonStates.stopAfterCurrent || isLoading}
-        title="Stop after current task (coming soon)"
-        aria-label="Stop after current"
+        title={
+          status === "stopping_after_current" ?
+            "Cancel stop after current task"
+          : "Stop after current task"
+        }
+        aria-label={
+          status === "stopping_after_current" ? "Cancel stop after current" : "Stop after current"
+        }
       >
         <StopAfterIcon />
       </Button>

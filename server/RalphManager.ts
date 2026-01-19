@@ -3,7 +3,13 @@ import { EventEmitter } from "node:events"
 
 // Types
 
-export type RalphStatus = "stopped" | "starting" | "running" | "paused" | "stopping"
+export type RalphStatus =
+  | "stopped"
+  | "starting"
+  | "running"
+  | "paused"
+  | "stopping"
+  | "stopping_after_current"
 
 export interface RalphEvent {
   type: string
@@ -179,6 +185,39 @@ export class RalphManager extends EventEmitter {
     }
 
     this.process.kill("SIGCONT")
+    this.setStatus("running")
+  }
+
+  /**
+   * Request ralph to stop after completing the current task.
+   * This sets a flag that ralph will check after each task.
+   */
+  stopAfterCurrent(): void {
+    if (!this.process) {
+      throw new Error("Ralph is not running")
+    }
+    if (this._status !== "running" && this._status !== "paused") {
+      throw new Error(`Cannot stop-after-current ralph in ${this._status} state`)
+    }
+
+    // Send the stop-after-current signal to ralph via stdin
+    this.send({ type: "stop_after_current" })
+    this.setStatus("stopping_after_current")
+  }
+
+  /**
+   * Cancel a pending stop-after-current request.
+   */
+  cancelStopAfterCurrent(): void {
+    if (!this.process) {
+      throw new Error("Ralph is not running")
+    }
+    if (this._status !== "stopping_after_current") {
+      throw new Error(`Cannot cancel stop-after-current in ${this._status} state`)
+    }
+
+    // Send cancel signal to ralph
+    this.send({ type: "cancel_stop_after_current" })
     this.setStatus("running")
   }
 
