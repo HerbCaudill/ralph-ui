@@ -1,7 +1,9 @@
 import { useState, useCallback } from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { TooltipButton } from "@/components/ui/tooltip"
 import { useAppStore, selectRalphStatus, selectIsConnected } from "@/store"
+import { useHotkeys } from "@/hooks"
 import type { RalphStatus } from "@/store"
 
 // Types
@@ -236,6 +238,7 @@ export function ControlBar({ className }: ControlBarProps) {
   const isConnected = useAppStore(selectIsConnected)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { getHotkeyDisplay } = useHotkeys({ handlers: {} })
 
   const buttonStates = getButtonStates(status, isConnected)
 
@@ -292,60 +295,68 @@ export function ControlBar({ className }: ControlBarProps) {
   return (
     <div className={cn("flex items-center gap-2", className)}>
       {/* Start button */}
-      <Button
-        variant="outline"
-        size="icon-sm"
-        onClick={handleStart}
-        disabled={!buttonStates.start || isLoading}
-        title="Start ralph"
-        aria-label="Start"
-      >
-        <PlayIcon />
-      </Button>
+      <TooltipButton tooltip="Start" hotkey={getHotkeyDisplay("agentStart")}>
+        <Button
+          variant="outline"
+          size="icon-sm"
+          onClick={handleStart}
+          disabled={!buttonStates.start || isLoading}
+          aria-label="Start"
+        >
+          <PlayIcon />
+        </Button>
+      </TooltipButton>
 
       {/* Pause/Resume button */}
-      <Button
-        variant="outline"
-        size="icon-sm"
-        onClick={handlePause}
-        disabled={!buttonStates.pause || isLoading}
-        title={status === "paused" ? "Resume ralph" : "Pause ralph"}
-        aria-label={status === "paused" ? "Resume" : "Pause"}
+      <TooltipButton
+        tooltip={status === "paused" ? "Resume" : "Pause"}
+        hotkey={getHotkeyDisplay("agentPause")}
       >
-        {status === "paused" ?
-          <PlayIcon />
-        : <PauseIcon />}
-      </Button>
+        <Button
+          variant="outline"
+          size="icon-sm"
+          onClick={handlePause}
+          disabled={!buttonStates.pause || isLoading}
+          aria-label={status === "paused" ? "Resume" : "Pause"}
+        >
+          {status === "paused" ?
+            <PlayIcon />
+          : <PauseIcon />}
+        </Button>
+      </TooltipButton>
 
       {/* Stop button */}
-      <Button
-        variant="outline"
-        size="icon-sm"
-        onClick={handleStop}
-        disabled={!buttonStates.stop || isLoading}
-        title="Stop ralph"
-        aria-label="Stop"
-      >
-        <StopIcon />
-      </Button>
+      <TooltipButton tooltip="Stop" hotkey={getHotkeyDisplay("agentStop")}>
+        <Button
+          variant="outline"
+          size="icon-sm"
+          onClick={handleStop}
+          disabled={!buttonStates.stop || isLoading}
+          aria-label="Stop"
+        >
+          <StopIcon />
+        </Button>
+      </TooltipButton>
 
       {/* Stop after current button */}
-      <Button
-        variant={status === "stopping_after_current" ? "default" : "outline"}
-        size="icon-sm"
-        onClick={handleStopAfterCurrent}
-        disabled={!buttonStates.stopAfterCurrent || isLoading}
-        title={
-          status === "stopping_after_current" ?
-            "Cancel stop after current task"
-          : "Stop after current task"
-        }
-        aria-label={
+      <TooltipButton
+        tooltip={
           status === "stopping_after_current" ? "Cancel stop after current" : "Stop after current"
         }
+        hotkey={getHotkeyDisplay("agentStopAfterCurrent")}
       >
-        <StopAfterIcon />
-      </Button>
+        <Button
+          variant={status === "stopping_after_current" ? "default" : "outline"}
+          size="icon-sm"
+          onClick={handleStopAfterCurrent}
+          disabled={!buttonStates.stopAfterCurrent || isLoading}
+          aria-label={
+            status === "stopping_after_current" ? "Cancel stop after current" : "Stop after current"
+          }
+        >
+          <StopAfterIcon />
+        </Button>
+      </TooltipButton>
 
       {/* Error display */}
       {error && <span className="text-destructive text-xs">{error}</span>}
