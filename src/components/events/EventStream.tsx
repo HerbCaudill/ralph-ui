@@ -89,6 +89,22 @@ function renderContentBlock(
   return null
 }
 
+// Helper to unescape JSON string escapes like \" and \\
+function unescapeJsonString(s: string): string {
+  return s.replace(/\\(.)/g, (_, char) => {
+    switch (char) {
+      case "n":
+        return "\n"
+      case "t":
+        return "\t"
+      case "r":
+        return "\r"
+      default:
+        return char // handles \" and \\ and others
+    }
+  })
+}
+
 // Streaming content renderer
 
 function StreamingContentRenderer({ message }: { message: StreamingMessage }) {
@@ -126,12 +142,15 @@ function StreamingBlockRenderer({
     } catch {
       // Partial JSON - try to extract what we can for display
       // Look for common patterns like "command": "..."
-      const commandMatch = block.input.match(/"command"\s*:\s*"([^"]*)"?/)
-      const filePathMatch = block.input.match(/"file_path"\s*:\s*"([^"]*)"?/)
-      const patternMatch = block.input.match(/"pattern"\s*:\s*"([^"]*)"?/)
-      if (commandMatch) input = { command: commandMatch[1] }
-      else if (filePathMatch) input = { file_path: filePathMatch[1] }
-      else if (patternMatch) input = { pattern: patternMatch[1] }
+      // The regex uses (?:[^"\\]|\\.)* to match either:
+      // - any char except " or \
+      // - OR a backslash followed by any char (escaped char)
+      const commandMatch = block.input.match(/"command"\s*:\s*"((?:[^"\\]|\\.)*)/)
+      const filePathMatch = block.input.match(/"file_path"\s*:\s*"((?:[^"\\]|\\.)*)/)
+      const patternMatch = block.input.match(/"pattern"\s*:\s*"((?:[^"\\]|\\.)*)/)
+      if (commandMatch) input = { command: unescapeJsonString(commandMatch[1]) }
+      else if (filePathMatch) input = { file_path: unescapeJsonString(filePathMatch[1]) }
+      else if (patternMatch) input = { pattern: unescapeJsonString(patternMatch[1]) }
     }
 
     const toolEvent: ToolUseEvent = {
