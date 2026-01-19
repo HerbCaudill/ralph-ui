@@ -45,6 +45,11 @@
       "key": "l",
       "modifiers": ["cmd"],
       "description": "Focus chat input"
+    },
+    "cycleTheme": {
+      "key": "t",
+      "modifiers": ["cmd", "shift"],
+      "description": "Cycle theme (system → light → dark)"
     }
   }
 }

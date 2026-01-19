@@ -99,6 +99,7 @@ describe("useHotkeys", () => {
       expect(actions).toContain("agentStop")
       expect(actions).toContain("toggleSidebar")
       expect(actions).toContain("focusChatInput")
+      expect(actions).toContain("cycleTheme")
     })
   })
 
@@ -280,6 +281,32 @@ describe("useHotkeys", () => {
       expect(handler).toHaveBeenCalledTimes(1)
     })
 
+    it("handles cycleTheme hotkey (Cmd+Shift+T)", () => {
+      mockNavigator("MacIntel")
+      const handler = vi.fn()
+
+      renderHook(() =>
+        useHotkeys({
+          handlers: {
+            cycleTheme: handler,
+          },
+        }),
+      )
+
+      // Simulate Cmd+Shift+T
+      act(() => {
+        const event = new KeyboardEvent("keydown", {
+          key: "t",
+          metaKey: true,
+          shiftKey: true,
+          bubbles: true,
+        })
+        window.dispatchEvent(event)
+      })
+
+      expect(handler).toHaveBeenCalledTimes(1)
+    })
+
     it("prevents default and stops propagation when handler fires", () => {
       mockNavigator("MacIntel")
       const handler = vi.fn()
@@ -372,6 +399,41 @@ describe("useHotkeys", () => {
       })
 
       // Should still fire for agent control hotkeys
+      expect(handler).toHaveBeenCalledTimes(1)
+
+      document.body.removeChild(input)
+    })
+
+    it("allows cycleTheme hotkey in input elements", () => {
+      mockNavigator("MacIntel")
+      const handler = vi.fn()
+
+      renderHook(() =>
+        useHotkeys({
+          handlers: {
+            cycleTheme: handler,
+          },
+        }),
+      )
+
+      // Create an input element
+      const input = document.createElement("input")
+      document.body.appendChild(input)
+      input.focus()
+
+      // Simulate Cmd+Shift+T while focused on input
+      act(() => {
+        const event = new KeyboardEvent("keydown", {
+          key: "t",
+          metaKey: true,
+          shiftKey: true,
+          bubbles: true,
+        })
+        Object.defineProperty(event, "target", { value: input })
+        window.dispatchEvent(event)
+      })
+
+      // Should still fire for cycleTheme hotkey
       expect(handler).toHaveBeenCalledTimes(1)
 
       document.body.removeChild(input)

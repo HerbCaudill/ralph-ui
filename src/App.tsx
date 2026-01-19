@@ -195,7 +195,7 @@ export function App() {
   const quickTaskInputRef = useRef<QuickTaskInputHandle>(null)
 
   // Initialize theme management (applies dark class and listens for system changes)
-  useTheme()
+  const { cycleTheme } = useTheme()
 
   // Task dialog state
   const taskDialog = useTaskDialog()
@@ -261,6 +261,10 @@ export function App() {
     chatInputRef.current?.focus()
   }, [])
 
+  const handleCycleTheme = useCallback(() => {
+    cycleTheme()
+  }, [cycleTheme])
+
   // Register hotkeys
   useHotkeys({
     handlers: {
@@ -273,6 +277,7 @@ export function App() {
       focusMain: handleFocusMain,
       focusTaskInput: handleFocusTaskInput,
       focusChatInput: handleFocusChatInput,
+      cycleTheme: handleCycleTheme,
     },
   })
 
