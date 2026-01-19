@@ -125,7 +125,7 @@ export const MainLayout = forwardRef<MainLayoutHandle, MainLayoutProps>(function
         >
           {sidebarOpen && (
             <div className="flex h-full flex-col overflow-hidden">
-              <div className="flex-1 overflow-y-auto p-4">{sidebar}</div>
+              <div className="flex-1 overflow-y-auto">{sidebar}</div>
             </div>
           )}
 
