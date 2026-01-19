@@ -37,7 +37,7 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       manifest: {
-        name: "Ralph Ui",
+        name: "Ralph",
         short_name: "ralph-ui",
         start_url: "/",
         display: "standalone",
