@@ -263,4 +263,59 @@ describe("EventStream", () => {
       expect(container.firstChild).toHaveClass("custom-class")
     })
   })
+
+  describe("running spinner", () => {
+    it("shows spinner when Ralph is running", () => {
+      useAppStore.getState().setRalphStatus("running")
+      useAppStore.getState().addEvent({
+        type: "user_message",
+        timestamp: 1705600000000,
+        message: "Test message",
+      })
+      render(<EventStream />)
+      expect(screen.getByTestId("ralph-running-spinner")).toBeInTheDocument()
+      expect(screen.getByLabelText("Ralph is running")).toBeInTheDocument()
+    })
+
+    it("shows spinner when Ralph is starting", () => {
+      useAppStore.getState().setRalphStatus("starting")
+      useAppStore.getState().addEvent({
+        type: "user_message",
+        timestamp: 1705600000000,
+        message: "Test message",
+      })
+      render(<EventStream />)
+      expect(screen.getByTestId("ralph-running-spinner")).toBeInTheDocument()
+    })
+
+    it("does not show spinner when Ralph is stopped", () => {
+      useAppStore.getState().setRalphStatus("stopped")
+      useAppStore.getState().addEvent({
+        type: "user_message",
+        timestamp: 1705600000000,
+        message: "Test message",
+      })
+      render(<EventStream />)
+      expect(screen.queryByTestId("ralph-running-spinner")).not.toBeInTheDocument()
+    })
+
+    it("does not show spinner when Ralph is paused", () => {
+      useAppStore.getState().setRalphStatus("paused")
+      useAppStore.getState().addEvent({
+        type: "user_message",
+        timestamp: 1705600000000,
+        message: "Test message",
+      })
+      render(<EventStream />)
+      expect(screen.queryByTestId("ralph-running-spinner")).not.toBeInTheDocument()
+    })
+
+    it("does not show spinner when there are no events (empty state)", () => {
+      useAppStore.getState().setRalphStatus("running")
+      render(<EventStream />)
+      // Empty state shows "No events yet" instead
+      expect(screen.getByText("No events yet")).toBeInTheDocument()
+      expect(screen.queryByTestId("ralph-running-spinner")).not.toBeInTheDocument()
+    })
+  })
 })

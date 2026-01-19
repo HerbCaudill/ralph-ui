@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils"
-import { useAppStore, selectEvents, type RalphEvent } from "@/store"
+import { useAppStore, selectEvents, selectRalphStatus, type RalphEvent } from "@/store"
+import { Loader2 } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { UserMessage, type UserMessageEvent } from "./UserMessage"
 import { AssistantText, type AssistantTextEvent } from "./AssistantText"
@@ -222,6 +223,8 @@ function EventItem({ event, toolResults }: EventItemProps) {
  */
 export function EventStream({ className, maxEvents = 1000 }: EventStreamProps) {
   const events = useAppStore(selectEvents)
+  const ralphStatus = useAppStore(selectRalphStatus)
+  const isRunning = ralphStatus === "running" || ralphStatus === "starting"
   const containerRef = useRef<HTMLDivElement>(null)
   const [autoScroll, setAutoScroll] = useState(true)
   const [isAtBottom, setIsAtBottom] = useState(true)
@@ -327,6 +330,16 @@ export function EventStream({ className, maxEvents = 1000 }: EventStreamProps) {
               />
             ))}
             {streamingMessage && <StreamingContentRenderer message={streamingMessage} />}
+            {/* Spinner shown when Ralph is running */}
+            {isRunning && (
+              <div
+                className="flex items-center justify-center py-4"
+                aria-label="Ralph is running"
+                data-testid="ralph-running-spinner"
+              >
+                <Loader2 className="text-muted-foreground size-5 animate-spin" aria-hidden="true" />
+              </div>
+            )}
           </>
         }
       </div>
