@@ -14,7 +14,7 @@ export function AssistantText({ event, className }: Props) {
       {/* Content */}
       <div
         className={cn(
-          "prose prose-sm dark:prose-invert max-w-none flex-1 text-sm",
+          "prose prose-sm dark:prose-invert max-w-none flex-1 font-serif text-sm",
           "prose-p:my-1 prose-p:leading-relaxed",
           "prose-strong:font-medium",
           "prose-a:text-cyan-600 dark:prose-a:text-cyan-400 prose-a:no-underline hover:prose-a:underline",
