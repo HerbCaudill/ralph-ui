@@ -208,8 +208,8 @@ function createApp(config: ServerConfig): Express {
       let activeIssueCount: number | undefined
       try {
         const [openIssues, inProgressIssues] = await Promise.all([
-          bdProxy.list({ status: "open" }),
-          bdProxy.list({ status: "in_progress" }),
+          bdProxy.list({ status: "open", limit: 0 }),
+          bdProxy.list({ status: "in_progress", limit: 0 }),
         ])
         activeIssueCount = openIssues.length + inProgressIssues.length
       } catch {
@@ -259,8 +259,8 @@ function createApp(config: ServerConfig): Express {
           try {
             const wsProxy = new BdProxy({ cwd: ws.path })
             const [openIssues, inProgressIssues] = await Promise.all([
-              wsProxy.list({ status: "open" }),
-              wsProxy.list({ status: "in_progress" }),
+              wsProxy.list({ status: "open", limit: 0 }),
+              wsProxy.list({ status: "in_progress", limit: 0 }),
             ])
             activeIssueCount = openIssues.length + inProgressIssues.length
           } catch {
@@ -313,8 +313,8 @@ function createApp(config: ServerConfig): Express {
       let activeIssueCount: number | undefined
       try {
         const [openIssues, inProgressIssues] = await Promise.all([
-          bdProxy.list({ status: "open" }),
-          bdProxy.list({ status: "in_progress" }),
+          bdProxy.list({ status: "open", limit: 0 }),
+          bdProxy.list({ status: "in_progress", limit: 0 }),
         ])
         activeIssueCount = openIssues.length + inProgressIssues.length
       } catch {
@@ -353,6 +353,7 @@ function createApp(config: ServerConfig): Express {
         status: status as "open" | "in_progress" | "blocked" | "deferred" | "closed" | undefined,
         ready: ready === "true",
         all: all === "true",
+        limit: 0, // Fetch all tasks, no limit
       })
 
       res.status(200).json({ ok: true, issues })
