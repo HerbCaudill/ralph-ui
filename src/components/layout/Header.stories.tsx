@@ -14,32 +14,11 @@ const meta: Meta<typeof Header> = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-export const Connected: Story = {
+export const Default: Story = {
   decorators: [
     withStoreState({
-      connectionStatus: "connected",
       workspace: "/Users/dev/projects/my-app",
       accentColor: "#007ACC",
-    }),
-  ],
-}
-
-export const Connecting: Story = {
-  decorators: [
-    withStoreState({
-      connectionStatus: "connecting",
-      workspace: null,
-      accentColor: "#FFA500",
-    }),
-  ],
-}
-
-export const Disconnected: Story = {
-  decorators: [
-    withStoreState({
-      connectionStatus: "disconnected",
-      workspace: null,
-      accentColor: "#DC3545",
     }),
   ],
 }
@@ -47,7 +26,6 @@ export const Disconnected: Story = {
 export const WithPeacockColor: Story = {
   decorators: [
     withStoreState({
-      connectionStatus: "connected",
       workspace: "/Users/dev/projects/feature-branch",
       accentColor: "#42B883",
     }),
@@ -57,7 +35,6 @@ export const WithPeacockColor: Story = {
 export const DefaultAccentColor: Story = {
   decorators: [
     withStoreState({
-      connectionStatus: "connected",
       workspace: "/Users/dev/projects/my-app",
       accentColor: null,
     }),
@@ -67,10 +44,18 @@ export const DefaultAccentColor: Story = {
 export const LongWorkspacePath: Story = {
   decorators: [
     withStoreState({
-      connectionStatus: "connected",
       workspace:
         "/Users/developer/Documents/Projects/enterprise/very-long-project-name-that-might-overflow",
       accentColor: "#9B59B6",
+    }),
+  ],
+}
+
+export const NoWorkspace: Story = {
+  decorators: [
+    withStoreState({
+      workspace: null,
+      accentColor: "#FFA500",
     }),
   ],
 }

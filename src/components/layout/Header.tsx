@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils"
-import { useAppStore, selectConnectionStatus, selectAccentColor } from "@/store"
+import { useAppStore, selectAccentColor } from "@/store"
 import { useTheme } from "@/hooks"
 import { WorkspacePicker } from "./WorkspacePicker"
 import { Button } from "@/components/ui/button"
@@ -43,36 +43,6 @@ function ThemeToggle() {
   )
 }
 
-// ConnectionIndicator Component
-
-function ConnectionIndicator() {
-  const connectionStatus = useAppStore(selectConnectionStatus)
-
-  const statusConfig = {
-    connected: {
-      color: "bg-green-500",
-      label: "Connected",
-    },
-    connecting: {
-      color: "bg-yellow-500",
-      label: "Connecting...",
-    },
-    disconnected: {
-      color: "bg-red-500",
-      label: "Disconnected",
-    },
-  }
-
-  const config = statusConfig[connectionStatus]
-
-  return (
-    <div className="flex items-center gap-2" title={config.label}>
-      <span className={cn("size-2 rounded-full", config.color)} />
-      <span className="text-muted-foreground hidden text-sm sm:inline">{config.label}</span>
-    </div>
-  )
-}
-
 // Logo Component
 
 function Logo() {
@@ -105,7 +75,7 @@ function Logo() {
 // Header Component
 
 /**
- * Application header with logo, workspace picker, and connection status.
+ * Application header with logo, workspace picker, and theme toggle.
  * Features an accent color bar at the top from peacock settings.
  */
 export function Header({ className }: HeaderProps) {
@@ -134,7 +104,6 @@ export function Header({ className }: HeaderProps) {
 
         <div className="flex items-center gap-4">
           <ThemeToggle />
-          <ConnectionIndicator />
         </div>
       </div>
     </header>

@@ -112,38 +112,6 @@ describe("Header", () => {
     })
   })
 
-  it("shows 'Disconnected' status when disconnected", async () => {
-    render(<Header />)
-    expect(screen.getByText("Disconnected")).toBeInTheDocument()
-
-    // Wait for workspace fetch to complete to avoid act() warning
-    await waitFor(() => {
-      expect(screen.getByText("my-project")).toBeInTheDocument()
-    })
-  })
-
-  it("shows 'Connected' status when connected", async () => {
-    useAppStore.getState().setConnectionStatus("connected")
-    render(<Header />)
-    expect(screen.getByText("Connected")).toBeInTheDocument()
-
-    // Wait for workspace fetch to complete to avoid act() warning
-    await waitFor(() => {
-      expect(screen.getByText("my-project")).toBeInTheDocument()
-    })
-  })
-
-  it("shows 'Connecting...' status when connecting", async () => {
-    useAppStore.getState().setConnectionStatus("connecting")
-    render(<Header />)
-    expect(screen.getByText("Connecting...")).toBeInTheDocument()
-
-    // Wait for workspace fetch to complete to avoid act() warning
-    await waitFor(() => {
-      expect(screen.getByText("my-project")).toBeInTheDocument()
-    })
-  })
-
   it("toggles workspace dropdown when clicked", async () => {
     render(<Header />)
 
