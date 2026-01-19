@@ -8,6 +8,7 @@ import { WebSocketServer, type WebSocket, type RawData } from "ws"
 import { RalphManager, type RalphEvent, type RalphStatus } from "./RalphManager.js"
 import { BdProxy, type BdCreateOptions } from "./BdProxy.js"
 import { getAliveWorkspaces } from "./registry.js"
+import { getEventLogStore, type EventLogMetadata } from "./EventLogStore.js"
 
 const execFileAsync = promisify(execFile)
 
@@ -450,6 +451,60 @@ function createApp(config: ServerConfig): Express {
       res.status(200).json({ ok: true, issue: issues[0] })
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to update task"
+      res.status(500).json({ ok: false, error: message })
+    }
+  })
+
+  // Event log endpoints
+  app.post("/api/eventlogs", async (req: Request, res: Response) => {
+    try {
+      const { events, metadata } = req.body as {
+        events?: RalphEvent[]
+        metadata?: EventLogMetadata
+      }
+
+      if (!events || !Array.isArray(events)) {
+        res.status(400).json({ ok: false, error: "Events array is required" })
+        return
+      }
+
+      const eventLogStore = getEventLogStore()
+      const eventLog = await eventLogStore.create(events, metadata)
+
+      res.status(201).json({ ok: true, eventlog: eventLog })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to create event log"
+      res.status(500).json({ ok: false, error: message })
+    }
+  })
+
+  app.get("/api/eventlogs/:id", async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id as string
+
+      const eventLogStore = getEventLogStore()
+      const eventLog = await eventLogStore.get(id)
+
+      if (!eventLog) {
+        res.status(404).json({ ok: false, error: "Event log not found" })
+        return
+      }
+
+      res.status(200).json({ ok: true, eventlog: eventLog })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to get event log"
+      res.status(500).json({ ok: false, error: message })
+    }
+  })
+
+  app.get("/api/eventlogs", async (_req: Request, res: Response) => {
+    try {
+      const eventLogStore = getEventLogStore()
+      const summaries = await eventLogStore.list()
+
+      res.status(200).json({ ok: true, eventlogs: summaries })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to list event logs"
       res.status(500).json({ ok: false, error: message })
     }
   })
