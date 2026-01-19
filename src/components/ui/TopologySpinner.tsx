@@ -4,18 +4,18 @@ import {
   IconTopologyStar,
   IconTopologyStar2,
   IconTopologyStar3,
-  IconTopologyRing,
-  IconTopologyRing2,
-  IconTopologyRing3,
+  IconTopologyStarRing,
+  IconTopologyStarRing2,
+  IconTopologyStarRing3,
 } from "@tabler/icons-react"
 
 const TOPOLOGY_ICONS = [
   IconTopologyStar,
   IconTopologyStar2,
   IconTopologyStar3,
-  IconTopologyRing,
-  IconTopologyRing2,
-  IconTopologyRing3,
+  IconTopologyStarRing,
+  IconTopologyStarRing2,
+  IconTopologyStarRing3,
 ]
 
 export interface TopologySpinnerProps {
@@ -41,7 +41,7 @@ export function TopologySpinner({ className, interval = 300 }: TopologySpinnerPr
 
   return (
     <Icon
-      className={cn("text-muted-foreground size-5 animate-spin", className)}
+      className={cn("text-muted-foreground size-4 animate-spin", className)}
       aria-hidden="true"
     />
   )
