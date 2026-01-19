@@ -265,4 +265,246 @@ describe("MainLayout", () => {
       })
     })
   })
+
+  describe("right panel", () => {
+    it("renders right panel content when open", async () => {
+      render(
+        <MainLayout
+          rightPanel={<div>Right Panel Content</div>}
+          rightPanelOpen={true}
+          rightPanelWidth={400}
+        />,
+      )
+      expect(screen.getByText("Right Panel Content")).toBeInTheDocument()
+
+      await waitFor(() => {
+        expect(screen.getByText("workspace")).toBeInTheDocument()
+      })
+    })
+
+    it("does not render right panel content when closed", async () => {
+      render(
+        <MainLayout
+          rightPanel={<div>Right Panel Content</div>}
+          rightPanelOpen={false}
+          rightPanelWidth={400}
+        />,
+      )
+      expect(screen.queryByText("Right Panel Content")).not.toBeInTheDocument()
+
+      await waitFor(() => {
+        expect(screen.getByText("workspace")).toBeInTheDocument()
+      })
+    })
+
+    it("has zero width when closed", async () => {
+      render(
+        <MainLayout
+          rightPanel={<div>Right Panel Content</div>}
+          rightPanelOpen={false}
+          rightPanelWidth={400}
+        />,
+      )
+
+      const rightPanel = screen.getByTestId("right-panel")
+      expect(rightPanel).toHaveStyle({ width: "0px" })
+
+      await waitFor(() => {
+        expect(screen.getByText("workspace")).toBeInTheDocument()
+      })
+    })
+
+    it("applies custom width when open", async () => {
+      render(
+        <MainLayout
+          rightPanel={<div>Right Panel Content</div>}
+          rightPanelOpen={true}
+          rightPanelWidth={500}
+        />,
+      )
+
+      const rightPanel = screen.getByTestId("right-panel")
+      expect(rightPanel).toHaveStyle({ width: "500px" })
+
+      await waitFor(() => {
+        expect(screen.getByText("workspace")).toBeInTheDocument()
+      })
+    })
+
+    it("renders resize handle when open with onRightPanelWidthChange", async () => {
+      const onWidthChange = vi.fn()
+      render(
+        <MainLayout
+          rightPanel={<div>Right Panel Content</div>}
+          rightPanelOpen={true}
+          rightPanelWidth={400}
+          onRightPanelWidthChange={onWidthChange}
+        />,
+      )
+      expect(screen.getByRole("separator", { name: /resize right panel/i })).toBeInTheDocument()
+
+      await waitFor(() => {
+        expect(screen.getByText("workspace")).toBeInTheDocument()
+      })
+    })
+
+    it("does not render resize handle when onRightPanelWidthChange is not provided", async () => {
+      render(
+        <MainLayout
+          rightPanel={<div>Right Panel Content</div>}
+          rightPanelOpen={true}
+          rightPanelWidth={400}
+        />,
+      )
+      expect(
+        screen.queryByRole("separator", { name: /resize right panel/i }),
+      ).not.toBeInTheDocument()
+
+      await waitFor(() => {
+        expect(screen.getByText("workspace")).toBeInTheDocument()
+      })
+    })
+
+    it("does not render resize handle when panel is closed", async () => {
+      const onWidthChange = vi.fn()
+      render(
+        <MainLayout
+          rightPanel={<div>Right Panel Content</div>}
+          rightPanelOpen={false}
+          rightPanelWidth={400}
+          onRightPanelWidthChange={onWidthChange}
+        />,
+      )
+      expect(
+        screen.queryByRole("separator", { name: /resize right panel/i }),
+      ).not.toBeInTheDocument()
+
+      await waitFor(() => {
+        expect(screen.getByText("workspace")).toBeInTheDocument()
+      })
+    })
+
+    it("calls onRightPanelWidthChange on drag", async () => {
+      const onWidthChange = vi.fn()
+
+      // Mock window.innerWidth
+      Object.defineProperty(window, "innerWidth", { value: 1200, writable: true })
+
+      render(
+        <MainLayout
+          rightPanel={<div>Right Panel Content</div>}
+          rightPanelOpen={true}
+          rightPanelWidth={400}
+          onRightPanelWidthChange={onWidthChange}
+        />,
+      )
+
+      await waitFor(() => {
+        expect(screen.getByText("workspace")).toBeInTheDocument()
+      })
+
+      const resizeHandle = screen.getByRole("separator", { name: /resize right panel/i })
+
+      // Start resize
+      fireEvent.mouseDown(resizeHandle)
+
+      // Move mouse to simulate resize (window width 1200, clientX 700 = panel width 500)
+      fireEvent.mouseMove(document, { clientX: 700 })
+
+      // Stop resize
+      fireEvent.mouseUp(document)
+
+      // Check that the callback was called
+      expect(onWidthChange).toHaveBeenCalledWith(500)
+    })
+
+    it("respects minimum right panel width", async () => {
+      const onWidthChange = vi.fn()
+
+      // Mock window.innerWidth
+      Object.defineProperty(window, "innerWidth", { value: 1200, writable: true })
+
+      render(
+        <MainLayout
+          rightPanel={<div>Right Panel Content</div>}
+          rightPanelOpen={true}
+          rightPanelWidth={400}
+          onRightPanelWidthChange={onWidthChange}
+        />,
+      )
+
+      await waitFor(() => {
+        expect(screen.getByText("workspace")).toBeInTheDocument()
+      })
+
+      const resizeHandle = screen.getByRole("separator", { name: /resize right panel/i })
+
+      // Start resize
+      fireEvent.mouseDown(resizeHandle)
+
+      // Move mouse to make panel too small (window 1200, clientX 1100 = panel would be 100)
+      fireEvent.mouseMove(document, { clientX: 1100 })
+
+      // Stop resize
+      fireEvent.mouseUp(document)
+
+      // Should be clamped to minimum (300)
+      expect(onWidthChange).toHaveBeenCalledWith(300)
+    })
+
+    it("respects maximum right panel width", async () => {
+      const onWidthChange = vi.fn()
+
+      // Mock window.innerWidth
+      Object.defineProperty(window, "innerWidth", { value: 1200, writable: true })
+
+      render(
+        <MainLayout
+          rightPanel={<div>Right Panel Content</div>}
+          rightPanelOpen={true}
+          rightPanelWidth={400}
+          onRightPanelWidthChange={onWidthChange}
+        />,
+      )
+
+      await waitFor(() => {
+        expect(screen.getByText("workspace")).toBeInTheDocument()
+      })
+
+      const resizeHandle = screen.getByRole("separator", { name: /resize right panel/i })
+
+      // Start resize
+      fireEvent.mouseDown(resizeHandle)
+
+      // Move mouse to make panel too large (window 1200, clientX 100 = panel would be 1100)
+      fireEvent.mouseMove(document, { clientX: 100 })
+
+      // Stop resize
+      fireEvent.mouseUp(document)
+
+      // Should be clamped to maximum (800)
+      expect(onWidthChange).toHaveBeenCalledWith(800)
+    })
+
+    it("defaults to closed state when rightPanelOpen is not provided", async () => {
+      render(<MainLayout rightPanel={<div>Right Panel Content</div>} rightPanelWidth={400} />)
+
+      expect(screen.queryByText("Right Panel Content")).not.toBeInTheDocument()
+
+      await waitFor(() => {
+        expect(screen.getByText("workspace")).toBeInTheDocument()
+      })
+    })
+
+    it("defaults to 400px width when rightPanelWidth is not provided", async () => {
+      render(<MainLayout rightPanel={<div>Right Panel Content</div>} rightPanelOpen={true} />)
+
+      const rightPanel = screen.getByTestId("right-panel")
+      expect(rightPanel).toHaveStyle({ width: "400px" })
+
+      await waitFor(() => {
+        expect(screen.getByText("workspace")).toBeInTheDocument()
+      })
+    })
+  })
 })

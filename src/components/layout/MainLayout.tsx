@@ -12,6 +12,10 @@ const DEFAULT_ACCENT_COLOR = "#374151"
 const MIN_SIDEBAR_WIDTH = 200
 const MAX_SIDEBAR_WIDTH = 600
 
+// Constants for right panel width constraints
+const MIN_RIGHT_PANEL_WIDTH = 300
+const MAX_RIGHT_PANEL_WIDTH = 800
+
 // Types
 
 export interface MainLayoutProps {
@@ -21,11 +25,20 @@ export interface MainLayoutProps {
   header?: React.ReactNode
   showHeader?: boolean
   className?: string
+  /** Optional right panel content (e.g., task chat panel) */
+  rightPanel?: React.ReactNode
+  /** Whether the right panel is open (defaults to false) */
+  rightPanelOpen?: boolean
+  /** Width of the right panel in pixels */
+  rightPanelWidth?: number
+  /** Callback when right panel width changes (for resize) */
+  onRightPanelWidthChange?: (width: number) => void
 }
 
 export interface MainLayoutHandle {
   focusSidebar: () => void
   focusMain: () => void
+  focusRightPanel: () => void
 }
 
 // MainLayout Component
@@ -35,7 +48,18 @@ export interface MainLayoutHandle {
  * Responsive design: sidebar collapses on mobile.
  */
 export const MainLayout = forwardRef<MainLayoutHandle, MainLayoutProps>(function MainLayout(
-  { sidebar, main, statusBar, header, showHeader = true, className },
+  {
+    sidebar,
+    main,
+    statusBar,
+    header,
+    showHeader = true,
+    className,
+    rightPanel,
+    rightPanelOpen = false,
+    rightPanelWidth = 400,
+    onRightPanelWidthChange,
+  },
   ref,
 ) {
   const sidebarOpen = useAppStore(selectSidebarOpen)
@@ -45,11 +69,13 @@ export const MainLayout = forwardRef<MainLayoutHandle, MainLayoutProps>(function
   const borderColor = accentColor ?? DEFAULT_ACCENT_COLOR
   const sidebarRef = useRef<HTMLDivElement>(null)
   const mainRef = useRef<HTMLDivElement>(null)
+  const rightPanelRef = useRef<HTMLDivElement>(null)
 
-  // Drag state for resizing
+  // Drag state for resizing (sidebar and right panel)
   const [isResizing, setIsResizing] = useState(false)
+  const [isResizingRightPanel, setIsResizingRightPanel] = useState(false)
 
-  // Handle mouse move during resize
+  // Handle mouse move during sidebar resize
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
       if (!isResizing) return
@@ -59,12 +85,27 @@ export const MainLayout = forwardRef<MainLayoutHandle, MainLayoutProps>(function
     [isResizing, setSidebarWidth],
   )
 
+  // Handle mouse move during right panel resize
+  const handleRightPanelMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isResizingRightPanel || !onRightPanelWidthChange) return
+      const windowWidth = window.innerWidth
+      const newWidth = Math.min(
+        MAX_RIGHT_PANEL_WIDTH,
+        Math.max(MIN_RIGHT_PANEL_WIDTH, windowWidth - e.clientX),
+      )
+      onRightPanelWidthChange(newWidth)
+    },
+    [isResizingRightPanel, onRightPanelWidthChange],
+  )
+
   // Handle mouse up to stop resizing
   const handleMouseUp = useCallback(() => {
     setIsResizing(false)
+    setIsResizingRightPanel(false)
   }, [])
 
-  // Add/remove global mouse event listeners during resize
+  // Add/remove global mouse event listeners during sidebar resize
   useEffect(() => {
     if (isResizing) {
       document.addEventListener("mousemove", handleMouseMove)
@@ -72,7 +113,7 @@ export const MainLayout = forwardRef<MainLayoutHandle, MainLayoutProps>(function
       // Prevent text selection during resize
       document.body.style.userSelect = "none"
       document.body.style.cursor = "col-resize"
-    } else {
+    } else if (!isResizingRightPanel) {
       document.body.style.userSelect = ""
       document.body.style.cursor = ""
     }
@@ -80,15 +121,46 @@ export const MainLayout = forwardRef<MainLayoutHandle, MainLayoutProps>(function
     return () => {
       document.removeEventListener("mousemove", handleMouseMove)
       document.removeEventListener("mouseup", handleMouseUp)
+      if (!isResizingRightPanel) {
+        document.body.style.userSelect = ""
+        document.body.style.cursor = ""
+      }
+    }
+  }, [isResizing, isResizingRightPanel, handleMouseMove, handleMouseUp])
+
+  // Add/remove global mouse event listeners during right panel resize
+  useEffect(() => {
+    if (isResizingRightPanel) {
+      document.addEventListener("mousemove", handleRightPanelMouseMove)
+      document.addEventListener("mouseup", handleMouseUp)
+      // Prevent text selection during resize
+      document.body.style.userSelect = "none"
+      document.body.style.cursor = "col-resize"
+    } else if (!isResizing) {
       document.body.style.userSelect = ""
       document.body.style.cursor = ""
     }
-  }, [isResizing, handleMouseMove, handleMouseUp])
 
-  // Start resizing on mouse down
+    return () => {
+      document.removeEventListener("mousemove", handleRightPanelMouseMove)
+      document.removeEventListener("mouseup", handleMouseUp)
+      if (!isResizing) {
+        document.body.style.userSelect = ""
+        document.body.style.cursor = ""
+      }
+    }
+  }, [isResizingRightPanel, isResizing, handleRightPanelMouseMove, handleMouseUp])
+
+  // Start sidebar resizing on mouse down
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
     setIsResizing(true)
+  }, [])
+
+  // Start right panel resizing on mouse down
+  const handleRightPanelResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsResizingRightPanel(true)
   }, [])
 
   // Expose focus methods via ref
@@ -106,6 +178,15 @@ export const MainLayout = forwardRef<MainLayoutHandle, MainLayoutProps>(function
       if (mainRef.current) {
         // Find the first focusable element in main
         const focusable = mainRef.current.querySelector<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        )
+        focusable?.focus()
+      }
+    },
+    focusRightPanel: () => {
+      if (rightPanelRef.current) {
+        // Find the first focusable element in the right panel
+        const focusable = rightPanelRef.current.querySelector<HTMLElement>(
           'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
         )
         focusable?.focus()
@@ -165,6 +246,41 @@ export const MainLayout = forwardRef<MainLayoutHandle, MainLayoutProps>(function
             <footer className="border-border bg-muted/50 border-t px-4 py-2">{statusBar}</footer>
           )}
         </main>
+
+        {/* Right panel (e.g., task chat panel) */}
+        <aside
+          ref={rightPanelRef}
+          className={cn(
+            "border-sidebar-border bg-sidebar relative flex flex-col border-l",
+            !isResizingRightPanel && "transition-all duration-200",
+          )}
+          style={{ width: rightPanelOpen ? rightPanelWidth : 0 }}
+          data-testid="right-panel"
+        >
+          {rightPanelOpen && (
+            <div className="flex h-full flex-col overflow-hidden">
+              <div className="flex-1 overflow-y-auto">{rightPanel}</div>
+            </div>
+          )}
+
+          {/* Resize handle for right panel */}
+          {rightPanelOpen && onRightPanelWidthChange && (
+            <div
+              className={cn(
+                "absolute top-0 left-0 z-10 h-full w-1 cursor-col-resize transition-colors",
+                "hover:bg-primary/20",
+                isResizingRightPanel && "bg-primary/30",
+              )}
+              onMouseDown={handleRightPanelResizeStart}
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Resize right panel"
+              aria-valuenow={rightPanelWidth}
+              aria-valuemin={MIN_RIGHT_PANEL_WIDTH}
+              aria-valuemax={MAX_RIGHT_PANEL_WIDTH}
+            />
+          )}
+        </aside>
       </div>
     </div>
   )
