@@ -248,9 +248,26 @@ describe("WorkspacePicker", () => {
   })
 
   it("has refresh button in dropdown", async () => {
-    mockFetch.mockResolvedValue({
+    const mockWorkspacesResponse = {
       ok: true,
-      json: () => Promise.resolve(mockWorkspaceResponse),
+      workspaces: [],
+      currentPath: "/Users/test/my-project",
+    }
+
+    mockFetch.mockImplementation((url: string) => {
+      if (url === "/api/workspace") {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockWorkspaceResponse),
+        })
+      }
+      if (url === "/api/workspaces") {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockWorkspacesResponse),
+        })
+      }
+      return Promise.reject(new Error("Unknown URL"))
     })
 
     render(<WorkspacePicker />)
@@ -263,8 +280,10 @@ describe("WorkspacePicker", () => {
     const workspaceButton = screen.getByRole("button", { expanded: false })
     fireEvent.click(workspaceButton)
 
-    // Refresh button should be visible
-    expect(screen.getByText("Refresh")).toBeInTheDocument()
+    // Wait for the dropdown to load the workspaces list
+    await waitFor(() => {
+      expect(screen.getByText("Refresh")).toBeInTheDocument()
+    })
   })
 
   it("applies custom className", async () => {
@@ -275,6 +294,11 @@ describe("WorkspacePicker", () => {
 
     const { container } = render(<WorkspacePicker className="custom-class" />)
     expect(container.firstChild).toHaveClass("custom-class")
+
+    // Wait for fetch to complete to avoid act() warning
+    await waitFor(() => {
+      expect(screen.getByText("my-project")).toBeInTheDocument()
+    })
   })
 
   it("shows 'No workspace' when workspace path is not set", async () => {
@@ -285,7 +309,12 @@ describe("WorkspacePicker", () => {
 
     render(<WorkspacePicker />)
 
-    // Initially should show "No workspace"
+    // Wait for fetch to complete
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith("/api/workspace")
+    })
+
+    // Should still show "No workspace" after fetch completes with null workspace
     expect(screen.getByText("No workspace")).toBeInTheDocument()
   })
 })

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react"
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react"
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest"
 import { Header } from "./Header"
 import { useAppStore } from "@/store"
@@ -81,6 +81,11 @@ describe("Header", () => {
   it("renders the logo", async () => {
     render(<Header />)
     expect(screen.getByText("Ralph")).toBeInTheDocument()
+
+    // Wait for workspace fetch to complete to avoid act() warning
+    await waitFor(() => {
+      expect(screen.getByText("my-project")).toBeInTheDocument()
+    })
   })
 
   it("shows 'No workspace' when workspace is null and fetch fails", async () => {
@@ -89,7 +94,13 @@ describe("Header", () => {
       json: () => Promise.resolve({ ok: true, workspace: null }),
     })
     render(<Header />)
-    // Initially shows "No workspace" before fetch completes
+
+    // Wait for fetch to complete
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith("/api/workspace")
+    })
+
+    // Should still show "No workspace" after fetch completes with null workspace
     expect(screen.getByText("No workspace")).toBeInTheDocument()
   })
 
@@ -104,18 +115,33 @@ describe("Header", () => {
   it("shows 'Disconnected' status when disconnected", async () => {
     render(<Header />)
     expect(screen.getByText("Disconnected")).toBeInTheDocument()
+
+    // Wait for workspace fetch to complete to avoid act() warning
+    await waitFor(() => {
+      expect(screen.getByText("my-project")).toBeInTheDocument()
+    })
   })
 
   it("shows 'Connected' status when connected", async () => {
     useAppStore.getState().setConnectionStatus("connected")
     render(<Header />)
     expect(screen.getByText("Connected")).toBeInTheDocument()
+
+    // Wait for workspace fetch to complete to avoid act() warning
+    await waitFor(() => {
+      expect(screen.getByText("my-project")).toBeInTheDocument()
+    })
   })
 
   it("shows 'Connecting...' status when connecting", async () => {
     useAppStore.getState().setConnectionStatus("connecting")
     render(<Header />)
     expect(screen.getByText("Connecting...")).toBeInTheDocument()
+
+    // Wait for workspace fetch to complete to avoid act() warning
+    await waitFor(() => {
+      expect(screen.getByText("my-project")).toBeInTheDocument()
+    })
   })
 
   it("toggles workspace dropdown when clicked", async () => {
@@ -164,12 +190,22 @@ describe("Header", () => {
   it("applies custom className", async () => {
     const { container } = render(<Header className="custom-class" />)
     expect(container.firstChild).toHaveClass("custom-class")
+
+    // Wait for workspace fetch to complete to avoid act() warning
+    await waitFor(() => {
+      expect(screen.getByText("my-project")).toBeInTheDocument()
+    })
   })
 
   describe("theme toggle", () => {
     it("renders theme toggle button", async () => {
       render(<Header />)
       expect(screen.getByTestId("theme-toggle")).toBeInTheDocument()
+
+      // Wait for workspace fetch to complete to avoid act() warning
+      await waitFor(() => {
+        expect(screen.getByText("my-project")).toBeInTheDocument()
+      })
     })
 
     it("shows monitor icon for system theme", async () => {
@@ -178,6 +214,11 @@ describe("Header", () => {
 
       const button = screen.getByTestId("theme-toggle")
       expect(button).toHaveAttribute("aria-label", "System theme")
+
+      // Wait for workspace fetch to complete to avoid act() warning
+      await waitFor(() => {
+        expect(screen.getByText("my-project")).toBeInTheDocument()
+      })
     })
 
     it("shows sun icon for light theme", async () => {
@@ -187,6 +228,11 @@ describe("Header", () => {
 
       const button = screen.getByTestId("theme-toggle")
       expect(button).toHaveAttribute("aria-label", "Light theme")
+
+      // Wait for workspace fetch to complete to avoid act() warning
+      await waitFor(() => {
+        expect(screen.getByText("my-project")).toBeInTheDocument()
+      })
     })
 
     it("shows moon icon for dark theme", async () => {
@@ -196,11 +242,21 @@ describe("Header", () => {
 
       const button = screen.getByTestId("theme-toggle")
       expect(button).toHaveAttribute("aria-label", "Dark theme")
+
+      // Wait for workspace fetch to complete to avoid act() warning
+      await waitFor(() => {
+        expect(screen.getByText("my-project")).toBeInTheDocument()
+      })
     })
 
     it("cycles theme when clicked: system -> light -> dark -> system", async () => {
       useAppStore.getState().setTheme("system")
       render(<Header />)
+
+      // Wait for workspace fetch to complete to avoid act() warning
+      await waitFor(() => {
+        expect(screen.getByText("my-project")).toBeInTheDocument()
+      })
 
       const button = screen.getByTestId("theme-toggle")
 
@@ -225,6 +281,11 @@ describe("Header", () => {
       const accentBar = screen.getByTestId("accent-bar")
       expect(accentBar).toBeInTheDocument()
       expect(accentBar).toHaveStyle({ backgroundColor: "#000000" })
+
+      // Wait for workspace fetch to complete to avoid act() warning
+      await waitFor(() => {
+        expect(screen.getByText("my-project")).toBeInTheDocument()
+      })
     })
 
     it("renders accent bar with peacock color from store", async () => {
@@ -234,19 +295,43 @@ describe("Header", () => {
       const accentBar = screen.getByTestId("accent-bar")
       expect(accentBar).toBeInTheDocument()
       expect(accentBar).toHaveStyle({ backgroundColor: "#4d9697" })
+
+      // Wait for workspace fetch to complete to avoid act() warning
+      await waitFor(() => {
+        expect(screen.getByText("my-project")).toBeInTheDocument()
+      })
     })
 
     it("updates accent bar color when accent color changes in store", async () => {
-      useAppStore.getState().setAccentColor("#4d9697")
-      const { rerender } = render(<Header />)
+      // Mock workspace response with initial accent color
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            ok: true,
+            workspace: {
+              ...mockWorkspaceResponse.workspace,
+              accentColor: "#4d9697",
+            },
+          }),
+      })
+
+      render(<Header />)
+
+      // Wait for workspace fetch to complete to avoid act() warning
+      await waitFor(() => {
+        expect(screen.getByText("my-project")).toBeInTheDocument()
+      })
 
       // Verify initial color
       let accentBar = screen.getByTestId("accent-bar")
       expect(accentBar).toHaveStyle({ backgroundColor: "#4d9697" })
 
-      // Change the accent color
-      useAppStore.getState().setAccentColor("#ff5733")
-      rerender(<Header />)
+      // Change the accent color - this triggers a re-render through store subscription
+      // Wrap in act() since we're directly calling store methods that cause state updates
+      act(() => {
+        useAppStore.getState().setAccentColor("#ff5733")
+      })
 
       // Verify updated color
       accentBar = screen.getByTestId("accent-bar")
@@ -254,16 +339,35 @@ describe("Header", () => {
     })
 
     it("falls back to black when accent color is cleared", async () => {
-      useAppStore.getState().setAccentColor("#4d9697")
-      const { rerender } = render(<Header />)
+      // Mock workspace response with initial accent color
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            ok: true,
+            workspace: {
+              ...mockWorkspaceResponse.workspace,
+              accentColor: "#4d9697",
+            },
+          }),
+      })
+
+      render(<Header />)
+
+      // Wait for workspace fetch to complete to avoid act() warning
+      await waitFor(() => {
+        expect(screen.getByText("my-project")).toBeInTheDocument()
+      })
 
       // Verify initial color
       let accentBar = screen.getByTestId("accent-bar")
       expect(accentBar).toHaveStyle({ backgroundColor: "#4d9697" })
 
-      // Clear the accent color
-      useAppStore.getState().setAccentColor(null)
-      rerender(<Header />)
+      // Clear the accent color - this triggers a re-render through store subscription
+      // Wrap in act() since we're directly calling store methods that cause state updates
+      act(() => {
+        useAppStore.getState().setAccentColor(null)
+      })
 
       // Verify fallback to black
       accentBar = screen.getByTestId("accent-bar")

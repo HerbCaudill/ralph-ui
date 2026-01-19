@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react"
+import { render, screen, waitFor } from "@testing-library/react"
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest"
 import { App } from "./App"
 
@@ -42,7 +42,7 @@ describe("App", () => {
     vi.restoreAllMocks()
   })
 
-  it("renders the main layout with sidebar and status bar", () => {
+  it("renders the main layout with sidebar and status bar", async () => {
     render(<App />)
 
     // Check for sidebar content (TaskSidebar is a pure layout component, no heading)
@@ -57,13 +57,23 @@ describe("App", () => {
 
     // Check for chat input
     expect(screen.getByRole("textbox", { name: "Message input" })).toBeInTheDocument()
+
+    // Wait for all async operations to complete to avoid act() warning
+    await waitFor(() => {
+      expect(screen.getByText("workspace")).toBeInTheDocument()
+    })
   })
 
-  it("shows disconnected status by default", () => {
+  it("shows disconnected status by default", async () => {
     render(<App />)
     // Connection status appears in both Header and StatusBar
     // Note: During test, WebSocket starts connecting immediately, so status may be "Connecting..."
     expect(screen.getAllByText(/Disconnected|Connecting/).length).toBeGreaterThan(0)
     expect(screen.getByText("Ralph: stopped")).toBeInTheDocument()
+
+    // Wait for all async operations to complete to avoid act() warning
+    await waitFor(() => {
+      expect(screen.getByText("workspace")).toBeInTheDocument()
+    })
   })
 })

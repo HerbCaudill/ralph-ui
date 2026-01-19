@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react"
+import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest"
 import { MainLayout } from "./MainLayout"
 import { useAppStore } from "@/store"
@@ -45,28 +45,53 @@ describe("MainLayout", () => {
     vi.restoreAllMocks()
   })
 
-  it("renders sidebar content", () => {
+  it("renders sidebar content", async () => {
     render(<MainLayout sidebar={<div>Sidebar Content</div>} />)
     expect(screen.getByText("Sidebar Content")).toBeInTheDocument()
+
+    // Wait for workspace fetch to complete to avoid act() warning
+    await waitFor(() => {
+      expect(screen.getByText("workspace")).toBeInTheDocument()
+    })
   })
 
-  it("renders main content", () => {
+  it("renders main content", async () => {
     render(<MainLayout main={<div>Main Content</div>} />)
     expect(screen.getByText("Main Content")).toBeInTheDocument()
+
+    // Wait for workspace fetch to complete to avoid act() warning
+    await waitFor(() => {
+      expect(screen.getByText("workspace")).toBeInTheDocument()
+    })
   })
 
-  it("renders status bar when provided", () => {
+  it("renders status bar when provided", async () => {
     render(<MainLayout statusBar={<div>Status Bar Content</div>} />)
     expect(screen.getByText("Status Bar Content")).toBeInTheDocument()
+
+    // Wait for workspace fetch to complete to avoid act() warning
+    await waitFor(() => {
+      expect(screen.getByText("workspace")).toBeInTheDocument()
+    })
   })
 
-  it("does not render status bar when not provided", () => {
+  it("does not render status bar when not provided", async () => {
     const { container } = render(<MainLayout />)
     expect(container.querySelector("footer")).not.toBeInTheDocument()
+
+    // Wait for workspace fetch to complete to avoid act() warning
+    await waitFor(() => {
+      expect(screen.getByText("workspace")).toBeInTheDocument()
+    })
   })
 
-  it("toggles sidebar visibility when button is clicked", () => {
+  it("toggles sidebar visibility when button is clicked", async () => {
     render(<MainLayout sidebar={<div>Sidebar Content</div>} />)
+
+    // Wait for workspace fetch to complete to avoid act() warning
+    await waitFor(() => {
+      expect(screen.getByText("workspace")).toBeInTheDocument()
+    })
 
     // Sidebar should be visible initially
     expect(screen.getByText("Sidebar Content")).toBeInTheDocument()
@@ -86,19 +111,34 @@ describe("MainLayout", () => {
     expect(screen.getByText("Sidebar Content")).toBeInTheDocument()
   })
 
-  it("applies custom className", () => {
+  it("applies custom className", async () => {
     const { container } = render(<MainLayout className="custom-class" />)
     expect(container.firstChild).toHaveClass("custom-class")
+
+    // Wait for workspace fetch to complete to avoid act() warning
+    await waitFor(() => {
+      expect(screen.getByText("workspace")).toBeInTheDocument()
+    })
   })
 
   describe("resizable sidebar", () => {
-    it("renders resize handle when sidebar is open", () => {
+    it("renders resize handle when sidebar is open", async () => {
       render(<MainLayout sidebar={<div>Sidebar Content</div>} />)
       expect(screen.getByRole("separator", { name: /resize sidebar/i })).toBeInTheDocument()
+
+      // Wait for workspace fetch to complete to avoid act() warning
+      await waitFor(() => {
+        expect(screen.getByText("workspace")).toBeInTheDocument()
+      })
     })
 
-    it("does not render resize handle when sidebar is closed", () => {
+    it("does not render resize handle when sidebar is closed", async () => {
       render(<MainLayout sidebar={<div>Sidebar Content</div>} />)
+
+      // Wait for workspace fetch to complete to avoid act() warning
+      await waitFor(() => {
+        expect(screen.getByText("workspace")).toBeInTheDocument()
+      })
 
       // Close the sidebar
       const toggleButton = screen.getByRole("button", { name: /collapse sidebar/i })
@@ -107,8 +147,13 @@ describe("MainLayout", () => {
       expect(screen.queryByRole("separator", { name: /resize sidebar/i })).not.toBeInTheDocument()
     })
 
-    it("updates sidebar width on drag", () => {
+    it("updates sidebar width on drag", async () => {
       render(<MainLayout sidebar={<div>Sidebar Content</div>} />)
+
+      // Wait for workspace fetch to complete to avoid act() warning
+      await waitFor(() => {
+        expect(screen.getByText("workspace")).toBeInTheDocument()
+      })
 
       const resizeHandle = screen.getByRole("separator", { name: /resize sidebar/i })
 
@@ -125,8 +170,13 @@ describe("MainLayout", () => {
       expect(useAppStore.getState().sidebarWidth).toBe(400)
     })
 
-    it("respects minimum sidebar width", () => {
+    it("respects minimum sidebar width", async () => {
       render(<MainLayout sidebar={<div>Sidebar Content</div>} />)
+
+      // Wait for workspace fetch to complete to avoid act() warning
+      await waitFor(() => {
+        expect(screen.getByText("workspace")).toBeInTheDocument()
+      })
 
       const resizeHandle = screen.getByRole("separator", { name: /resize sidebar/i })
 
@@ -143,8 +193,13 @@ describe("MainLayout", () => {
       expect(useAppStore.getState().sidebarWidth).toBe(200)
     })
 
-    it("respects maximum sidebar width", () => {
+    it("respects maximum sidebar width", async () => {
       render(<MainLayout sidebar={<div>Sidebar Content</div>} />)
+
+      // Wait for workspace fetch to complete to avoid act() warning
+      await waitFor(() => {
+        expect(screen.getByText("workspace")).toBeInTheDocument()
+      })
 
       const resizeHandle = screen.getByRole("separator", { name: /resize sidebar/i })
 
@@ -161,7 +216,7 @@ describe("MainLayout", () => {
       expect(useAppStore.getState().sidebarWidth).toBe(600)
     })
 
-    it("applies width from store to sidebar", () => {
+    it("applies width from store to sidebar", async () => {
       // Set a custom width
       useAppStore.getState().setSidebarWidth(350)
 
@@ -169,6 +224,11 @@ describe("MainLayout", () => {
 
       const sidebar = screen.getByText("Sidebar Content").closest("aside")
       expect(sidebar).toHaveStyle({ width: "350px" })
+
+      // Wait for workspace fetch to complete to avoid act() warning
+      await waitFor(() => {
+        expect(screen.getByText("workspace")).toBeInTheDocument()
+      })
     })
   })
 })
