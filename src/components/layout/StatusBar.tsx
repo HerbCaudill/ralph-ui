@@ -6,6 +6,7 @@ import {
   selectWorkspace,
   selectBranch,
   selectTokenUsage,
+  selectContextWindow,
   selectIteration,
   selectRunStartedAt,
   selectCurrentTask,
@@ -151,6 +152,42 @@ function TokenUsageDisplay() {
   )
 }
 
+// ContextWindowProgress Component
+
+function ContextWindowProgress() {
+  const contextWindow = useAppStore(selectContextWindow)
+
+  // Don't show if no usage yet
+  if (contextWindow.used === 0) return null
+
+  const progress = (contextWindow.used / contextWindow.max) * 100
+  const usedFormatted = formatTokenCount(contextWindow.used)
+  const maxFormatted = formatTokenCount(contextWindow.max)
+
+  // Color coding based on usage: green < 50%, yellow 50-80%, red > 80%
+  const getProgressColor = () => {
+    if (progress >= 80) return "bg-red-500"
+    if (progress >= 50) return "bg-yellow-500"
+    return "bg-primary"
+  }
+
+  return (
+    <div
+      className="flex items-center gap-2"
+      title={`Context window: ${usedFormatted} / ${maxFormatted} tokens (${progress.toFixed(1)}%)`}
+      data-testid="context-window-progress"
+    >
+      <div className="bg-muted h-1.5 w-20 overflow-hidden rounded-full">
+        <div
+          className={cn("h-full transition-all duration-300", getProgressColor())}
+          style={{ width: `${Math.min(progress, 100)}%` }}
+        />
+      </div>
+      <span className="text-muted-foreground text-xs">{usedFormatted}</span>
+    </div>
+  )
+}
+
 // IterationProgress Component
 
 function IterationProgress() {
@@ -247,10 +284,11 @@ export function StatusBar({ className }: StatusBarProps) {
         <CurrentTask />
       </div>
 
-      {/* Right section: Repo/branch, token usage and iteration */}
+      {/* Right section: Repo/branch, token usage, context window, and iteration */}
       <div className="flex shrink-0 items-center gap-4">
         <RepoBranch />
         <TokenUsageDisplay />
+        <ContextWindowProgress />
         <IterationProgress />
       </div>
     </div>

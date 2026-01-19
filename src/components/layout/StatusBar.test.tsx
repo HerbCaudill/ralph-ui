@@ -87,6 +87,56 @@ describe("StatusBar", () => {
     })
   })
 
+  describe("ContextWindowProgress", () => {
+    it("does not show progress when no tokens used", () => {
+      render(<StatusBar />)
+      expect(screen.queryByTestId("context-window-progress")).not.toBeInTheDocument()
+    })
+
+    it("shows context window usage when tokens are used", () => {
+      useAppStore.getState().updateContextWindowUsed(50000)
+      render(<StatusBar />)
+      expect(screen.getByTestId("context-window-progress")).toBeInTheDocument()
+      expect(screen.getByText("50.0k")).toBeInTheDocument()
+    })
+
+    it("shows progress bar at correct percentage", () => {
+      // 100k of 200k = 50%
+      useAppStore.getState().updateContextWindowUsed(100000)
+      render(<StatusBar />)
+      const progressBar = screen
+        .getByTestId("context-window-progress")
+        .querySelector('[style*="width: 50%"]')
+      expect(progressBar).toBeInTheDocument()
+    })
+
+    it("uses yellow color when usage is between 50% and 80%", () => {
+      // 120k of 200k = 60%
+      useAppStore.getState().updateContextWindowUsed(120000)
+      render(<StatusBar />)
+      const progressBar = screen
+        .getByTestId("context-window-progress")
+        .querySelector(".bg-yellow-500")
+      expect(progressBar).toBeInTheDocument()
+    })
+
+    it("uses red color when usage is over 80%", () => {
+      // 180k of 200k = 90%
+      useAppStore.getState().updateContextWindowUsed(180000)
+      render(<StatusBar />)
+      const progressBar = screen.getByTestId("context-window-progress").querySelector(".bg-red-500")
+      expect(progressBar).toBeInTheDocument()
+    })
+
+    it("has proper tooltip with usage details", () => {
+      useAppStore.getState().updateContextWindowUsed(50000)
+      render(<StatusBar />)
+      const container = screen.getByTestId("context-window-progress")
+      expect(container).toHaveAttribute("title", expect.stringContaining("Context window"))
+      expect(container).toHaveAttribute("title", expect.stringContaining("50.0k"))
+    })
+  })
+
   describe("IterationProgress", () => {
     it("does not show progress when total is 0", () => {
       render(<StatusBar />)

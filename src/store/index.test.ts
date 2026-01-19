@@ -17,6 +17,7 @@ describe("useAppStore", () => {
       expect(state.workspace).toBeNull()
       expect(state.branch).toBeNull()
       expect(state.tokenUsage).toEqual({ input: 0, output: 0 })
+      expect(state.contextWindow).toEqual({ used: 0, max: 200_000 })
       expect(state.iteration).toEqual({ current: 0, total: 0 })
       expect(state.connectionStatus).toBe("disconnected")
       expect(state.accentColor).toBeNull()
@@ -227,6 +228,28 @@ describe("useAppStore", () => {
       useAppStore.getState().addTokenUsage({ input: 200, output: 100 })
       useAppStore.getState().addTokenUsage({ input: 300, output: 150 })
       expect(useAppStore.getState().tokenUsage).toEqual({ input: 600, output: 300 })
+    })
+  })
+
+  describe("context window", () => {
+    it("has default max context window of 200k", () => {
+      expect(useAppStore.getState().contextWindow).toEqual({ used: 0, max: 200_000 })
+    })
+
+    it("sets context window", () => {
+      useAppStore.getState().setContextWindow({ used: 50000, max: 200000 })
+      expect(useAppStore.getState().contextWindow).toEqual({ used: 50000, max: 200000 })
+    })
+
+    it("updates context window used", () => {
+      useAppStore.getState().updateContextWindowUsed(75000)
+      expect(useAppStore.getState().contextWindow).toEqual({ used: 75000, max: 200_000 })
+    })
+
+    it("preserves max when updating used", () => {
+      useAppStore.getState().setContextWindow({ used: 0, max: 150000 })
+      useAppStore.getState().updateContextWindowUsed(50000)
+      expect(useAppStore.getState().contextWindow).toEqual({ used: 50000, max: 150000 })
     })
   })
 

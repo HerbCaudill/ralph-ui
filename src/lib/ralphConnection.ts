@@ -86,6 +86,10 @@ function handleMessage(event: MessageEvent): void {
               const outputTokens = usage.output_tokens || 0
               if (inputTokens > 0 || outputTokens > 0) {
                 store.addTokenUsage({ input: inputTokens, output: outputTokens })
+                // Update context window usage (total tokens used = input + output)
+                const totalTokens =
+                  store.tokenUsage.input + inputTokens + store.tokenUsage.output + outputTokens
+                store.updateContextWindowUsed(totalTokens)
               }
             }
           }

@@ -63,9 +63,33 @@ export interface TokenUsage {
   output: number
 }
 
+export interface ContextWindow {
+  used: number
+  max: number
+}
+
+// Default context window size for Claude Sonnet (200k tokens)
+export const DEFAULT_CONTEXT_WINDOW_MAX = 200_000
+
 export interface IterationInfo {
   current: number
   total: number
+}
+
+// Event log metadata type (matches server EventLogMetadata)
+export interface EventLogMetadata {
+  taskId?: string
+  title?: string
+  source?: string
+  workspacePath?: string
+}
+
+// Event log type (matches server EventLog)
+export interface EventLog {
+  id: string
+  createdAt: string
+  events: RalphEvent[]
+  metadata?: EventLogMetadata
 }
 
 // Store State
@@ -92,6 +116,9 @@ export interface AppState {
   // Token usage
   tokenUsage: TokenUsage
 
+  // Context window usage
+  contextWindow: ContextWindow
+
   // Iteration progress
   iteration: IterationInfo
 
@@ -107,6 +134,12 @@ export interface AppState {
 
   // Theme
   theme: Theme
+
+  // Event log viewer state
+  viewingEventLogId: string | null
+  viewingEventLog: EventLog | null
+  eventLogLoading: boolean
+  eventLogError: string | null
 }
 
 // Store Actions
@@ -137,6 +170,10 @@ export interface AppActions {
   setTokenUsage: (usage: TokenUsage) => void
   addTokenUsage: (usage: TokenUsage) => void
 
+  // Context window
+  setContextWindow: (contextWindow: ContextWindow) => void
+  updateContextWindowUsed: (used: number) => void
+
   // Iteration
   setIteration: (iteration: IterationInfo) => void
 
@@ -150,6 +187,13 @@ export interface AppActions {
 
   // Theme
   setTheme: (theme: Theme) => void
+
+  // Event log viewer
+  setViewingEventLogId: (id: string | null) => void
+  setViewingEventLog: (eventLog: EventLog | null) => void
+  setEventLogLoading: (loading: boolean) => void
+  setEventLogError: (error: string | null) => void
+  clearEventLogViewer: () => void
 
   // Reset
   reset: () => void
@@ -167,12 +211,17 @@ const initialState: AppState = {
   workspace: null,
   branch: null,
   tokenUsage: { input: 0, output: 0 },
+  contextWindow: { used: 0, max: DEFAULT_CONTEXT_WINDOW_MAX },
   iteration: { current: 0, total: 0 },
   connectionStatus: "disconnected",
   accentColor: null,
   sidebarOpen: true,
   sidebarWidth: defaultSidebarWidth,
   theme: "system",
+  viewingEventLogId: null,
+  viewingEventLog: null,
+  eventLogLoading: false,
+  eventLogError: null,
 }
 
 // Create the store with localStorage initialization
@@ -234,6 +283,13 @@ export const useAppStore = create<AppState & AppActions>(set => ({
       },
     })),
 
+  // Context window
+  setContextWindow: contextWindow => set({ contextWindow }),
+  updateContextWindowUsed: used =>
+    set(state => ({
+      contextWindow: { ...state.contextWindow, used },
+    })),
+
   // Iteration
   setIteration: iteration => set({ iteration }),
 
@@ -251,6 +307,19 @@ export const useAppStore = create<AppState & AppActions>(set => ({
   // Theme
   setTheme: theme => set({ theme }),
 
+  // Event log viewer
+  setViewingEventLogId: id => set({ viewingEventLogId: id }),
+  setViewingEventLog: eventLog => set({ viewingEventLog: eventLog }),
+  setEventLogLoading: loading => set({ eventLogLoading: loading }),
+  setEventLogError: error => set({ eventLogError: error }),
+  clearEventLogViewer: () =>
+    set({
+      viewingEventLogId: null,
+      viewingEventLog: null,
+      eventLogLoading: false,
+      eventLogError: null,
+    }),
+
   // Reset
   reset: () => set(initialState),
 }))
@@ -264,6 +333,7 @@ export const selectTasks = (state: AppState) => state.tasks
 export const selectWorkspace = (state: AppState) => state.workspace
 export const selectBranch = (state: AppState) => state.branch
 export const selectTokenUsage = (state: AppState) => state.tokenUsage
+export const selectContextWindow = (state: AppState) => state.contextWindow
 export const selectIteration = (state: AppState) => state.iteration
 export const selectConnectionStatus = (state: AppState) => state.connectionStatus
 export const selectIsConnected = (state: AppState) => state.connectionStatus === "connected"
@@ -274,3 +344,7 @@ export const selectSidebarWidth = (state: AppState) => state.sidebarWidth
 export const selectTheme = (state: AppState) => state.theme
 export const selectCurrentTask = (state: AppState) =>
   state.tasks.find(t => t.status === "in_progress") ?? null
+export const selectViewingEventLogId = (state: AppState) => state.viewingEventLogId
+export const selectViewingEventLog = (state: AppState) => state.viewingEventLog
+export const selectEventLogLoading = (state: AppState) => state.eventLogLoading
+export const selectEventLogError = (state: AppState) => state.eventLogError
