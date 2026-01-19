@@ -3,6 +3,7 @@ import { useAppStore, selectAccentColor } from "@/store"
 import {
   forwardRef,
   useCallback,
+  useEffect,
   useImperativeHandle,
   useRef,
   useState,
@@ -75,6 +76,22 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function Ch
   const [message, setMessage] = useState("")
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
+  // Auto-resize textarea to fit content
+  const adjustTextareaHeight = useCallback(() => {
+    const textarea = textareaRef.current
+    if (!textarea) return
+
+    // Reset height to auto to get the correct scrollHeight
+    textarea.style.height = "auto"
+    // Set height to scrollHeight to fit content
+    textarea.style.height = `${textarea.scrollHeight}px`
+  }, [])
+
+  // Adjust height when message changes
+  useEffect(() => {
+    adjustTextareaHeight()
+  }, [message, adjustTextareaHeight])
+
   useImperativeHandle(ref, () => ({
     focus: () => {
       textareaRef.current?.focus()
@@ -115,12 +132,13 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function Ch
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         disabled={disabled}
-        rows={3}
+        rows={1}
         className={cn(
           "placeholder:text-muted-foreground bg-transparent",
           "w-full resize-none border-0 px-0 py-1 text-sm",
           "focus:ring-0 focus:outline-none",
           "disabled:cursor-not-allowed disabled:opacity-50",
+          "overflow-hidden", // Hide scrollbar during auto-resize
         )}
         aria-label={ariaLabel}
       />

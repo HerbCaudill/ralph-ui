@@ -162,6 +162,48 @@ describe("ChatInput", () => {
     })
   })
 
+  describe("auto-expanding", () => {
+    it("starts with a single row", () => {
+      render(<ChatInput />)
+      const textarea = screen.getByRole("textbox")
+      expect(textarea).toHaveAttribute("rows", "1")
+    })
+
+    it("has overflow hidden for auto-resize", () => {
+      render(<ChatInput />)
+      const textarea = screen.getByRole("textbox")
+      expect(textarea).toHaveClass("overflow-hidden")
+    })
+
+    it("adjusts height when content changes", () => {
+      render(<ChatInput />)
+      const textarea = screen.getByRole("textbox") as HTMLTextAreaElement
+
+      // Type multiline content
+      fireEvent.change(textarea, { target: { value: "Line 1\nLine 2\nLine 3" } })
+
+      // Height should be set dynamically via style
+      expect(textarea.style.height).toBeTruthy()
+    })
+
+    it("resets height when content is cleared", () => {
+      render(<ChatInput />)
+      const textarea = screen.getByRole("textbox") as HTMLTextAreaElement
+
+      // Add content
+      fireEvent.change(textarea, { target: { value: "Line 1\nLine 2\nLine 3" } })
+      const expandedHeight = textarea.style.height
+
+      // Clear content
+      fireEvent.change(textarea, { target: { value: "" } })
+
+      // Height should be recalculated (may be different from expanded)
+      expect(textarea.style.height).toBeTruthy()
+      // After clearing, the height should be less than or equal to expanded height
+      expect(parseInt(textarea.style.height)).toBeLessThanOrEqual(parseInt(expandedHeight))
+    })
+  })
+
   describe("styling", () => {
     it("textarea has borderless styling", () => {
       render(<ChatInput />)
