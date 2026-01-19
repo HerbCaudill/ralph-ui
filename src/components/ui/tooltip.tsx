@@ -73,7 +73,11 @@ function TooltipButton({
 }: TooltipButtonProps) {
   return (
     <Tooltip delayDuration={delayDuration}>
-      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      {/* Wrap children in a span so tooltips work on disabled buttons.
+          Disabled elements don't fire pointer events, but the wrapper span does. */}
+      <TooltipTrigger asChild>
+        <span className="inline-flex">{children}</span>
+      </TooltipTrigger>
       <TooltipContent side={side}>
         <span className="flex items-center">
           {tooltip}

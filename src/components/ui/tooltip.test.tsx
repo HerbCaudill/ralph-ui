@@ -144,5 +144,26 @@ describe("Tooltip", () => {
         expect(screen.getByRole("tooltip")).toBeInTheDocument()
       })
     })
+
+    it("wraps children in a span to allow tooltips on disabled buttons", () => {
+      render(
+        <TooltipProvider delayDuration={0}>
+          <TooltipButton tooltip="This button is disabled" delayDuration={0}>
+            <Button disabled>Disabled</Button>
+          </TooltipButton>
+        </TooltipProvider>,
+      )
+
+      // The button should be wrapped in an inline-flex span
+      const button = screen.getByRole("button", { name: "Disabled" })
+      const wrapperSpan = button.parentElement!
+
+      // Verify the wrapper span exists and has the correct class
+      expect(wrapperSpan.tagName.toLowerCase()).toBe("span")
+      expect(wrapperSpan).toHaveClass("inline-flex")
+
+      // The span should have Radix tooltip data attributes
+      expect(wrapperSpan).toHaveAttribute("data-state")
+    })
   })
 })
