@@ -461,7 +461,10 @@ describe("QuickTaskInput", () => {
         expect(input).toHaveValue("")
       })
 
-      expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
+      // localStorage is cleared by useEffect after render, so we need to wait for it
+      await waitFor(() => {
+        expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
+      })
     })
 
     it("retains localStorage value after failed submission", async () => {
