@@ -83,7 +83,6 @@ export const WithDescription: Story = {
       ...baseTask,
       description:
         "This task involves setting up OAuth2 authentication with Google and GitHub providers. Need to configure callback URLs and store tokens securely.",
-      defaultExpanded: true,
     },
     defaultExpanded: true,
   },

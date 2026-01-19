@@ -23,7 +23,7 @@ export default defineConfig({
             }
           })
           proxy.on("proxyReqWs", (_proxyReq, _req, socket) => {
-            socket.on("error", (err: NodeJS.ErrnoException) => {
+            socket.on("error", (_err: NodeJS.ErrnoException) => {
               // Silently ignore - these errors are expected during rapid reconnects
             })
           })

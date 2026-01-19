@@ -51,7 +51,7 @@ export const AllGroupsExpanded: Story = {
       ready: false,
       in_progress: false,
       blocked: false,
-      other: false,
+      closed: false,
     },
   },
 }
@@ -63,7 +63,7 @@ export const AllGroupsCollapsed: Story = {
       ready: true,
       in_progress: true,
       blocked: true,
-      other: true,
+      closed: true,
     },
   },
 }
@@ -108,7 +108,7 @@ export const ShowEmptyGroups: Story = {
       ready: false,
       in_progress: false,
       blocked: false,
-      other: false,
+      closed: false,
     },
   },
 }
