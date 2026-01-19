@@ -3,13 +3,20 @@ import type { ConnectionStatus } from "../hooks/useWebSocket"
 
 // Types
 
-export type RalphStatus =
-  | "stopped"
-  | "starting"
-  | "running"
-  | "paused"
-  | "stopping"
-  | "stopping_after_current"
+export const RALPH_STATUSES = [
+  "stopped",
+  "starting",
+  "running",
+  "paused",
+  "stopping",
+  "stopping_after_current",
+] as const
+
+export type RalphStatus = (typeof RALPH_STATUSES)[number]
+
+export function isRalphStatus(value: unknown): value is RalphStatus {
+  return typeof value === "string" && RALPH_STATUSES.includes(value as RalphStatus)
+}
 export type Theme = "system" | "light" | "dark"
 
 export interface RalphEvent {

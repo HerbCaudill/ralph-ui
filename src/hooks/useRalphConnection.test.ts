@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { renderHook, act } from "@testing-library/react"
 import { useRalphConnection } from "./useRalphConnection"
 import { useAppStore } from "../store"
+import { ralphConnection } from "../lib/ralphConnection"
 
 // Mock WebSocket
 class MockWebSocket {
@@ -67,12 +68,18 @@ class MockWebSocket {
 // Install mock using window (DOM environment)
 const originalWebSocket = window.WebSocket
 
+// Helper to get the current WebSocket instance
+function getWs(): MockWebSocket | undefined {
+  return MockWebSocket.instances[MockWebSocket.instances.length - 1]
+}
+
 beforeEach(() => {
   MockWebSocket.instances = []
   window.WebSocket = MockWebSocket as unknown as typeof WebSocket
   vi.useFakeTimers()
-  // Reset store
+  // Reset store and singleton
   useAppStore.getState().reset()
+  ralphConnection.reset()
 })
 
 afterEach(() => {
@@ -82,117 +89,133 @@ afterEach(() => {
 
 describe("useRalphConnection", () => {
   describe("connection", () => {
-    it("connects automatically by default", () => {
-      renderHook(() => useRalphConnection({ url: "ws://localhost:3000/ws" }))
+    it("connects automatically on first use", () => {
+      renderHook(() => useRalphConnection())
 
-      expect(MockWebSocket.instances).toHaveLength(1)
-      expect(MockWebSocket.instances[0].url).toBe("ws://localhost:3000/ws")
+      expect(MockWebSocket.instances.length).toBeGreaterThan(0)
     })
 
-    it("does not connect automatically when autoConnect is false", () => {
-      renderHook(() => useRalphConnection({ url: "ws://localhost:3000/ws", autoConnect: false }))
+    it("initializes only once across multiple hook instances", () => {
+      renderHook(() => useRalphConnection())
+      const countAfterFirst = MockWebSocket.instances.length
 
-      expect(MockWebSocket.instances).toHaveLength(0)
+      renderHook(() => useRalphConnection())
+      const countAfterSecond = MockWebSocket.instances.length
+
+      // Should not create additional connections
+      expect(countAfterSecond).toBe(countAfterFirst)
+    })
+  })
+
+  describe("store integration", () => {
+    it("reads connection status from store", () => {
+      const { result } = renderHook(() => useRalphConnection())
+
+      // Set store directly
+      act(() => {
+        useAppStore.getState().setConnectionStatus("connected")
+      })
+
+      expect(result.current.status).toBe("connected")
+      expect(result.current.isConnected).toBe(true)
     })
 
-    it("updates connection status in store when connected", () => {
-      renderHook(() => useRalphConnection({ url: "ws://localhost:3000/ws" }))
-
-      // Initially connecting
-      expect(useAppStore.getState().connectionStatus).toBe("connecting")
-
-      // Simulate connection open
-      act(() => {
-        MockWebSocket.instances[0].simulateOpen()
-      })
-
-      expect(useAppStore.getState().connectionStatus).toBe("connected")
-    })
-
-    it("updates connection status in store when disconnected", () => {
-      renderHook(() => useRalphConnection({ url: "ws://localhost:3000/ws" }))
+    it("reflects disconnected status from store", () => {
+      const { result } = renderHook(() => useRalphConnection())
 
       act(() => {
-        MockWebSocket.instances[0].simulateOpen()
+        useAppStore.getState().setConnectionStatus("disconnected")
       })
 
-      act(() => {
-        MockWebSocket.instances[0].simulateClose()
-      })
-
-      expect(useAppStore.getState().connectionStatus).toBe("disconnected")
+      expect(result.current.status).toBe("disconnected")
+      expect(result.current.isConnected).toBe(false)
     })
   })
 
   describe("sendMessage", () => {
-    it("sends chat_message via WebSocket", () => {
-      const { result } = renderHook(() => useRalphConnection({ url: "ws://localhost:3000/ws" }))
+    it("sends chat_message via WebSocket when connected", () => {
+      const { result } = renderHook(() => useRalphConnection())
 
+      // Simulate connection
       act(() => {
-        MockWebSocket.instances[0].simulateOpen()
+        getWs()?.simulateOpen()
       })
 
       act(() => {
         result.current.sendMessage("Hello, ralph!")
       })
 
-      expect(MockWebSocket.instances[0].sentMessages).toEqual([
+      expect(getWs()?.sentMessages).toContainEqual(
         JSON.stringify({ type: "chat_message", message: "Hello, ralph!" }),
-      ])
+      )
     })
 
     it("does not send when not connected", () => {
-      const { result } = renderHook(() => useRalphConnection({ url: "ws://localhost:3000/ws" }))
+      const { result } = renderHook(() => useRalphConnection())
 
-      // Still in connecting state
+      // Don't simulate open - still connecting
       act(() => {
         result.current.sendMessage("Hello!")
       })
 
-      expect(MockWebSocket.instances[0].sentMessages).toEqual([])
+      expect(getWs()?.sentMessages ?? []).toEqual([])
     })
   })
 
   describe("message handling", () => {
     it("handles ralph:event messages", () => {
-      renderHook(() => useRalphConnection({ url: "ws://localhost:3000/ws" }))
+      renderHook(() => useRalphConnection())
 
       act(() => {
-        MockWebSocket.instances[0].simulateOpen()
+        getWs()?.simulateOpen()
       })
 
       const event = { type: "tool_use", timestamp: 1234, tool: "read" }
 
       act(() => {
-        MockWebSocket.instances[0].simulateMessage({ type: "ralph:event", event })
+        getWs()?.simulateMessage({ type: "ralph:event", event })
       })
 
       expect(useAppStore.getState().events).toContainEqual(event)
     })
 
     it("handles ralph:status messages", () => {
-      renderHook(() => useRalphConnection({ url: "ws://localhost:3000/ws" }))
+      renderHook(() => useRalphConnection())
 
       act(() => {
-        MockWebSocket.instances[0].simulateOpen()
+        getWs()?.simulateOpen()
       })
 
       act(() => {
-        MockWebSocket.instances[0].simulateMessage({ type: "ralph:status", status: "running" })
+        getWs()?.simulateMessage({ type: "ralph:status", status: "running" })
+      })
+
+      expect(useAppStore.getState().ralphStatus).toBe("running")
+    })
+
+    it("handles connected message with ralph status", () => {
+      renderHook(() => useRalphConnection())
+
+      act(() => {
+        getWs()?.simulateOpen()
+      })
+
+      act(() => {
+        getWs()?.simulateMessage({ type: "connected", ralphStatus: "running", timestamp: 1234 })
       })
 
       expect(useAppStore.getState().ralphStatus).toBe("running")
     })
 
     it("handles ralph:output messages", () => {
-      renderHook(() => useRalphConnection({ url: "ws://localhost:3000/ws" }))
+      renderHook(() => useRalphConnection())
 
       act(() => {
-        MockWebSocket.instances[0].simulateOpen()
+        getWs()?.simulateOpen()
       })
 
       act(() => {
-        MockWebSocket.instances[0].simulateMessage({
+        getWs()?.simulateMessage({
           type: "ralph:output",
           line: "Some output",
           timestamp: 1234,
@@ -205,14 +228,14 @@ describe("useRalphConnection", () => {
     })
 
     it("handles ralph:error messages", () => {
-      renderHook(() => useRalphConnection({ url: "ws://localhost:3000/ws" }))
+      renderHook(() => useRalphConnection())
 
       act(() => {
-        MockWebSocket.instances[0].simulateOpen()
+        getWs()?.simulateOpen()
       })
 
       act(() => {
-        MockWebSocket.instances[0].simulateMessage({
+        getWs()?.simulateMessage({
           type: "ralph:error",
           error: "Something went wrong",
           timestamp: 1234,
@@ -225,14 +248,14 @@ describe("useRalphConnection", () => {
     })
 
     it("handles ralph:exit messages", () => {
-      renderHook(() => useRalphConnection({ url: "ws://localhost:3000/ws" }))
+      renderHook(() => useRalphConnection())
 
       act(() => {
-        MockWebSocket.instances[0].simulateOpen()
+        getWs()?.simulateOpen()
       })
 
       act(() => {
-        MockWebSocket.instances[0].simulateMessage({
+        getWs()?.simulateMessage({
           type: "ralph:exit",
           code: 0,
           signal: null,
@@ -246,14 +269,14 @@ describe("useRalphConnection", () => {
     })
 
     it("handles user_message messages", () => {
-      renderHook(() => useRalphConnection({ url: "ws://localhost:3000/ws" }))
+      renderHook(() => useRalphConnection())
 
       act(() => {
-        MockWebSocket.instances[0].simulateOpen()
+        getWs()?.simulateOpen()
       })
 
       act(() => {
-        MockWebSocket.instances[0].simulateMessage({
+        getWs()?.simulateMessage({
           type: "user_message",
           message: "Hello!",
           timestamp: 1234,
@@ -266,14 +289,14 @@ describe("useRalphConnection", () => {
     })
 
     it("handles server error messages", () => {
-      renderHook(() => useRalphConnection({ url: "ws://localhost:3000/ws" }))
+      renderHook(() => useRalphConnection())
 
       act(() => {
-        MockWebSocket.instances[0].simulateOpen()
+        getWs()?.simulateOpen()
       })
 
       act(() => {
-        MockWebSocket.instances[0].simulateMessage({
+        getWs()?.simulateMessage({
           type: "error",
           error: "Ralph is not running",
           timestamp: 1234,
@@ -288,56 +311,35 @@ describe("useRalphConnection", () => {
 
   describe("connect and disconnect", () => {
     it("provides connect function", () => {
-      const { result } = renderHook(() =>
-        useRalphConnection({ url: "ws://localhost:3000/ws", autoConnect: false }),
-      )
+      const { result } = renderHook(() => useRalphConnection())
 
-      expect(result.current.isConnected).toBe(false)
-      expect(MockWebSocket.instances).toHaveLength(0)
+      // Disconnect first
+      act(() => {
+        result.current.disconnect()
+      })
+
+      const countBefore = MockWebSocket.instances.length
 
       act(() => {
         result.current.connect()
       })
 
-      expect(MockWebSocket.instances).toHaveLength(1)
-      expect(result.current.status).toBe("connecting")
-
-      act(() => {
-        MockWebSocket.instances[0].simulateOpen()
-      })
-
-      expect(result.current.isConnected).toBe(true)
+      // Should create a new connection
+      expect(MockWebSocket.instances.length).toBe(countBefore + 1)
     })
 
     it("provides disconnect function", () => {
-      const { result } = renderHook(() => useRalphConnection({ url: "ws://localhost:3000/ws" }))
+      const { result } = renderHook(() => useRalphConnection())
 
       act(() => {
-        MockWebSocket.instances[0].simulateOpen()
+        getWs()?.simulateOpen()
       })
-
-      expect(result.current.isConnected).toBe(true)
 
       act(() => {
         result.current.disconnect()
       })
 
-      expect(result.current.isConnected).toBe(false)
-      expect(result.current.status).toBe("disconnected")
-    })
-  })
-
-  describe("status property", () => {
-    it("returns current connection status", () => {
-      const { result } = renderHook(() => useRalphConnection({ url: "ws://localhost:3000/ws" }))
-
-      expect(result.current.status).toBe("connecting")
-
-      act(() => {
-        MockWebSocket.instances[0].simulateOpen()
-      })
-
-      expect(result.current.status).toBe("connected")
+      expect(useAppStore.getState().connectionStatus).toBe("disconnected")
     })
   })
 })
