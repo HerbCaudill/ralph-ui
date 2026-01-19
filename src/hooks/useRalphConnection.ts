@@ -72,7 +72,28 @@ export function useRalphConnection(
 
       switch (type) {
         case "connected":
-          // Welcome message, already connected
+          // Welcome message - sync Ralph status from server
+          if (
+            typeof message.ralphStatus === "string" &&
+            [
+              "stopped",
+              "starting",
+              "running",
+              "paused",
+              "stopping",
+              "stopping_after_current",
+            ].includes(message.ralphStatus)
+          ) {
+            setRalphStatus(
+              message.ralphStatus as
+                | "stopped"
+                | "starting"
+                | "running"
+                | "paused"
+                | "stopping"
+                | "stopping_after_current",
+            )
+          }
           break
 
         case "ralph:event":

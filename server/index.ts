@@ -496,8 +496,15 @@ function attachWsServer(httpServer: Server): WebSocketServer {
       clients.delete(client)
     })
 
-    // Send welcome message
-    ws.send(JSON.stringify({ type: "connected", timestamp: Date.now() }))
+    // Send welcome message with current Ralph status
+    const manager = getRalphManager()
+    ws.send(
+      JSON.stringify({
+        type: "connected",
+        timestamp: Date.now(),
+        ralphStatus: manager.status,
+      }),
+    )
   })
 
   return wss
