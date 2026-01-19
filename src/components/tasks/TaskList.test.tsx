@@ -146,8 +146,9 @@ describe("TaskList", () => {
       ]
       render(<TaskList tasks={tasks} />)
 
-      const taskIds = screen.getAllByText(/task-/).map(el => el.textContent)
-      expect(taskIds).toEqual(["task-high", "task-med", "task-low"])
+      // Get task titles in order - they should be sorted by priority
+      const taskTitles = screen.getAllByText(/priority/).map(el => el.textContent)
+      expect(taskTitles).toEqual(["High priority", "Medium priority", "Low priority"])
     })
 
     it("treats undefined priority as lowest", () => {
@@ -157,8 +158,9 @@ describe("TaskList", () => {
       ]
       render(<TaskList tasks={tasks} />)
 
-      const taskIds = screen.getAllByText(/task-/).map(el => el.textContent)
-      expect(taskIds).toEqual(["task-high", "task-none"])
+      // Get task titles in order - undefined priority should sort after defined priorities
+      const taskTitles = screen.getAllByText(/priority/).map(el => el.textContent)
+      expect(taskTitles).toEqual(["High priority", "No priority"])
     })
   })
 
@@ -360,8 +362,8 @@ describe("TaskList", () => {
       const onTaskClick = vi.fn()
       render(<TaskList tasks={sampleTasks} onTaskClick={onTaskClick} />)
 
-      // Click on task content
-      const taskButton = screen.getByRole("button", { name: /task-2/i })
+      // Click on task content (task-2 has title "Open task 2" and is first due to priority sorting)
+      const taskButton = screen.getByRole("button", { name: "Open task 2" })
       fireEvent.click(taskButton)
 
       expect(onTaskClick).toHaveBeenCalledWith("task-2")

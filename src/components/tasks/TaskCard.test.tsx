@@ -24,14 +24,15 @@ const fullTask: TaskCardTask = {
 
 describe("TaskCard", () => {
   describe("rendering", () => {
-    it("renders task ID", () => {
-      render(<TaskCard task={baseTask} />)
-      expect(screen.getByText("rui-4rt.5")).toBeInTheDocument()
-    })
-
     it("renders task title", () => {
       render(<TaskCard task={baseTask} />)
       expect(screen.getByText("Create TaskCard component")).toBeInTheDocument()
+    })
+
+    it("does not render task ID in main view", () => {
+      render(<TaskCard task={baseTask} />)
+      // Task ID should not be visible in the main view
+      expect(screen.queryByText("rui-4rt.5")).not.toBeInTheDocument()
     })
 
     it("renders status icon", () => {
@@ -50,13 +51,9 @@ describe("TaskCard", () => {
       })
     })
 
-    it("renders priority badge when provided", () => {
+    it("does not render priority badge (priority not shown in sidebar)", () => {
       render(<TaskCard task={{ ...baseTask, priority: 2 }} />)
-      expect(screen.getByText("P2")).toBeInTheDocument()
-    })
-
-    it("does not render priority badge when not provided", () => {
-      render(<TaskCard task={baseTask} />)
+      // Priority badge should not be visible in the sidebar
       expect(screen.queryByText(/^P\d$/)).not.toBeInTheDocument()
     })
 
@@ -112,7 +109,7 @@ describe("TaskCard", () => {
       expect(screen.queryByText(fullTask.description!)).not.toBeInTheDocument()
 
       // Click the content area to expand
-      const contentButton = screen.getByRole("button", { name: /rui-4rt.5/i })
+      const contentButton = screen.getByRole("button", { name: fullTask.title })
       fireEvent.click(contentButton)
 
       // Details should now be visible
@@ -122,7 +119,7 @@ describe("TaskCard", () => {
     it("collapses details on second click", () => {
       render(<TaskCard task={fullTask} />)
 
-      const contentButton = screen.getByRole("button", { name: /rui-4rt.5/i })
+      const contentButton = screen.getByRole("button", { name: fullTask.title })
 
       // Expand
       fireEvent.click(contentButton)
@@ -149,7 +146,7 @@ describe("TaskCard", () => {
     it("supports keyboard navigation", () => {
       render(<TaskCard task={fullTask} />)
 
-      const contentButton = screen.getByRole("button", { name: /rui-4rt.5/i })
+      const contentButton = screen.getByRole("button", { name: fullTask.title })
 
       // Press Enter to expand
       fireEvent.keyDown(contentButton, { key: "Enter" })
@@ -248,7 +245,7 @@ describe("TaskCard", () => {
       const onClick = vi.fn()
       render(<TaskCard task={baseTask} onClick={onClick} />)
 
-      fireEvent.click(screen.getByRole("button", { name: /rui-4rt.5/i }))
+      fireEvent.click(screen.getByRole("button", { name: baseTask.title }))
 
       expect(onClick).toHaveBeenCalledWith("rui-4rt.5")
     })
@@ -257,54 +254,34 @@ describe("TaskCard", () => {
       const onClick = vi.fn()
       render(<TaskCard task={fullTask} onClick={onClick} />)
 
-      fireEvent.click(screen.getByRole("button", { name: /rui-4rt.5/i }))
+      fireEvent.click(screen.getByRole("button", { name: fullTask.title }))
 
       expect(onClick).toHaveBeenCalledWith("rui-4rt.5")
       expect(screen.getByText(fullTask.description!)).toBeInTheDocument()
     })
   })
 
-  describe("priority badges", () => {
-    it("renders P0 with correct styling", () => {
-      render(<TaskCard task={{ ...baseTask, priority: 0 }} />)
-      const badge = screen.getByText("P0")
-      expect(badge).toHaveClass("text-red-600")
-    })
-
-    it("renders P1 with correct styling", () => {
-      render(<TaskCard task={{ ...baseTask, priority: 1 }} />)
-      const badge = screen.getByText("P1")
-      expect(badge).toHaveClass("text-orange-600")
-    })
-
-    it("renders P2 with correct styling", () => {
-      render(<TaskCard task={{ ...baseTask, priority: 2 }} />)
-      const badge = screen.getByText("P2")
-      expect(badge).toHaveClass("text-yellow-600")
-    })
-
-    it("renders P3 with correct styling", () => {
-      render(<TaskCard task={{ ...baseTask, priority: 3 }} />)
-      const badge = screen.getByText("P3")
-      expect(badge).toHaveClass("text-blue-600")
-    })
-
-    it("renders P4 with correct styling", () => {
-      render(<TaskCard task={{ ...baseTask, priority: 4 }} />)
-      const badge = screen.getByText("P4")
-      expect(badge).toHaveClass("text-gray-600")
+  describe("priority", () => {
+    it("does not display priority badges in the sidebar", () => {
+      // Priority badges are not shown in the simplified sidebar view
+      const priorities = [0, 1, 2, 3, 4]
+      priorities.forEach(priority => {
+        const { unmount } = render(<TaskCard task={{ ...baseTask, priority }} />)
+        expect(screen.queryByText(`P${priority}`)).not.toBeInTheDocument()
+        unmount()
+      })
     })
   })
 
   describe("accessibility", () => {
     it("content area has button role", () => {
       render(<TaskCard task={baseTask} />)
-      expect(screen.getByRole("button", { name: /rui-4rt.5/i })).toBeInTheDocument()
+      expect(screen.getByRole("button", { name: baseTask.title })).toBeInTheDocument()
     })
 
     it("content area has aria-expanded attribute", () => {
       render(<TaskCard task={fullTask} />)
-      const contentButton = screen.getByRole("button", { name: /rui-4rt.5/i })
+      const contentButton = screen.getByRole("button", { name: fullTask.title })
       expect(contentButton).toHaveAttribute("aria-expanded", "false")
 
       fireEvent.click(contentButton)

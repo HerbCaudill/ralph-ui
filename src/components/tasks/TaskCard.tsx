@@ -86,16 +86,6 @@ const statusConfig: Record<TaskStatus, StatusConfig> = {
   },
 }
 
-// Priority Configuration
-
-const priorityLabels: Record<number, { label: string; color: string }> = {
-  0: { label: "P0", color: "text-red-600 bg-red-100 dark:bg-red-900/30" },
-  1: { label: "P1", color: "text-orange-600 bg-orange-100 dark:bg-orange-900/30" },
-  2: { label: "P2", color: "text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30" },
-  3: { label: "P3", color: "text-blue-600 bg-blue-100 dark:bg-blue-900/30" },
-  4: { label: "P4", color: "text-gray-600 bg-gray-100 dark:bg-gray-900/30" },
-}
-
 // Available Statuses for Transition
 
 const availableStatuses: TaskStatus[] = ["open", "in_progress", "blocked", "deferred", "closed"]
@@ -119,7 +109,6 @@ export function TaskCard({
 
   const config = statusConfig[task.status]
   const StatusIcon = config.icon
-  const priorityConfig = task.priority !== undefined ? priorityLabels[task.priority] : null
 
   const toggleExpanded = useCallback(() => {
     setIsExpanded(prev => !prev)
@@ -234,23 +223,8 @@ export function TaskCard({
           onKeyDown={handleKeyDown}
           className="flex min-w-0 flex-1 cursor-pointer items-center gap-2"
           aria-expanded={isExpanded}
-          aria-label={`${task.id} ${task.title}`}
+          aria-label={task.title}
         >
-          {/* Task ID */}
-          <span className="text-muted-foreground shrink-0 font-mono text-xs">{task.id}</span>
-
-          {/* Priority badge */}
-          {priorityConfig && (
-            <span
-              className={cn(
-                "shrink-0 rounded px-1.5 py-0.5 text-xs font-medium",
-                priorityConfig.color,
-              )}
-            >
-              {priorityConfig.label}
-            </span>
-          )}
-
           {/* Title */}
           <span
             className={cn(
