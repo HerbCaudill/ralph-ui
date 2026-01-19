@@ -160,13 +160,12 @@ export const MainLayout = forwardRef<MainLayoutHandle, MainLayoutProps>(function
         {/* Main content */}
         <main ref={mainRef} className="flex flex-1 flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto">{main}</div>
+          {/* Status bar - inside main panel */}
+          {statusBar && (
+            <footer className="border-border bg-muted/50 border-t px-4 py-2">{statusBar}</footer>
+          )}
         </main>
       </div>
-
-      {/* Status bar */}
-      {statusBar && (
-        <footer className="border-border bg-muted/50 border-t px-4 py-2">{statusBar}</footer>
-      )}
     </div>
   )
 })

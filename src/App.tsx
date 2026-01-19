@@ -6,14 +6,7 @@ import { TaskSidebar } from "./components/tasks/TaskSidebar"
 import { TaskList } from "./components/tasks/TaskList"
 import { TaskDetailsDialog } from "./components/tasks/TaskDetailsDialog"
 import { QuickTaskInput, type QuickTaskInputHandle } from "./components/tasks/QuickTaskInput"
-import {
-  useAppStore,
-  selectConnectionStatus,
-  selectRalphStatus,
-  selectIsRalphRunning,
-  selectIsConnected,
-  selectCurrentTask,
-} from "./store"
+import { useAppStore, selectRalphStatus, selectIsRalphRunning, selectIsConnected } from "./store"
 import { useRalphConnection, useHotkeys, useTheme, useTasks, useTaskDialog } from "./hooks"
 
 // API Functions (for hotkeys)
@@ -113,9 +106,6 @@ function AgentView({ chatInputRef }: AgentViewProps) {
 
   return (
     <div className="flex h-full flex-col">
-      {/* Task status bar at top of main panel */}
-      <TaskStatusBar />
-
       {/* Event stream */}
       <div className="min-h-0 flex-1">
         <EventStream />
@@ -134,54 +124,6 @@ function AgentView({ chatInputRef }: AgentViewProps) {
             : "Type a message..."
           }
         />
-      </div>
-    </div>
-  )
-}
-
-function TaskStatusBar() {
-  const connectionStatus = useAppStore(selectConnectionStatus)
-  const ralphStatus = useAppStore(selectRalphStatus)
-  const currentTask = useAppStore(selectCurrentTask)
-
-  return (
-    <div
-      role="status"
-      aria-label="Task status bar"
-      className="border-border bg-muted/50 flex items-center justify-between border-b px-4 py-2 text-sm"
-    >
-      {/* Left section: Current task */}
-      <div className="flex min-w-0 flex-1 items-center gap-2">
-        {currentTask ?
-          <>
-            <span className="text-muted-foreground shrink-0 font-mono text-xs">
-              {currentTask.id}
-            </span>
-            <span className="truncate">{currentTask.content}</span>
-          </>
-        : <span className="text-muted-foreground">No task in progress</span>}
-      </div>
-
-      {/* Right section: Status indicators */}
-      <div className="flex shrink-0 items-center gap-4">
-        <span className="flex items-center gap-2">
-          <span
-            className={
-              connectionStatus === "connected" ? "size-2 rounded-full bg-green-500"
-              : connectionStatus === "connecting" ?
-                "size-2 rounded-full bg-yellow-500"
-              : "size-2 rounded-full bg-red-500"
-            }
-          />
-          <span className="text-muted-foreground">
-            {connectionStatus === "connected" ?
-              "Connected"
-            : connectionStatus === "connecting" ?
-              "Connecting..."
-            : "Disconnected"}
-          </span>
-        </span>
-        <span className="text-muted-foreground">Ralph: {ralphStatus}</span>
       </div>
     </div>
   )

@@ -12,8 +12,8 @@ test("displays main layout with sidebar and content", async ({ page }) => {
   // Check for chat input
   await expect(page.getByRole("textbox", { name: "Message input" })).toBeVisible()
 
-  // Check for status bar (now at top of main panel)
-  await expect(page.getByRole("status", { name: "Status bar" })).toBeVisible()
+  // Check for status bar at bottom (by checking for the control buttons)
+  await expect(page.getByRole("button", { name: "Start" })).toBeVisible()
 })
 
 test("can toggle sidebar", async ({ page }) => {

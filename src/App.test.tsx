@@ -48,9 +48,8 @@ describe("App", () => {
     // Check for sidebar content (TaskSidebar is a pure layout component, no heading)
     expect(screen.getByRole("complementary", { name: "Task sidebar" })).toBeInTheDocument()
 
-    // Check for status indicators (connection status appears in both Header and StatusBar)
-    expect(screen.getAllByText(/Disconnected|Connected|Connecting/).length).toBeGreaterThan(0)
-    expect(screen.getByText(/Ralph:/)).toBeInTheDocument()
+    // Check for ralph status in StatusBar
+    expect(screen.getByText(/Stopped|Running|Starting/)).toBeInTheDocument()
 
     // Check for event stream
     expect(screen.getByRole("log", { name: "Event stream" })).toBeInTheDocument()
@@ -65,12 +64,10 @@ describe("App", () => {
     })
   })
 
-  it("shows disconnected status by default", async () => {
+  it("shows stopped status by default", async () => {
     render(<App />)
-    // Connection status appears in both Header and StatusBar
-    // Note: During test, WebSocket starts connecting immediately, so status may be "Connecting..."
-    expect(screen.getAllByText(/Disconnected|Connecting/).length).toBeGreaterThan(0)
-    expect(screen.getByText("Ralph: stopped")).toBeInTheDocument()
+    // Ralph status appears in StatusBar
+    expect(screen.getByText("Stopped")).toBeInTheDocument()
 
     // Wait for all async operations to complete to avoid act() warning
     // workspace appears in both Header and StatusBar now

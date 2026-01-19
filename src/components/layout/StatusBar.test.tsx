@@ -108,6 +108,39 @@ describe("StatusBar", () => {
     })
   })
 
+  describe("CurrentTask", () => {
+    it("does not show task when no current task", () => {
+      render(<StatusBar />)
+      // No task info should be displayed - the component won't render
+      expect(screen.queryByTitle("Current task")).not.toBeInTheDocument()
+    })
+
+    it("shows current task id and content when in_progress task exists", () => {
+      useAppStore
+        .getState()
+        .setTasks([{ id: "rui-123", content: "Fix the bug", status: "in_progress" }])
+      render(<StatusBar />)
+      expect(screen.getByText("rui-123")).toBeInTheDocument()
+      expect(screen.getByText("Fix the bug")).toBeInTheDocument()
+    })
+
+    it("truncates long task content", () => {
+      useAppStore.getState().setTasks([
+        {
+          id: "rui-456",
+          content: "This is a very long task description that should be truncated",
+          status: "in_progress",
+        },
+      ])
+      render(<StatusBar />)
+      expect(screen.getByText("rui-456")).toBeInTheDocument()
+      const taskContent = screen.getByText(
+        "This is a very long task description that should be truncated",
+      )
+      expect(taskContent).toHaveClass("truncate")
+    })
+  })
+
   describe("styling", () => {
     it("applies custom className", () => {
       const { container } = render(<StatusBar className="custom-class" />)
