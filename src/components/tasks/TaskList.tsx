@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils"
 import { useState, useCallback, useMemo, useEffect } from "react"
 import { IconChevronDown, IconStack2 } from "@tabler/icons-react"
 import { TaskCard, type TaskCardTask, type TaskStatus } from "./TaskCard"
+import { TaskHoverCard } from "./TaskHoverCard"
 
 // Constants
 
@@ -590,13 +591,18 @@ export function TaskList({
                           {!isEpicCollapsed && (
                             <div role="group" aria-label={`${epic.title} tasks`}>
                               {epicTasks.map(task => (
-                                <TaskCard
+                                <TaskHoverCard
                                   key={task.id}
                                   task={task}
-                                  onStatusChange={onStatusChange}
-                                  onClick={onTaskClick}
-                                  className="pl-6"
-                                />
+                                  onOpenDetails={onTaskClick}
+                                >
+                                  <TaskCard
+                                    task={task}
+                                    onStatusChange={onStatusChange}
+                                    onClick={onTaskClick}
+                                    className="pl-6"
+                                  />
+                                </TaskHoverCard>
                               ))}
                             </div>
                           )}
@@ -605,12 +611,17 @@ export function TaskList({
                     } else {
                       // Ungrouped tasks (no epic parent)
                       return epicTasks.map(task => (
-                        <TaskCard
+                        <TaskHoverCard
                           key={task.id}
                           task={task}
-                          onStatusChange={onStatusChange}
-                          onClick={onTaskClick}
-                        />
+                          onOpenDetails={onTaskClick}
+                        >
+                          <TaskCard
+                            task={task}
+                            onStatusChange={onStatusChange}
+                            onClick={onTaskClick}
+                          />
+                        </TaskHoverCard>
                       ))
                     }
                   })
