@@ -1,7 +1,10 @@
 import { cn } from "@/lib/utils"
 import { forwardRef, useImperativeHandle, useRef, useCallback, useState, useEffect } from "react"
 import { Header } from "./Header"
-import { useAppStore, selectSidebarOpen, selectSidebarWidth } from "@/store"
+import { useAppStore, selectSidebarOpen, selectSidebarWidth, selectAccentColor } from "@/store"
+
+/** Default accent color (neutral dark) when peacock color is not set */
+const DEFAULT_ACCENT_COLOR = "#374151"
 
 // Note: Sidebar toggle removed from UI - use Cmd+B hotkey to toggle
 
@@ -38,6 +41,8 @@ export const MainLayout = forwardRef<MainLayoutHandle, MainLayoutProps>(function
   const sidebarOpen = useAppStore(selectSidebarOpen)
   const sidebarWidth = useAppStore(selectSidebarWidth)
   const setSidebarWidth = useAppStore(state => state.setSidebarWidth)
+  const accentColor = useAppStore(selectAccentColor)
+  const borderColor = accentColor ?? DEFAULT_ACCENT_COLOR
   const sidebarRef = useRef<HTMLDivElement>(null)
   const mainRef = useRef<HTMLDivElement>(null)
 
@@ -109,7 +114,10 @@ export const MainLayout = forwardRef<MainLayoutHandle, MainLayoutProps>(function
   }))
 
   return (
-    <div className={cn("bg-background flex h-screen flex-col overflow-hidden", className)}>
+    <div
+      className={cn("bg-background flex h-screen flex-col overflow-hidden", className)}
+      style={{ border: `2px solid ${borderColor}` }}
+    >
       {/* Header */}
       {showHeader && (header ?? <Header />)}
 

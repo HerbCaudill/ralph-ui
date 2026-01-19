@@ -123,6 +123,37 @@ describe("MainLayout", () => {
     })
   })
 
+  describe("accent color border", () => {
+    it("renders with default accent color border when no accent color is set", async () => {
+      const { container } = render(<MainLayout />)
+      const layoutDiv = container.firstChild as HTMLElement
+      // Check border style is applied (jsdom converts hex to rgb)
+      expect(layoutDiv.style.border).toBe("2px solid rgb(55, 65, 81)")
+
+      // Wait for workspace fetch to complete to avoid act() warning
+      await waitFor(() => {
+        expect(screen.getByText("workspace")).toBeInTheDocument()
+      })
+    })
+
+    it("renders with accent color border from store", async () => {
+      // Set accent color in store
+      act(() => {
+        useAppStore.getState().setAccentColor("#ff5500")
+      })
+
+      const { container } = render(<MainLayout />)
+      const layoutDiv = container.firstChild as HTMLElement
+      // Check border style is applied (jsdom converts hex to rgb)
+      expect(layoutDiv.style.border).toBe("2px solid rgb(255, 85, 0)")
+
+      // Wait for workspace fetch to complete to avoid act() warning
+      await waitFor(() => {
+        expect(screen.getByText("workspace")).toBeInTheDocument()
+      })
+    })
+  })
+
   describe("resizable sidebar", () => {
     it("renders resize handle when sidebar is open", async () => {
       render(<MainLayout sidebar={<div>Sidebar Content</div>} />)
