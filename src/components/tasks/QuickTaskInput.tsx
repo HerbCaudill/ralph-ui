@@ -33,7 +33,7 @@ export interface QuickTaskInputProps {
 
   /**
    * Placeholder text for the input.
-   * @default "Add a task..."
+   * @default "Tell Ralph what you want to do"
    */
   placeholder?: string
 
@@ -71,7 +71,13 @@ const STORAGE_KEY = "ralph-ui-task-input-draft"
  */
 export const QuickTaskInput = forwardRef<QuickTaskInputHandle, QuickTaskInputProps>(
   function QuickTaskInput(
-    { onTaskCreated, onError, placeholder = "Add a task...", disabled = false, className },
+    {
+      onTaskCreated,
+      onError,
+      placeholder = "Tell Ralph what you want to do",
+      disabled = false,
+      className,
+    },
     ref,
   ) {
     const accentColor = useAppStore(selectAccentColor)
