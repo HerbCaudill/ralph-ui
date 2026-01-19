@@ -172,7 +172,10 @@ describe("QuickTaskInput", () => {
       })
 
       // Input should still be focused after submission
-      expect(document.activeElement).toBe(input)
+      // Focus is restored via requestAnimationFrame, so we need to wait for it
+      await waitFor(() => {
+        expect(document.activeElement).toBe(input)
+      })
     })
 
     it("trims whitespace from title", async () => {

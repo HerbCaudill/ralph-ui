@@ -134,9 +134,12 @@ export const QuickTaskInput = forwardRef<QuickTaskInputHandle, QuickTaskInputPro
           }
 
           setTitle("")
-          // Keep textarea focused after submission
-          textareaRef.current?.focus()
-          onTaskCreated?.(data.issue)
+          await onTaskCreated?.(data.issue)
+          // Keep textarea focused after submission and any parent callbacks
+          // Use requestAnimationFrame to ensure focus happens after React re-renders
+          requestAnimationFrame(() => {
+            textareaRef.current?.focus()
+          })
         } catch (err) {
           const message = err instanceof Error ? err.message : "Failed to create task"
           onError?.(message)
