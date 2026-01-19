@@ -7,6 +7,56 @@ import { TaskCard, type TaskCardTask, type TaskStatus } from "./TaskCard"
 
 const STATUS_STORAGE_KEY = "ralph-ui-task-list-collapsed-state"
 const EPIC_STORAGE_KEY = "ralph-ui-task-list-epic-collapsed-state"
+const CLOSED_FILTER_STORAGE_KEY = "ralph-ui-task-list-closed-filter"
+
+/** Time filter options for closed tasks */
+export type ClosedTasksTimeFilter = "past_hour" | "past_day" | "past_week" | "all_time"
+
+/** Human-readable labels for time filter options */
+const closedTimeFilterLabels: Record<ClosedTasksTimeFilter, string> = {
+  past_hour: "Past hour",
+  past_day: "Past day",
+  past_week: "Past week",
+  all_time: "All time",
+}
+
+/** Get the cutoff timestamp for a time filter */
+function getTimeFilterCutoff(filter: ClosedTasksTimeFilter): Date | null {
+  if (filter === "all_time") return null
+  const now = new Date()
+  switch (filter) {
+    case "past_hour":
+      return new Date(now.getTime() - 60 * 60 * 1000)
+    case "past_day":
+      return new Date(now.getTime() - 24 * 60 * 60 * 1000)
+    case "past_week":
+      return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+  }
+}
+
+/** Load closed filter from localStorage */
+function loadClosedFilter(): ClosedTasksTimeFilter | null {
+  if (typeof window === "undefined") return null
+  try {
+    const stored = localStorage.getItem(CLOSED_FILTER_STORAGE_KEY)
+    if (stored && stored in closedTimeFilterLabels) {
+      return stored as ClosedTasksTimeFilter
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  return null
+}
+
+/** Save closed filter to localStorage */
+function saveClosedFilter(filter: ClosedTasksTimeFilter): void {
+  if (typeof window === "undefined") return
+  try {
+    localStorage.setItem(CLOSED_FILTER_STORAGE_KEY, filter)
+  } catch {
+    // Ignore storage errors
+  }
+}
 
 // Types
 
@@ -68,9 +118,20 @@ interface TaskGroupHeaderProps {
   count: number
   isCollapsed: boolean
   onToggle: () => void
+  /** Optional time filter for closed tasks */
+  timeFilter?: ClosedTasksTimeFilter
+  /** Callback when time filter changes */
+  onTimeFilterChange?: (filter: ClosedTasksTimeFilter) => void
 }
 
-function TaskGroupHeader({ label, count, isCollapsed, onToggle }: TaskGroupHeaderProps) {
+function TaskGroupHeader({
+  label,
+  count,
+  isCollapsed,
+  onToggle,
+  timeFilter,
+  onTimeFilterChange,
+}: TaskGroupHeaderProps) {
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === "Enter" || e.key === " ") {
@@ -80,6 +141,18 @@ function TaskGroupHeader({ label, count, isCollapsed, onToggle }: TaskGroupHeade
     },
     [onToggle],
   )
+
+  const handleFilterChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      e.stopPropagation()
+      onTimeFilterChange?.(e.target.value as ClosedTasksTimeFilter)
+    },
+    [onTimeFilterChange],
+  )
+
+  const handleFilterClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent toggle when clicking dropdown
+  }, [])
 
   return (
     <div
@@ -102,6 +175,25 @@ function TaskGroupHeader({ label, count, isCollapsed, onToggle }: TaskGroupHeade
         )}
       />
       <span className="text-sm font-medium">{label}</span>
+      {timeFilter && onTimeFilterChange && (
+        <select
+          value={timeFilter}
+          onChange={handleFilterChange}
+          onClick={handleFilterClick}
+          onKeyDown={e => e.stopPropagation()}
+          className={cn(
+            "text-muted-foreground bg-muted hover:bg-muted/80 cursor-pointer rounded px-1.5 py-0.5 text-xs",
+            "focus:ring-ring border-0 outline-none focus:ring-1",
+          )}
+          aria-label="Filter closed tasks by time"
+        >
+          {(Object.keys(closedTimeFilterLabels) as ClosedTasksTimeFilter[]).map(filter => (
+            <option key={filter} value={filter}>
+              {closedTimeFilterLabels[filter]}
+            </option>
+          ))}
+        </select>
+      )}
       <span className="text-muted-foreground bg-muted rounded px-1.5 py-0.5 text-xs">{count}</span>
     </div>
   )
@@ -290,6 +382,11 @@ export function TaskList({
     return persistCollapsedState ? (loadEpicCollapsedState() ?? {}) : {}
   })
 
+  // Initialize closed tasks time filter from localStorage
+  const [closedTimeFilter, setClosedTimeFilter] = useState<ClosedTasksTimeFilter>(() => {
+    return persistCollapsedState ? (loadClosedFilter() ?? "past_day") : "past_day"
+  })
+
   // Persist status collapsed state to localStorage when it changes
   useEffect(() => {
     if (persistCollapsedState) {
@@ -303,6 +400,13 @@ export function TaskList({
       saveEpicCollapsedState(epicCollapsedState)
     }
   }, [epicCollapsedState, persistCollapsedState])
+
+  // Persist closed time filter to localStorage when it changes
+  useEffect(() => {
+    if (persistCollapsedState) {
+      saveClosedFilter(closedTimeFilter)
+    }
+  }, [closedTimeFilter, persistCollapsedState])
 
   const toggleStatusGroup = useCallback((group: TaskGroup) => {
     setStatusCollapsedState(prev => ({
@@ -320,6 +424,9 @@ export function TaskList({
 
   // Group tasks by status first, then by epic within each status
   const statusGroups = useMemo(() => {
+    // Get the time cutoff for closed tasks filtering
+    const closedCutoff = getTimeFilterCutoff(closedTimeFilter)
+
     // First, identify all epics and create a map
     const epicMap = new Map<string, TaskCardTask>()
     for (const task of tasks) {
@@ -342,6 +449,14 @@ export function TaskList({
       // Find which status group this task belongs to
       const config = groupConfigs.find(g => g.statusFilter(task.status))
       if (!config) continue
+
+      // Apply time filter for closed tasks
+      if (config.key === "closed" && closedCutoff) {
+        const closedAt = task.closed_at ? new Date(task.closed_at) : null
+        if (!closedAt || closedAt < closedCutoff) {
+          continue // Skip tasks closed before the cutoff
+        }
+      }
 
       const epicTasksMap = statusToEpicTasks.get(config.key)!
       const epicId = task.parent && epicMap.has(task.parent) ? task.parent : null
@@ -404,7 +519,7 @@ export function TaskList({
     }
 
     return result
-  }, [tasks])
+  }, [tasks, closedTimeFilter])
 
   // Filter to only non-empty status groups (or all if showEmptyGroups is true)
   const visibleStatusGroups = useMemo(() => {
@@ -442,6 +557,8 @@ export function TaskList({
               count={totalCount}
               isCollapsed={isStatusCollapsed}
               onToggle={() => toggleStatusGroup(config.key)}
+              timeFilter={config.key === "closed" ? closedTimeFilter : undefined}
+              onTimeFilterChange={config.key === "closed" ? setClosedTimeFilter : undefined}
             />
             {!isStatusCollapsed && (
               <div role="group" aria-label={`${config.label} tasks`}>

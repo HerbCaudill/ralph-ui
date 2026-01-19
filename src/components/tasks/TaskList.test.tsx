@@ -4,6 +4,10 @@ import { TaskList, type TaskGroup } from "./TaskList"
 import type { TaskCardTask } from "./TaskCard"
 
 const STORAGE_KEY = "ralph-ui-task-list-collapsed-state"
+const CLOSED_FILTER_STORAGE_KEY = "ralph-ui-task-list-closed-filter"
+
+// Helper to get recent date (for closed tasks to be visible with default filter)
+const getRecentDate = () => new Date().toISOString()
 
 // Test Fixtures
 
@@ -12,8 +16,14 @@ const sampleTasks: TaskCardTask[] = [
   { id: "task-2", title: "Open task 2", status: "open", priority: 1 },
   { id: "task-3", title: "In progress task", status: "in_progress", priority: 2 },
   { id: "task-4", title: "Blocked task", status: "blocked", priority: 0 },
-  { id: "task-5", title: "Deferred task", status: "deferred", priority: 3 },
-  { id: "task-6", title: "Closed task", status: "closed", priority: 2 },
+  {
+    id: "task-5",
+    title: "Deferred task",
+    status: "deferred",
+    priority: 3,
+    closed_at: getRecentDate(),
+  },
+  { id: "task-6", title: "Closed task", status: "closed", priority: 2, closed_at: getRecentDate() },
 ]
 
 // Tests
@@ -127,8 +137,8 @@ describe("TaskList", () => {
 
     it("groups deferred and closed tasks under Closed", () => {
       const tasks: TaskCardTask[] = [
-        { id: "task-1", title: "Deferred task", status: "deferred" },
-        { id: "task-2", title: "Closed task", status: "closed" },
+        { id: "task-1", title: "Deferred task", status: "deferred", closed_at: getRecentDate() },
+        { id: "task-2", title: "Closed task", status: "closed", closed_at: getRecentDate() },
       ]
       render(<TaskList tasks={tasks} />)
 
@@ -164,30 +174,38 @@ describe("TaskList", () => {
     })
 
     it("sorts closed tasks by closed_at (most recent first)", () => {
+      // Use recent dates to ensure they pass the time filter
+      const now = new Date()
       const tasks: TaskCardTask[] = [
         {
           id: "task-old",
           title: "Task A closed earlier",
           status: "closed",
           priority: 0, // Highest priority but should come last
-          closed_at: "2026-01-15T10:00:00Z",
+          closed_at: new Date(now.getTime() - 3 * 60 * 60 * 1000).toISOString(), // 3 hours ago
         },
         {
           id: "task-new",
           title: "Task B closed later",
           status: "closed",
           priority: 4, // Lowest priority but should come first
-          closed_at: "2026-01-19T10:00:00Z",
+          closed_at: new Date(now.getTime() - 1 * 60 * 60 * 1000).toISOString(), // 1 hour ago
         },
         {
           id: "task-mid",
           title: "Task C closed middle",
           status: "closed",
           priority: 2,
-          closed_at: "2026-01-17T10:00:00Z",
+          closed_at: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
         },
       ]
-      render(<TaskList tasks={tasks} defaultCollapsed={{ closed: false }} />)
+      render(
+        <TaskList
+          tasks={tasks}
+          defaultCollapsed={{ closed: false }}
+          persistCollapsedState={false}
+        />,
+      )
 
       // Get task titles in order - they should be sorted by closed_at (most recent first)
       const taskTitles = screen.getAllByText(/Task [ABC] closed/).map(el => el.textContent)
@@ -199,6 +217,9 @@ describe("TaskList", () => {
     })
 
     it("treats undefined closed_at as oldest for closed tasks", () => {
+      // Need to set all_time filter to see task without closed_at
+      localStorage.setItem(CLOSED_FILTER_STORAGE_KEY, "all_time")
+
       const tasks: TaskCardTask[] = [
         {
           id: "task-no-date",
@@ -209,7 +230,7 @@ describe("TaskList", () => {
           id: "task-with-date",
           title: "Has close date",
           status: "closed",
-          closed_at: "2026-01-19T10:00:00Z",
+          closed_at: getRecentDate(),
         },
       ]
       render(<TaskList tasks={tasks} defaultCollapsed={{ closed: false }} />)
@@ -220,6 +241,8 @@ describe("TaskList", () => {
         .filter(el => el.textContent?.includes("date"))
         .map(el => el.textContent)
       expect(taskTitles).toEqual(["Has close date", "No close date"])
+
+      localStorage.clear()
     })
   })
 
@@ -291,7 +314,11 @@ describe("TaskList", () => {
         in_progress: false,
         closed: false,
       }
-      render(<TaskList tasks={sampleTasks} defaultCollapsed={defaultCollapsed} />)
+      // Use sample tasks with recent closed_at dates
+      const tasksWithRecentClosed = sampleTasks.map(t =>
+        t.status === "deferred" || t.status === "closed" ? { ...t, closed_at: getRecentDate() } : t,
+      )
+      render(<TaskList tasks={tasksWithRecentClosed} defaultCollapsed={defaultCollapsed} />)
 
       // Ready should be collapsed
       expect(screen.queryByText("Open task 1")).not.toBeInTheDocument()
@@ -322,6 +349,8 @@ describe("TaskList", () => {
     afterEach(() => {
       localStorage.clear()
     })
+
+    // Note: The CLOSED_FILTER_STORAGE_KEY is also stored in localStorage
 
     it("persists collapsed state to localStorage", () => {
       render(<TaskList tasks={sampleTasks} />)
@@ -557,6 +586,163 @@ describe("TaskList", () => {
       // High priority epic should come first
       expect(epicHeaders[0]).toHaveTextContent("High Priority Epic")
       expect(epicHeaders[1]).toHaveTextContent("Low Priority Epic")
+    })
+  })
+
+  describe("closed tasks time filter", () => {
+    beforeEach(() => {
+      localStorage.clear()
+    })
+
+    afterEach(() => {
+      localStorage.clear()
+    })
+
+    it("shows time filter dropdown in closed group header", () => {
+      const tasks: TaskCardTask[] = [
+        { id: "task-1", title: "Closed task", status: "closed", closed_at: getRecentDate() },
+      ]
+      render(<TaskList tasks={tasks} />)
+
+      const filterDropdown = screen.getByRole("combobox", { name: "Filter closed tasks by time" })
+      expect(filterDropdown).toBeInTheDocument()
+    })
+
+    it("defaults to past_day filter", () => {
+      const tasks: TaskCardTask[] = [
+        { id: "task-1", title: "Closed task", status: "closed", closed_at: getRecentDate() },
+      ]
+      render(<TaskList tasks={tasks} persistCollapsedState={false} />)
+
+      const filterDropdown = screen.getByRole("combobox", { name: "Filter closed tasks by time" })
+      expect(filterDropdown).toHaveValue("past_day")
+    })
+
+    it("filters closed tasks based on time selection", () => {
+      const now = new Date()
+      const hourAgo = new Date(now.getTime() - 30 * 60 * 1000).toISOString() // 30 mins ago
+      const twoDaysAgo = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString()
+
+      const tasks: TaskCardTask[] = [
+        { id: "task-recent", title: "Recent task", status: "closed", closed_at: hourAgo },
+        { id: "task-old", title: "Old task", status: "closed", closed_at: twoDaysAgo },
+      ]
+      render(
+        <TaskList
+          tasks={tasks}
+          defaultCollapsed={{ closed: false }}
+          persistCollapsedState={false}
+        />,
+      )
+
+      // With past_day (default), only recent task should appear
+      expect(screen.getByText("Recent task")).toBeInTheDocument()
+      expect(screen.queryByText("Old task")).not.toBeInTheDocument()
+
+      // Change to past_week
+      const filterDropdown = screen.getByRole("combobox", { name: "Filter closed tasks by time" })
+      fireEvent.change(filterDropdown, { target: { value: "past_week" } })
+
+      // Now both tasks should appear
+      expect(screen.getByText("Recent task")).toBeInTheDocument()
+      expect(screen.getByText("Old task")).toBeInTheDocument()
+    })
+
+    it("shows all closed tasks when all_time is selected", () => {
+      const now = new Date()
+      const oldDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days ago
+
+      const tasks: TaskCardTask[] = [
+        { id: "task-old", title: "Very old task", status: "closed", closed_at: oldDate },
+      ]
+      render(
+        <TaskList
+          tasks={tasks}
+          defaultCollapsed={{ closed: false }}
+          persistCollapsedState={false}
+          showEmptyGroups={true}
+        />,
+      )
+
+      // Initially with past_day, no tasks visible (but group header with dropdown is visible)
+      expect(screen.queryByText("Very old task")).not.toBeInTheDocument()
+
+      // Change to all_time
+      const filterDropdown = screen.getByRole("combobox", { name: "Filter closed tasks by time" })
+      fireEvent.change(filterDropdown, { target: { value: "all_time" } })
+
+      // Now task should appear
+      expect(screen.getByText("Very old task")).toBeInTheDocument()
+    })
+
+    it("persists time filter selection to localStorage", () => {
+      const tasks: TaskCardTask[] = [
+        { id: "task-1", title: "Closed task", status: "closed", closed_at: getRecentDate() },
+      ]
+      render(<TaskList tasks={tasks} />)
+
+      const filterDropdown = screen.getByRole("combobox", { name: "Filter closed tasks by time" })
+      fireEvent.change(filterDropdown, { target: { value: "past_week" } })
+
+      expect(localStorage.getItem(CLOSED_FILTER_STORAGE_KEY)).toBe("past_week")
+    })
+
+    it("restores time filter from localStorage", () => {
+      localStorage.setItem(CLOSED_FILTER_STORAGE_KEY, "all_time")
+
+      const tasks: TaskCardTask[] = [
+        { id: "task-1", title: "Closed task", status: "closed", closed_at: getRecentDate() },
+      ]
+      render(<TaskList tasks={tasks} />)
+
+      const filterDropdown = screen.getByRole("combobox", { name: "Filter closed tasks by time" })
+      expect(filterDropdown).toHaveValue("all_time")
+    })
+
+    it("does not persist time filter when persistCollapsedState is false", () => {
+      const tasks: TaskCardTask[] = [
+        { id: "task-1", title: "Closed task", status: "closed", closed_at: getRecentDate() },
+      ]
+      render(<TaskList tasks={tasks} persistCollapsedState={false} />)
+
+      const filterDropdown = screen.getByRole("combobox", { name: "Filter closed tasks by time" })
+      fireEvent.change(filterDropdown, { target: { value: "past_week" } })
+
+      expect(localStorage.getItem(CLOSED_FILTER_STORAGE_KEY)).toBeNull()
+    })
+
+    it("updates task count when filter changes", () => {
+      const now = new Date()
+      const hourAgo = new Date(now.getTime() - 30 * 60 * 1000).toISOString()
+      const twoDaysAgo = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString()
+
+      const tasks: TaskCardTask[] = [
+        { id: "task-1", title: "Task 1", status: "closed", closed_at: hourAgo },
+        { id: "task-2", title: "Task 2", status: "closed", closed_at: twoDaysAgo },
+      ]
+      render(<TaskList tasks={tasks} persistCollapsedState={false} />)
+
+      // Initially should show 1 task with past_day filter
+      expect(screen.getByLabelText("Closed section, 1 task")).toBeInTheDocument()
+
+      // Change to past_week
+      const filterDropdown = screen.getByRole("combobox", { name: "Filter closed tasks by time" })
+      fireEvent.change(filterDropdown, { target: { value: "past_week" } })
+
+      // Now should show 2 tasks
+      expect(screen.getByLabelText("Closed section, 2 tasks")).toBeInTheDocument()
+    })
+
+    it("does not show time filter dropdown for non-closed groups", () => {
+      const tasks: TaskCardTask[] = [
+        { id: "task-1", title: "Open task", status: "open" },
+        { id: "task-2", title: "Closed task", status: "closed", closed_at: getRecentDate() },
+      ]
+      render(<TaskList tasks={tasks} />)
+
+      // Only one combobox should exist (for closed group)
+      const filterDropdowns = screen.getAllByRole("combobox")
+      expect(filterDropdowns).toHaveLength(1)
     })
   })
 })
