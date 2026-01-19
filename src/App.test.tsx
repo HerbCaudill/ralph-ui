@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@/test-utils"
+import { render, screen, waitFor, fireEvent, act } from "@/test-utils"
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest"
 import { App } from "./App"
 
@@ -77,5 +77,47 @@ describe("App", () => {
     await waitFor(() => {
       expect(screen.getAllByText("workspace").length).toBeGreaterThan(0)
     })
+  })
+
+  it("auto-focuses task input on mount", async () => {
+    vi.useFakeTimers()
+    render(<App />)
+
+    // Fast-forward the timeout for auto-focus
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(150)
+    })
+
+    // Task input should be focused
+    const taskInput = screen.getByRole("textbox", { name: "New task title" })
+    expect(document.activeElement).toBe(taskInput)
+
+    vi.useRealTimers()
+  })
+
+  it("Tab key toggles focus between task input and chat input", async () => {
+    render(<App />)
+
+    // Wait for async operations
+    await waitFor(() => {
+      expect(screen.getAllByText("workspace").length).toBeGreaterThan(0)
+    })
+
+    const taskInput = screen.getByRole("textbox", { name: "New task title" })
+    const chatInput = screen.getByRole("textbox", { name: "Message input" })
+
+    // Focus task input first
+    act(() => {
+      taskInput.focus()
+    })
+    expect(document.activeElement).toBe(taskInput)
+
+    // Press Tab - should switch to chat input
+    fireEvent.keyDown(taskInput, { key: "Tab" })
+    expect(document.activeElement).toBe(chatInput)
+
+    // Press Tab again - should switch back to task input
+    fireEvent.keyDown(chatInput, { key: "Tab" })
+    expect(document.activeElement).toBe(taskInput)
   })
 })

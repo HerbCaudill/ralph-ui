@@ -55,6 +55,11 @@
       "key": "/",
       "modifiers": ["cmd"],
       "description": "Show keyboard shortcuts"
+    },
+    "toggleInputFocus": {
+      "key": "Tab",
+      "modifiers": [],
+      "description": "Toggle focus between task and chat input"
     }
   }
 }

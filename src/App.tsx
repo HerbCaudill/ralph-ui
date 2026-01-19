@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState } from "react"
+import { useRef, useCallback, useState, useEffect } from "react"
 import { MainLayout, type MainLayoutHandle, StatusBar, HotkeysDialog } from "./components/layout"
 import { ChatInput, type ChatInputHandle } from "./components/chat/ChatInput"
 import { EventStream } from "./components/events"
@@ -264,6 +264,19 @@ export function App() {
     chatInputRef.current?.focus()
   }, [])
 
+  // Toggle focus between task input and chat input
+  const handleToggleInputFocus = useCallback(() => {
+    // Check if task input is currently focused
+    const activeElement = document.activeElement
+    const taskInput = document.querySelector('[aria-label="New task title"]')
+
+    if (activeElement === taskInput) {
+      chatInputRef.current?.focus()
+    } else {
+      quickTaskInputRef.current?.focus()
+    }
+  }, [])
+
   const handleCycleTheme = useCallback(() => {
     cycleTheme()
   }, [cycleTheme])
@@ -290,8 +303,18 @@ export function App() {
       focusChatInput: handleFocusChatInput,
       cycleTheme: handleCycleTheme,
       showHotkeys: handleShowHotkeys,
+      toggleInputFocus: handleToggleInputFocus,
     },
   })
+
+  // Auto-focus task input on mount
+  useEffect(() => {
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      quickTaskInputRef.current?.focus()
+    }, 100)
+    return () => clearTimeout(timer)
+  }, [])
 
   return (
     <>

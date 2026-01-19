@@ -22,6 +22,7 @@ export type HotkeyAction =
   | "focusChatInput"
   | "cycleTheme"
   | "showHotkeys"
+  | "toggleInputFocus"
 
 export type HotkeysConfig = Record<HotkeyAction, HotkeyConfig>
 
