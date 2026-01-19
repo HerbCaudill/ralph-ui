@@ -158,7 +158,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
     wsRef.current = ws
 
     ws.onopen = () => {
-      if (!mountedRef.current) return
+      // Ignore events from stale WebSocket instances (can happen with StrictMode)
+      if (!mountedRef.current || wsRef.current !== ws) return
       setStatus("connected")
       reconnectAttemptsRef.current = 0
       setReconnectAttempts(0)
@@ -166,7 +167,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
     }
 
     ws.onmessage = (event: MessageEvent) => {
-      if (!mountedRef.current) return
+      // Ignore events from stale WebSocket instances
+      if (!mountedRef.current || wsRef.current !== ws) return
       try {
         const data = JSON.parse(event.data)
         onMessageRef.current?.(data)
@@ -177,12 +179,14 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
     }
 
     ws.onerror = (error: Event) => {
-      if (!mountedRef.current) return
+      // Ignore events from stale WebSocket instances
+      if (!mountedRef.current || wsRef.current !== ws) return
       onErrorRef.current?.(error)
     }
 
     ws.onclose = (event: CloseEvent) => {
-      if (!mountedRef.current) return
+      // Ignore events from stale WebSocket instances (critical for StrictMode)
+      if (!mountedRef.current || wsRef.current !== ws) return
       setStatus("disconnected")
       onDisconnectRef.current?.(event)
 

@@ -13,20 +13,18 @@ export default defineConfig({
         changeOrigin: true,
       },
       "/ws": {
-        target: "ws://localhost:3000",
+        target: "http://localhost:3000",
         ws: true,
         configure: proxy => {
-          // Suppress EPIPE errors that occur when WebSocket clients disconnect
-          proxy.on("error", (err: NodeJS.ErrnoException) => {
-            if (err.code !== "EPIPE") {
+          // Suppress EPIPE and ECONNRESET errors that occur when WebSocket clients disconnect
+          proxy.on("error", (err: NodeJS.ErrnoException, _req, _res) => {
+            if (err.code !== "EPIPE" && err.code !== "ECONNRESET") {
               console.error("[ws proxy]", err.message)
             }
           })
           proxy.on("proxyReqWs", (_proxyReq, _req, socket) => {
             socket.on("error", (err: NodeJS.ErrnoException) => {
-              if (err.code !== "EPIPE") {
-                console.error("[ws proxy socket]", err.message)
-              }
+              // Silently ignore - these errors are expected during rapid reconnects
             })
           })
         },
