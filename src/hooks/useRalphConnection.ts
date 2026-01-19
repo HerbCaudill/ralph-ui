@@ -86,9 +86,11 @@ export function useRalphConnection(
           // Ralph status change
           if (
             typeof message.status === "string" &&
-            ["stopped", "starting", "running", "stopping"].includes(message.status)
+            ["stopped", "starting", "running", "paused", "stopping"].includes(message.status)
           ) {
-            setRalphStatus(message.status as "stopped" | "starting" | "running" | "stopping")
+            setRalphStatus(
+              message.status as "stopped" | "starting" | "running" | "paused" | "stopping",
+            )
           }
           break
 
@@ -166,9 +168,11 @@ export function useRalphConnection(
     onDisconnect: handleDisconnect,
   })
 
-  // Update connection status in store
+  // Sync "connecting" status to store (callbacks only handle connected/disconnected)
   useEffect(() => {
-    setConnectionStatus(status)
+    if (status === "connecting") {
+      setConnectionStatus("connecting")
+    }
   }, [status, setConnectionStatus])
 
   const sendMessage = useCallback(
