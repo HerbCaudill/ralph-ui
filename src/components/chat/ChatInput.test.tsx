@@ -1,8 +1,14 @@
 import { render, screen, fireEvent } from "@testing-library/react"
-import { describe, it, expect, vi } from "vitest"
+import { describe, it, expect, vi, beforeEach } from "vitest"
 import { ChatInput } from "./ChatInput"
+import { useAppStore } from "@/store"
 
 describe("ChatInput", () => {
+  beforeEach(() => {
+    // Reset the store before each test
+    useAppStore.getState().setAccentColor(null)
+  })
+
   describe("rendering", () => {
     it("renders input with default placeholder", () => {
       render(<ChatInput />)
@@ -163,10 +169,33 @@ describe("ChatInput", () => {
       expect(input).toHaveClass("border-input", "bg-background", "rounded-md")
     })
 
-    it("button has correct base classes", () => {
+    it("button has correct base classes and accent color styling", () => {
       render(<ChatInput />)
       const button = screen.getByRole("button", { name: "Send message" })
-      expect(button).toHaveClass("bg-primary", "text-primary-foreground", "rounded-md")
+      // Button uses inline styles for accent color, check structure classes
+      expect(button).toHaveClass("rounded-md", "inline-flex", "items-center")
+      // Default accent color is black with white text
+      expect(button).toHaveStyle({ backgroundColor: "#000000", color: "#ffffff" })
+    })
+
+    it("button uses accent color from store", () => {
+      // Set a custom accent color
+      useAppStore.getState().setAccentColor("#007ACC")
+
+      render(<ChatInput />)
+      const button = screen.getByRole("button", { name: "Send message" })
+      // Blue accent color with white text (dark background)
+      expect(button).toHaveStyle({ backgroundColor: "#007ACC", color: "#ffffff" })
+    })
+
+    it("button uses black text for light accent colors", () => {
+      // Set a light accent color
+      useAppStore.getState().setAccentColor("#FFA500")
+
+      render(<ChatInput />)
+      const button = screen.getByRole("button", { name: "Send message" })
+      // Orange accent color with black text (light background)
+      expect(button).toHaveStyle({ backgroundColor: "#FFA500", color: "#000000" })
     })
   })
 })

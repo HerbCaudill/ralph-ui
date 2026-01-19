@@ -1,4 +1,5 @@
-import { cn } from "@/lib/utils"
+import { cn, getContrastingColor } from "@/lib/utils"
+import { useAppStore, selectAccentColor } from "@/store"
 import {
   forwardRef,
   useCallback,
@@ -8,6 +9,11 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react"
+
+// Constants
+
+/** Default accent color (black) when peacock color is not set */
+const DEFAULT_ACCENT_COLOR = "#000000"
 
 // Types
 
@@ -49,6 +55,10 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function Ch
   { onSubmit, placeholder = "Type a message...", disabled = false, className },
   ref,
 ) {
+  const accentColor = useAppStore(selectAccentColor)
+  const buttonBgColor = accentColor ?? DEFAULT_ACCENT_COLOR
+  const buttonTextColor = getContrastingColor(buttonBgColor)
+
   const [message, setMessage] = useState("")
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -103,12 +113,15 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function Ch
         type="submit"
         disabled={disabled || !message.trim()}
         className={cn(
-          "bg-primary text-primary-foreground hover:bg-primary/90",
           "inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium",
           "ring-offset-background focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
           "disabled:pointer-events-none disabled:opacity-50",
-          "transition-colors",
+          "transition-opacity",
         )}
+        style={{
+          backgroundColor: buttonBgColor,
+          color: buttonTextColor,
+        }}
         aria-label="Send message"
       >
         <svg

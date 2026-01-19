@@ -1,4 +1,5 @@
-import { cn } from "@/lib/utils"
+import { cn, getContrastingColor } from "@/lib/utils"
+import { useAppStore, selectAccentColor } from "@/store"
 import {
   forwardRef,
   useCallback,
@@ -10,6 +11,11 @@ import {
   type KeyboardEvent,
 } from "react"
 import { Plus, Loader2 } from "lucide-react"
+
+// Constants
+
+/** Default accent color (black) when peacock color is not set */
+const DEFAULT_ACCENT_COLOR = "#000000"
 
 // Types
 
@@ -68,6 +74,10 @@ export const QuickTaskInput = forwardRef<QuickTaskInputHandle, QuickTaskInputPro
     { onTaskCreated, onError, placeholder = "Add a task...", disabled = false, className },
     ref,
   ) {
+    const accentColor = useAppStore(selectAccentColor)
+    const buttonBgColor = accentColor ?? DEFAULT_ACCENT_COLOR
+    const buttonTextColor = getContrastingColor(buttonBgColor)
+
     const [title, setTitle] = useState(() => {
       // Initialize from localStorage
       if (typeof window !== "undefined") {
@@ -166,12 +176,15 @@ export const QuickTaskInput = forwardRef<QuickTaskInputHandle, QuickTaskInputPro
             type="submit"
             disabled={isDisabled || !title.trim()}
             className={cn(
-              "bg-primary text-primary-foreground hover:bg-primary/90",
               "inline-flex shrink-0 items-center justify-center rounded-md p-1",
               "focus-visible:ring-ring/50 focus:outline-none focus-visible:ring-[3px]",
               "disabled:pointer-events-none disabled:opacity-50",
-              "transition-colors",
+              "transition-opacity",
             )}
+            style={{
+              backgroundColor: buttonBgColor,
+              color: buttonTextColor,
+            }}
             aria-label={isSubmitting ? "Creating task..." : "Add task"}
           >
             {isSubmitting ?
