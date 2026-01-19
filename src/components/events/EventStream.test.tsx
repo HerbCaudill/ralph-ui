@@ -207,13 +207,15 @@ describe("EventStream", () => {
         timestamp: 1705600000000,
         message: "Test message",
       })
-      render(<EventStream />)
-      expect(screen.getByText("Auto-scroll")).toBeInTheDocument()
+      const { container } = render(<EventStream />)
+      // Check for the pulsing indicator dot
+      expect(container.querySelector(".animate-pulse")).toBeInTheDocument()
     })
 
     it("does not show auto-scroll indicator when no events", () => {
-      render(<EventStream />)
-      expect(screen.queryByText("Auto-scroll")).not.toBeInTheDocument()
+      const { container } = render(<EventStream />)
+      // No indicator when no events
+      expect(container.querySelector(".animate-pulse")).not.toBeInTheDocument()
     })
   })
 
