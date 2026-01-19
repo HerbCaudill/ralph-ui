@@ -355,6 +355,20 @@ export function TaskList({
     // Build status groups with epic sub-groups
     const result: StatusGroupData[] = []
 
+    // Sort function for tasks: closed tasks by closed_at (most recent first), others by priority
+    const sortTasks = (tasks: TaskCardTask[], groupKey: TaskGroup): TaskCardTask[] => {
+      if (groupKey === "closed") {
+        // Sort closed tasks by closed_at timestamp, most recently closed first
+        return [...tasks].sort((a, b) => {
+          const aTime = a.closed_at ? new Date(a.closed_at).getTime() : 0
+          const bTime = b.closed_at ? new Date(b.closed_at).getTime() : 0
+          return bTime - aTime // Descending order (most recent first)
+        })
+      }
+      // Sort other tasks by priority
+      return [...tasks].sort((a, b) => (a.priority ?? 4) - (b.priority ?? 4))
+    }
+
     for (const config of groupConfigs) {
       const epicTasksMap = statusToEpicTasks.get(config.key)!
       const epicSubGroups: EpicSubGroup[] = []
@@ -368,18 +382,14 @@ export function TaskList({
 
       // Add epic sub-groups
       for (const epic of epicsInStatus) {
-        const epicTasks = (epicTasksMap.get(epic.id) ?? []).sort(
-          (a, b) => (a.priority ?? 4) - (b.priority ?? 4),
-        )
+        const epicTasks = sortTasks(epicTasksMap.get(epic.id) ?? [], config.key)
         if (epicTasks.length > 0) {
           epicSubGroups.push({ epic, tasks: epicTasks })
         }
       }
 
       // Add ungrouped tasks (null epic) at the end
-      const ungroupedTasks = (epicTasksMap.get(null) ?? []).sort(
-        (a, b) => (a.priority ?? 4) - (b.priority ?? 4),
-      )
+      const ungroupedTasks = sortTasks(epicTasksMap.get(null) ?? [], config.key)
       if (ungroupedTasks.length > 0) {
         epicSubGroups.push({ epic: null, tasks: ungroupedTasks })
       }

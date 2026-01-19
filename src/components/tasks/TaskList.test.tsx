@@ -162,6 +162,65 @@ describe("TaskList", () => {
       const taskTitles = screen.getAllByText(/priority/).map(el => el.textContent)
       expect(taskTitles).toEqual(["High priority", "No priority"])
     })
+
+    it("sorts closed tasks by closed_at (most recent first)", () => {
+      const tasks: TaskCardTask[] = [
+        {
+          id: "task-old",
+          title: "Task A closed earlier",
+          status: "closed",
+          priority: 0, // Highest priority but should come last
+          closed_at: "2026-01-15T10:00:00Z",
+        },
+        {
+          id: "task-new",
+          title: "Task B closed later",
+          status: "closed",
+          priority: 4, // Lowest priority but should come first
+          closed_at: "2026-01-19T10:00:00Z",
+        },
+        {
+          id: "task-mid",
+          title: "Task C closed middle",
+          status: "closed",
+          priority: 2,
+          closed_at: "2026-01-17T10:00:00Z",
+        },
+      ]
+      render(<TaskList tasks={tasks} defaultCollapsed={{ closed: false }} />)
+
+      // Get task titles in order - they should be sorted by closed_at (most recent first)
+      const taskTitles = screen.getAllByText(/Task [ABC] closed/).map(el => el.textContent)
+      expect(taskTitles).toEqual([
+        "Task B closed later",
+        "Task C closed middle",
+        "Task A closed earlier",
+      ])
+    })
+
+    it("treats undefined closed_at as oldest for closed tasks", () => {
+      const tasks: TaskCardTask[] = [
+        {
+          id: "task-no-date",
+          title: "No close date",
+          status: "closed",
+        },
+        {
+          id: "task-with-date",
+          title: "Has close date",
+          status: "closed",
+          closed_at: "2026-01-19T10:00:00Z",
+        },
+      ]
+      render(<TaskList tasks={tasks} defaultCollapsed={{ closed: false }} />)
+
+      // Task with closed_at should come first, undefined should be last
+      const taskTitles = screen
+        .getAllByText(/close|date/i)
+        .filter(el => el.textContent?.includes("date"))
+        .map(el => el.textContent)
+      expect(taskTitles).toEqual(["Has close date", "No close date"])
+    })
   })
 
   describe("collapse/expand", () => {

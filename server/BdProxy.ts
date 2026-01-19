@@ -13,6 +13,7 @@ export interface BdIssue {
   created_at: string
   created_by?: string
   updated_at: string
+  closed_at?: string
   parent?: string
   dependency_count?: number
   dependent_count?: number
