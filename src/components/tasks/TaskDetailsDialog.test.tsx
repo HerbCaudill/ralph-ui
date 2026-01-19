@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { render, screen, fireEvent, waitFor, cleanup, act } from "@testing-library/react"
 import { TaskDetailsDialog } from "./TaskDetailsDialog"
+import { useAppStore } from "@/store"
 import type { TaskCardTask } from "./TaskCard"
 
 // Helper functions
@@ -8,6 +9,9 @@ import type { TaskCardTask } from "./TaskCard"
 function typeInInput(input: HTMLElement, value: string) {
   fireEvent.change(input, { target: { value } })
 }
+
+// Mock fetch for event log tests
+const originalFetch = globalThis.fetch
 
 describe("TaskDetailsDialog", () => {
   const mockTask: TaskCardTask = {
@@ -30,6 +34,10 @@ describe("TaskDetailsDialog", () => {
 
   afterEach(() => {
     cleanup()
+    // Reset the store state
+    useAppStore.getState().reset()
+    // Restore original fetch
+    globalThis.fetch = originalFetch
   })
 
   describe("rendering", () => {
@@ -402,6 +410,48 @@ describe("TaskDetailsDialog", () => {
       )
 
       expect(screen.getByText("No description")).toBeInTheDocument()
+    })
+  })
+
+  describe("event log capture on close", () => {
+    it("does not save event log when task is already closed", async () => {
+      const mockFetch = vi.fn()
+      globalThis.fetch = mockFetch
+
+      const closedTask: TaskCardTask = {
+        id: "task-001",
+        title: "Already closed task",
+        status: "closed",
+      }
+
+      render(
+        <TaskDetailsDialog
+          task={closedTask}
+          open={true}
+          onClose={mockOnClose}
+          onSave={mockOnSave}
+        />,
+      )
+
+      // Change the title (not the status)
+      const titleInput = screen.getByLabelText(/title/i)
+      typeInInput(titleInput, "Updated title")
+
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /save/i })).toBeEnabled()
+      })
+
+      // Click save
+      const saveButton = screen.getByRole("button", { name: /save/i })
+      await act(async () => {
+        fireEvent.click(saveButton)
+      })
+
+      // Verify event log was NOT saved (task was already closed)
+      await waitFor(() => {
+        expect(mockOnSave).toHaveBeenCalledWith("task-001", { title: "Updated title" })
+      })
+      expect(mockFetch).not.toHaveBeenCalledWith("/api/eventlogs", expect.anything())
     })
   })
 })

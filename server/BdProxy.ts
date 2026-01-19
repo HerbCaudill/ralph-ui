@@ -262,6 +262,17 @@ export class BdProxy {
   }
 
   /**
+   * Add a comment to an issue.
+   *
+   * @param id - Issue ID to add comment to
+   * @param comment - The comment text
+   */
+  async addComment(id: string, comment: string): Promise<void> {
+    const args = ["comments", "add", id, comment]
+    await this.exec(args)
+  }
+
+  /**
    * Get database info.
    *
    * @returns Database and daemon information

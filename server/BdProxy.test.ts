@@ -543,6 +543,32 @@ describe("BdProxy", () => {
     })
   })
 
+  describe("addComment", () => {
+    it("adds a comment to an issue", async () => {
+      const commentPromise = proxy.addComment("rui-123", "This is a comment")
+
+      mockProcess.stdout.emit("data", Buffer.from(""))
+      mockProcess.emit("close", 0)
+
+      await commentPromise
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        "bd",
+        ["comments", "add", "rui-123", "This is a comment"],
+        expect.anything(),
+      )
+    })
+
+    it("rejects on command failure", async () => {
+      const commentPromise = proxy.addComment("rui-123", "Comment")
+
+      mockProcess.stderr.emit("data", Buffer.from("Issue not found"))
+      mockProcess.emit("close", 1)
+
+      await expect(commentPromise).rejects.toThrow("bd exited with code 1: Issue not found")
+    })
+  })
+
   describe("timeout", () => {
     it("uses default timeout", () => {
       const defaultProxy = new BdProxy({ spawn: mockSpawn as unknown as SpawnFn })

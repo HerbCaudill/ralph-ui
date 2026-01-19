@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { useAppStore } from "@/store"
 import type { TaskCardTask, TaskStatus } from "./TaskCard"
 
 // Types
@@ -103,6 +104,70 @@ const priorityOptions = [
  * Dialog for viewing and editing task details.
  * Displays task title, description, status, and priority with editable fields.
  */
+/**
+ * Save an event log and add a closing comment to the task.
+ * Returns the event log ID if successful, null otherwise.
+ */
+async function saveEventLogAndAddComment(
+  taskId: string,
+  taskTitle: string,
+  events: Array<{ type: string; timestamp: number; [key: string]: unknown }>,
+  workspacePath: string | null,
+): Promise<string | null> {
+  // Only save if there are events
+  if (events.length === 0) {
+    return null
+  }
+
+  try {
+    // Save the event log
+    const response = await fetch("/api/eventlogs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        events,
+        metadata: {
+          taskId,
+          title: taskTitle,
+          source: "task-close",
+          workspacePath: workspacePath ?? undefined,
+        },
+      }),
+    })
+
+    if (!response.ok) {
+      console.error("Failed to save event log:", await response.text())
+      return null
+    }
+
+    const result = (await response.json()) as { ok: boolean; eventlog?: { id: string } }
+    if (!result.ok || !result.eventlog?.id) {
+      return null
+    }
+
+    const eventLogId = result.eventlog.id
+
+    // Add closing comment with event log link
+    const commentResponse = await fetch(`/api/tasks/${taskId}/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        comment: `Closed. Event log: #eventlog=${eventLogId}`,
+      }),
+    })
+
+    if (!commentResponse.ok) {
+      console.error("Failed to add closing comment:", await commentResponse.text())
+      // Still return the event log ID even if comment failed
+    }
+
+    return eventLogId
+  } catch (err) {
+    console.error("Error saving event log:", err)
+    return null
+  }
+}
+
 export function TaskDetailsDialog({
   task,
   open,
@@ -110,6 +175,10 @@ export function TaskDetailsDialog({
   onSave,
   readOnly = false,
 }: TaskDetailsDialogProps) {
+  // Get events and workspace from store for event log capture
+  const events = useAppStore(state => state.events)
+  const workspace = useAppStore(state => state.workspace)
+
   // Local state for editable fields
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
@@ -156,6 +225,12 @@ export function TaskDetailsDialog({
 
     setIsSaving(true)
     try {
+      // If closing the task (status changed to closed), save event log first
+      const isClosing = status === "closed" && task.status !== "closed"
+      if (isClosing) {
+        await saveEventLogAndAddComment(task.id, task.title, events, workspace)
+      }
+
       await onSave(task.id, updates)
       onClose()
     } catch (error) {
@@ -163,7 +238,7 @@ export function TaskDetailsDialog({
     } finally {
       setIsSaving(false)
     }
-  }, [task, onSave, readOnly, title, description, status, priority, onClose])
+  }, [task, onSave, readOnly, title, description, status, priority, onClose, events, workspace])
 
   const handleClose = useCallback(() => {
     onClose()
