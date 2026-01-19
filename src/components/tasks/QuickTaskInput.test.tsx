@@ -108,7 +108,7 @@ describe("QuickTaskInput", () => {
   })
 
   describe("form submission", () => {
-    it("submits on Enter key", async () => {
+    it("submits on Cmd/Ctrl+Enter", async () => {
       const onTaskCreated = vi.fn()
       const mockIssue = { id: "rui-123", title: "New task", status: "open", priority: 2 }
       mockSuccessResponse(mockIssue)
@@ -117,7 +117,7 @@ describe("QuickTaskInput", () => {
 
       const input = screen.getByRole("textbox")
       typeInInput(input, "New task")
-      fireEvent.keyDown(input, { key: "Enter" })
+      fireEvent.keyDown(input, { key: "Enter", metaKey: true })
 
       await waitFor(() => {
         expect(onTaskCreated).toHaveBeenCalledWith(mockIssue)
@@ -147,7 +147,7 @@ describe("QuickTaskInput", () => {
 
       const input = screen.getByRole("textbox")
       typeInInput(input, "Task")
-      fireEvent.keyDown(input, { key: "Enter" })
+      fireEvent.keyDown(input, { key: "Enter", metaKey: true })
 
       await waitFor(() => {
         expect(input).toHaveValue("")
@@ -165,7 +165,7 @@ describe("QuickTaskInput", () => {
       expect(document.activeElement).toBe(input)
 
       typeInInput(input, "Task")
-      fireEvent.keyDown(input, { key: "Enter" })
+      fireEvent.keyDown(input, { key: "Enter", metaKey: true })
 
       await waitFor(() => {
         expect(input).toHaveValue("")
@@ -182,7 +182,7 @@ describe("QuickTaskInput", () => {
 
       const input = screen.getByRole("textbox")
       typeInInput(input, "  Trimmed  ")
-      fireEvent.keyDown(input, { key: "Enter" })
+      fireEvent.keyDown(input, { key: "Enter", metaKey: true })
 
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith(
@@ -201,7 +201,7 @@ describe("QuickTaskInput", () => {
 
       const input = screen.getByRole("textbox")
       typeInInput(input, "My task")
-      fireEvent.keyDown(input, { key: "Enter" })
+      fireEvent.keyDown(input, { key: "Enter", metaKey: true })
 
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith("/api/tasks", {
@@ -212,14 +212,30 @@ describe("QuickTaskInput", () => {
       })
     })
 
-    it("does not submit on Shift+Enter", async () => {
+    it("does not submit on plain Enter (allows newlines)", async () => {
       render(<QuickTaskInput />)
 
       const input = screen.getByRole("textbox")
       typeInInput(input, "My task")
-      fireEvent.keyDown(input, { key: "Enter", shiftKey: true })
+      fireEvent.keyDown(input, { key: "Enter" })
 
       expect(mockFetch).not.toHaveBeenCalled()
+    })
+
+    it("submits on Ctrl+Enter", async () => {
+      const onTaskCreated = vi.fn()
+      const mockIssue = { id: "rui-ctrl", title: "New task", status: "open", priority: 2 }
+      mockSuccessResponse(mockIssue)
+
+      render(<QuickTaskInput onTaskCreated={onTaskCreated} />)
+
+      const input = screen.getByRole("textbox")
+      typeInInput(input, "New task")
+      fireEvent.keyDown(input, { key: "Enter", ctrlKey: true })
+
+      await waitFor(() => {
+        expect(onTaskCreated).toHaveBeenCalledWith(mockIssue)
+      })
     })
   })
 
@@ -297,7 +313,7 @@ describe("QuickTaskInput", () => {
 
       const input = screen.getByRole("textbox")
       typeInInput(input, "Task")
-      fireEvent.keyDown(input, { key: "Enter" })
+      fireEvent.keyDown(input, { key: "Enter", metaKey: true })
 
       await waitFor(() => {
         expect(onError).toHaveBeenCalledWith("Title is required")
@@ -312,7 +328,7 @@ describe("QuickTaskInput", () => {
 
       const input = screen.getByRole("textbox")
       typeInInput(input, "Task")
-      fireEvent.keyDown(input, { key: "Enter" })
+      fireEvent.keyDown(input, { key: "Enter", metaKey: true })
 
       await waitFor(() => {
         expect(onError).toHaveBeenCalledWith("Network error")
@@ -326,7 +342,7 @@ describe("QuickTaskInput", () => {
 
       const input = screen.getByRole("textbox")
       typeInInput(input, "My task")
-      fireEvent.keyDown(input, { key: "Enter" })
+      fireEvent.keyDown(input, { key: "Enter", metaKey: true })
 
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalled()
@@ -343,7 +359,7 @@ describe("QuickTaskInput", () => {
 
       const input = screen.getByRole("textbox")
       typeInInput(input, "Task")
-      fireEvent.keyDown(input, { key: "Enter" })
+      fireEvent.keyDown(input, { key: "Enter", metaKey: true })
 
       await waitFor(() => {
         expect(input).toBeEnabled()
@@ -452,7 +468,7 @@ describe("QuickTaskInput", () => {
       typeInInput(input, "Task to submit")
       expect(localStorage.getItem(STORAGE_KEY)).toBe("Task to submit")
 
-      fireEvent.keyDown(input, { key: "Enter" })
+      fireEvent.keyDown(input, { key: "Enter", metaKey: true })
 
       await waitFor(() => {
         expect(input).toHaveValue("")
@@ -468,7 +484,7 @@ describe("QuickTaskInput", () => {
 
       const input = screen.getByRole("textbox")
       typeInInput(input, "Task that fails")
-      fireEvent.keyDown(input, { key: "Enter" })
+      fireEvent.keyDown(input, { key: "Enter", metaKey: true })
 
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalled()

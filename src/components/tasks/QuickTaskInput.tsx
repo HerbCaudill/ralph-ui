@@ -10,7 +10,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react"
-import { Plus, Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
 
 // Constants
 
@@ -86,7 +86,7 @@ export const QuickTaskInput = forwardRef<QuickTaskInputHandle, QuickTaskInputPro
       return ""
     })
     const [isSubmitting, setIsSubmitting] = useState(false)
-    const inputRef = useRef<HTMLInputElement>(null)
+    const textareaRef = useRef<HTMLTextAreaElement>(null)
 
     // Persist to localStorage as user types
     useEffect(() => {
@@ -101,7 +101,7 @@ export const QuickTaskInput = forwardRef<QuickTaskInputHandle, QuickTaskInputPro
 
     useImperativeHandle(ref, () => ({
       focus: () => {
-        inputRef.current?.focus()
+        textareaRef.current?.focus()
       },
     }))
 
@@ -128,8 +128,8 @@ export const QuickTaskInput = forwardRef<QuickTaskInputHandle, QuickTaskInputPro
           }
 
           setTitle("")
-          // Keep input focused after submission
-          inputRef.current?.focus()
+          // Keep textarea focused after submission
+          textareaRef.current?.focus()
           onTaskCreated?.(data.issue)
         } catch (err) {
           const message = err instanceof Error ? err.message : "Failed to create task"
@@ -142,8 +142,9 @@ export const QuickTaskInput = forwardRef<QuickTaskInputHandle, QuickTaskInputPro
     )
 
     const handleKeyDown = useCallback(
-      (e: KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter" && !e.shiftKey) {
+      (e: KeyboardEvent<HTMLTextAreaElement>) => {
+        // Cmd/Ctrl+Enter to submit
+        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
           e.preventDefault()
           handleSubmit()
         }
@@ -154,29 +155,29 @@ export const QuickTaskInput = forwardRef<QuickTaskInputHandle, QuickTaskInputPro
     const isDisabled = disabled || isSubmitting
 
     return (
-      <form onSubmit={handleSubmit} className={cn("flex items-center", className)}>
-        <div className="flex flex-1 items-center">
-          <input
-            ref={inputRef}
-            type="text"
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={placeholder}
-            disabled={isDisabled}
-            className={cn(
-              "placeholder:text-muted-foreground bg-transparent",
-              "flex-1 border-0 px-0 py-1 text-sm",
-              "focus:ring-0 focus:outline-none",
-              "disabled:cursor-not-allowed disabled:opacity-50",
-            )}
-            aria-label="New task title"
-          />
+      <form onSubmit={handleSubmit} className={cn("flex flex-col gap-2", className)}>
+        <textarea
+          ref={textareaRef}
+          value={title}
+          onChange={e => setTitle(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          disabled={isDisabled}
+          rows={3}
+          className={cn(
+            "placeholder:text-muted-foreground bg-transparent",
+            "w-full resize-none border-0 px-0 py-1 text-sm",
+            "focus:ring-0 focus:outline-none",
+            "disabled:cursor-not-allowed disabled:opacity-50",
+          )}
+          aria-label="New task title"
+        />
+        <div className="flex justify-end">
           <button
             type="submit"
             disabled={isDisabled || !title.trim()}
             className={cn(
-              "inline-flex shrink-0 items-center justify-center rounded-md p-1",
+              "inline-flex shrink-0 items-center justify-center gap-1 rounded-md px-3 py-1.5 text-sm font-medium",
               "focus-visible:ring-ring/50 focus:outline-none focus-visible:ring-[3px]",
               "disabled:pointer-events-none disabled:opacity-50",
               "transition-opacity",
@@ -188,8 +189,11 @@ export const QuickTaskInput = forwardRef<QuickTaskInputHandle, QuickTaskInputPro
             aria-label={isSubmitting ? "Creating task..." : "Add task"}
           >
             {isSubmitting ?
-              <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-            : <Plus size={16} aria-hidden="true" />}
+              <>
+                <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                Adding...
+              </>
+            : "Add"}
           </button>
         </div>
       </form>
