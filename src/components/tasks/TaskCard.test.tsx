@@ -75,33 +75,6 @@ describe("TaskCard", () => {
   })
 
   describe("expand/collapse", () => {
-    it("does not show expand indicator when no details", () => {
-      const { container } = render(<TaskCard task={baseTask} />)
-      // ChevronDown icon should not be present
-      const chevrons = container.querySelectorAll('svg[class*="transition-transform"]')
-      expect(chevrons).toHaveLength(0)
-    })
-
-    it("shows expand indicator when task has description", () => {
-      const { container } = render(
-        <TaskCard task={{ ...baseTask, description: "Some description" }} />,
-      )
-      const chevron = container.querySelector('svg[class*="transition-transform"]')
-      expect(chevron).toBeInTheDocument()
-    })
-
-    it("shows expand indicator when task has parent", () => {
-      const { container } = render(<TaskCard task={{ ...baseTask, parent: "rui-4rt" }} />)
-      const chevron = container.querySelector('svg[class*="transition-transform"]')
-      expect(chevron).toBeInTheDocument()
-    })
-
-    it("shows expand indicator when task has issue_type", () => {
-      const { container } = render(<TaskCard task={{ ...baseTask, issue_type: "bug" }} />)
-      const chevron = container.querySelector('svg[class*="transition-transform"]')
-      expect(chevron).toBeInTheDocument()
-    })
-
     it("expands details on click", () => {
       render(<TaskCard task={fullTask} />)
 

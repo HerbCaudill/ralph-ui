@@ -1,14 +1,6 @@
 import { cn } from "@/lib/utils"
 import { useState, useCallback } from "react"
-import {
-  Circle,
-  CircleDot,
-  CheckCircle2,
-  Ban,
-  Clock,
-  ChevronDown,
-  type LucideIcon,
-} from "lucide-react"
+import { Circle, CircleDot, CheckCircle2, Ban, Clock, type LucideIcon } from "lucide-react"
 
 // Types
 
@@ -234,17 +226,6 @@ export function TaskCard({
           >
             {task.title}
           </span>
-
-          {/* Expand indicator */}
-          {hasDetails && (
-            <ChevronDown
-              size={14}
-              className={cn(
-                "text-muted-foreground shrink-0 transition-transform",
-                isExpanded && "rotate-180",
-              )}
-            />
-          )}
         </div>
       </div>
 
