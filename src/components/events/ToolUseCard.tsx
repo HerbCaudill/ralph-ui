@@ -249,10 +249,11 @@ export function ToolUseCard({ event, className, defaultExpanded = false }: ToolU
   const outputSummary = getOutputSummary(event.tool, event.output)
   const statusColor = getStatusColor(event.status)
 
-  const hasExpandableContent =
+  const hasExpandableContent = Boolean(
     event.output ||
     event.error ||
-    (event.tool === "Edit" && event.input?.old_string && event.input?.new_string)
+    (event.tool === "Edit" && event.input?.old_string && event.input?.new_string),
+  )
 
   // Special handling for TodoWrite
   if (event.tool === "TodoWrite" && event.input?.todos && Array.isArray(event.input.todos)) {
@@ -308,10 +309,8 @@ export function ToolUseCard({ event, className, defaultExpanded = false }: ToolU
             <div className="flex-1">
               {/* Edit tool: show diff */}
               {event.tool === "Edit" &&
-                event.input?.old_string &&
-                event.input?.new_string &&
-                typeof event.input.old_string === "string" &&
-                typeof event.input.new_string === "string" && (
+                typeof event.input?.old_string === "string" &&
+                typeof event.input?.new_string === "string" && (
                   <DiffView oldString={event.input.old_string} newString={event.input.new_string} />
                 )}
 
@@ -344,7 +343,7 @@ export function ToolUseCard({ event, className, defaultExpanded = false }: ToolU
               )}
 
               {/* Error - show first line only */}
-              {event.error && <span className="text-red-500">{event.error.split("\n")[0]}</span>}
+              {event.error && <div className="my-1 text-red-500">{event.error.split("\n")[0]}</div>}
             </div>
           </div>
         </div>
