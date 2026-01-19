@@ -9,7 +9,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react"
-import { IconArrowUp } from "@tabler/icons-react"
+import { IconArrowBigUpFilled } from "@tabler/icons-react"
 
 // Constants
 
@@ -125,7 +125,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function Ch
         }}
         aria-label="Send message"
       >
-        <IconArrowUp className="size-4" aria-hidden="true" />
+        <IconArrowBigUpFilled className="size-5" aria-hidden="true" />
       </button>
     </form>
   )

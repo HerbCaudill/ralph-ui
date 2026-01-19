@@ -10,7 +10,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react"
-import { IconSquareRoundedPlusFilled, IconLoader } from "@tabler/icons-react"
+import { IconArrowBigUpFilled, IconLoader } from "@tabler/icons-react"
 
 // Constants
 
@@ -200,7 +200,7 @@ export const QuickTaskInput = forwardRef<QuickTaskInputHandle, QuickTaskInputPro
           >
             {isSubmitting ?
               <IconLoader className="size-4 animate-spin" aria-hidden="true" />
-            : <IconSquareRoundedPlusFilled className="size-5" aria-hidden="true" />}
+            : <IconArrowBigUpFilled className="size-5" aria-hidden="true" />}
           </button>
         </div>
       </form>
