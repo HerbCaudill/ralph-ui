@@ -49,8 +49,8 @@ export interface ChatInputHandle {
 // ChatInput Component
 
 /**
- * Text input for sending messages to a running agent.
- * Submits on Enter key, clears after send.
+ * Text area input for sending messages to a running agent.
+ * Submits on Enter key (Shift+Enter for new line), clears after send.
  */
 export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function ChatInput(
   { onSubmit, placeholder = "Send Ralph a message...", disabled = false, className },
@@ -61,11 +61,11 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function Ch
   const buttonTextColor = getContrastingColor(buttonBgColor)
 
   const [message, setMessage] = useState("")
-  const inputRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useImperativeHandle(ref, () => ({
     focus: () => {
-      inputRef.current?.focus()
+      textareaRef.current?.focus()
     },
   }))
 
@@ -83,50 +83,54 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function Ch
   )
 
   const handleKeyDown = useCallback(
-    (e: KeyboardEvent<HTMLInputElement>) => {
+    (e: KeyboardEvent<HTMLTextAreaElement>) => {
+      // Enter to submit, Shift+Enter for new line
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault()
         handleSubmit()
       }
+      // Shift+Enter allows default behavior (new line)
     },
     [handleSubmit],
   )
 
   return (
-    <form onSubmit={handleSubmit} className={cn("flex gap-2", className)}>
-      <input
-        ref={inputRef}
-        type="text"
+    <form onSubmit={handleSubmit} className={cn("flex flex-col gap-2", className)}>
+      <textarea
+        ref={textareaRef}
         value={message}
         onChange={e => setMessage(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         disabled={disabled}
+        rows={3}
         className={cn(
-          "border-input bg-background ring-offset-background placeholder:text-muted-foreground",
-          "focus-visible:ring-ring flex-1 rounded-md border px-3 py-2 text-sm",
-          "focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+          "placeholder:text-muted-foreground bg-transparent",
+          "w-full resize-none border-0 px-0 py-1 text-sm",
+          "focus:ring-0 focus:outline-none",
           "disabled:cursor-not-allowed disabled:opacity-50",
         )}
         aria-label="Message input"
       />
-      <button
-        type="submit"
-        disabled={disabled || !message.trim()}
-        className={cn(
-          "inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium",
-          "ring-offset-background focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
-          "disabled:pointer-events-none disabled:opacity-50",
-          "transition-opacity",
-        )}
-        style={{
-          backgroundColor: buttonBgColor,
-          color: buttonTextColor,
-        }}
-        aria-label="Send message"
-      >
-        <IconArrowBigUpFilled className="size-5" aria-hidden="true" />
-      </button>
+      <div className="flex justify-end">
+        <button
+          type="submit"
+          disabled={disabled || !message.trim()}
+          className={cn(
+            "inline-flex shrink-0 items-center justify-center rounded-md p-1.5",
+            "focus-visible:ring-ring/50 focus:outline-none focus-visible:ring-[3px]",
+            "disabled:pointer-events-none disabled:opacity-50",
+            "transition-opacity",
+          )}
+          style={{
+            backgroundColor: buttonBgColor,
+            color: buttonTextColor,
+          }}
+          aria-label="Send message"
+        >
+          <IconArrowBigUpFilled className="size-5" aria-hidden="true" />
+        </button>
+      </div>
     </form>
   )
 })

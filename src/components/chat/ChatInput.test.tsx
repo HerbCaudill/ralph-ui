@@ -163,17 +163,17 @@ describe("ChatInput", () => {
   })
 
   describe("styling", () => {
-    it("input has correct base classes", () => {
+    it("textarea has borderless styling", () => {
       render(<ChatInput />)
-      const input = screen.getByRole("textbox")
-      expect(input).toHaveClass("border-input", "bg-background", "rounded-md")
+      const textarea = screen.getByRole("textbox")
+      expect(textarea).toHaveClass("bg-transparent", "border-0", "resize-none")
     })
 
     it("button has correct base classes and accent color styling", () => {
       render(<ChatInput />)
       const button = screen.getByRole("button", { name: "Send message" })
       // Button uses inline styles for accent color, check structure classes
-      expect(button).toHaveClass("rounded-md", "inline-flex", "items-center")
+      expect(button).toHaveClass("rounded-md", "inline-flex", "shrink-0")
       // Default accent color is black with white text
       expect(button).toHaveStyle({ backgroundColor: "#000000", color: "#ffffff" })
     })
