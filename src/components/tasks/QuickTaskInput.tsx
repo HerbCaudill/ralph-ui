@@ -105,38 +105,40 @@ export function QuickTaskInput({
   const isDisabled = disabled || isSubmitting
 
   return (
-    <form onSubmit={handleSubmit} className={cn("flex gap-2", className)}>
-      <input
-        type="text"
-        value={title}
-        onChange={e => setTitle(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder={placeholder}
-        disabled={isDisabled}
-        className={cn(
-          "border-input bg-background ring-offset-background placeholder:text-muted-foreground",
-          "focus-visible:ring-ring flex-1 rounded-md border px-3 py-2 text-sm",
-          "focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
-          "disabled:cursor-not-allowed disabled:opacity-50",
-        )}
-        aria-label="New task title"
-      />
-      <button
-        type="submit"
-        disabled={isDisabled || !title.trim()}
-        className={cn(
-          "bg-primary text-primary-foreground hover:bg-primary/90",
-          "inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium",
-          "ring-offset-background focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
-          "disabled:pointer-events-none disabled:opacity-50",
-          "transition-colors",
-        )}
-        aria-label={isSubmitting ? "Creating task..." : "Add task"}
-      >
-        {isSubmitting ?
-          <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-        : <Plus size={16} aria-hidden="true" />}
-      </button>
+    <form onSubmit={handleSubmit} className={cn("flex items-center", className)}>
+      <div className="flex flex-1 items-center">
+        <input
+          type="text"
+          value={title}
+          onChange={e => setTitle(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          disabled={isDisabled}
+          className={cn(
+            "placeholder:text-muted-foreground bg-transparent",
+            "flex-1 border-0 px-0 py-1 text-sm",
+            "focus:ring-0 focus:outline-none",
+            "disabled:cursor-not-allowed disabled:opacity-50",
+          )}
+          aria-label="New task title"
+        />
+        <button
+          type="submit"
+          disabled={isDisabled || !title.trim()}
+          className={cn(
+            "text-muted-foreground hover:text-foreground",
+            "inline-flex shrink-0 items-center justify-center p-1",
+            "focus-visible:text-foreground focus:outline-none",
+            "disabled:pointer-events-none disabled:opacity-50",
+            "transition-colors",
+          )}
+          aria-label={isSubmitting ? "Creating task..." : "Add task"}
+        >
+          {isSubmitting ?
+            <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+          : <Plus size={16} aria-hidden="true" />}
+        </button>
+      </div>
     </form>
   )
 }
