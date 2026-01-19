@@ -150,7 +150,10 @@ function createApp(config: ServerConfig): Express {
         return
       }
 
-      manager.send(message)
+      // Wrap string messages in JSON format that Ralph CLI expects
+      const payload =
+        typeof message === "string" ? { type: "user_message", content: message } : message
+      manager.send(payload)
       res.status(200).json({ ok: true })
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to send message"
@@ -539,8 +542,8 @@ function handleWsMessage(ws: WebSocket, data: RawData): void {
           return
         }
 
-        // Send to ralph
-        manager.send(chatMessage)
+        // Send to ralph - wrap in JSON format that Ralph CLI expects
+        manager.send({ type: "user_message", content: chatMessage })
 
         // Broadcast user message to all clients so it appears in event stream
         broadcast({
