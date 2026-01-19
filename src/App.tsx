@@ -158,6 +158,7 @@ export function App() {
   const ralphStatus = useAppStore(selectRalphStatus)
   const isConnected = useAppStore(selectIsConnected)
   const toggleSidebar = useAppStore(state => state.toggleSidebar)
+  const toggleTaskChat = useAppStore(state => state.toggleTaskChat)
 
   // Hotkey handlers
   const handleAgentStart = useCallback(async () => {
@@ -232,6 +233,24 @@ export function App() {
     setHotkeysDialogOpen(false)
   }, [])
 
+  const handleToggleTaskChat = useCallback(() => {
+    toggleTaskChat()
+  }, [toggleTaskChat])
+
+  const handleFocusTaskChatInput = useCallback(() => {
+    // Focus the task chat input element
+    // First ensure the panel is open
+    const taskChatOpen = useAppStore.getState().taskChatOpen
+    if (!taskChatOpen) {
+      toggleTaskChat()
+    }
+    // Focus the input after a brief delay to allow panel to render
+    setTimeout(() => {
+      const taskChatInput = document.querySelector('[aria-label="Task chat input"]') as HTMLElement
+      taskChatInput?.focus()
+    }, 50)
+  }, [toggleTaskChat])
+
   // Register hotkeys
   useHotkeys({
     handlers: {
@@ -247,6 +266,8 @@ export function App() {
       cycleTheme: handleCycleTheme,
       showHotkeys: handleShowHotkeys,
       toggleInputFocus: handleToggleInputFocus,
+      toggleTaskChat: handleToggleTaskChat,
+      focusTaskChatInput: handleFocusTaskChatInput,
     },
   })
 

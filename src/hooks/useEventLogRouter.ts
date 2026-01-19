@@ -74,14 +74,11 @@ export function useEventLogRouter(): UseEventLogRouterReturn {
   const clearEventLogViewer = useAppStore(state => state.clearEventLogViewer)
 
   // Navigate to view an event log
-  const navigateToEventLog = useCallback(
-    (id: string) => {
-      // Update URL hash
-      window.location.hash = buildEventLogHash(id)
-      // Store will be updated by hashchange listener
-    },
-    [],
-  )
+  const navigateToEventLog = useCallback((id: string) => {
+    // Update URL hash
+    window.location.hash = buildEventLogHash(id)
+    // Store will be updated by hashchange listener
+  }, [])
 
   // Close the event log viewer
   const closeEventLogViewer = useCallback(() => {

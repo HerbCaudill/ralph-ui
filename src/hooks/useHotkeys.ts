@@ -176,6 +176,8 @@ export function useHotkeys({ handlers, enabled = true }: UseHotkeysOptions): Use
               "cycleTheme",
               "showHotkeys",
               "toggleInputFocus",
+              "toggleTaskChat",
+              "focusTaskChatInput",
             ]
 
             if (isInput && !allowedInInput.includes(action)) {

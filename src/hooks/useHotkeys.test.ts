@@ -100,6 +100,8 @@ describe("useHotkeys", () => {
       expect(actions).toContain("toggleSidebar")
       expect(actions).toContain("focusChatInput")
       expect(actions).toContain("cycleTheme")
+      expect(actions).toContain("toggleTaskChat")
+      expect(actions).toContain("focusTaskChatInput")
     })
   })
 
@@ -299,6 +301,56 @@ describe("useHotkeys", () => {
           key: "t",
           metaKey: true,
           shiftKey: true,
+          bubbles: true,
+        })
+        window.dispatchEvent(event)
+      })
+
+      expect(handler).toHaveBeenCalledTimes(1)
+    })
+
+    it("handles toggleTaskChat hotkey (Cmd+J)", () => {
+      mockNavigator("MacIntel")
+      const handler = vi.fn()
+
+      renderHook(() =>
+        useHotkeys({
+          handlers: {
+            toggleTaskChat: handler,
+          },
+        }),
+      )
+
+      // Simulate Cmd+J
+      act(() => {
+        const event = new KeyboardEvent("keydown", {
+          key: "j",
+          metaKey: true,
+          bubbles: true,
+        })
+        window.dispatchEvent(event)
+      })
+
+      expect(handler).toHaveBeenCalledTimes(1)
+    })
+
+    it("handles focusTaskChatInput hotkey (Cmd+3)", () => {
+      mockNavigator("MacIntel")
+      const handler = vi.fn()
+
+      renderHook(() =>
+        useHotkeys({
+          handlers: {
+            focusTaskChatInput: handler,
+          },
+        }),
+      )
+
+      // Simulate Cmd+3
+      act(() => {
+        const event = new KeyboardEvent("keydown", {
+          key: "3",
+          metaKey: true,
           bubbles: true,
         })
         window.dispatchEvent(event)

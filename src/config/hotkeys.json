@@ -60,6 +60,16 @@
       "key": "Tab",
       "modifiers": [],
       "description": "Toggle focus between task and chat input"
+    },
+    "toggleTaskChat": {
+      "key": "j",
+      "modifiers": ["cmd"],
+      "description": "Toggle task chat panel"
+    },
+    "focusTaskChatInput": {
+      "key": "3",
+      "modifiers": ["cmd"],
+      "description": "Focus task chat input"
     }
   }
 }

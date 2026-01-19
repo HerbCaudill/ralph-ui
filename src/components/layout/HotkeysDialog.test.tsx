@@ -38,6 +38,14 @@ describe("HotkeysDialog", () => {
       expect(screen.getByText("Show keyboard shortcuts")).toBeInTheDocument()
     })
 
+    it("displays task chat panel hotkeys", () => {
+      const onClose = vi.fn()
+      render(<HotkeysDialog open={true} onClose={onClose} />)
+
+      expect(screen.getByText("Toggle task chat panel")).toBeInTheDocument()
+      expect(screen.getByText("Focus task chat input")).toBeInTheDocument()
+    })
+
     it("displays keyboard icons", () => {
       const onClose = vi.fn()
       render(<HotkeysDialog open={true} onClose={onClose} />)

@@ -90,7 +90,15 @@ const hotkeyCategories: HotkeyCategory[] = [
   },
   {
     name: "Navigation",
-    actions: ["toggleSidebar", "focusSidebar", "focusMain", "focusTaskInput", "focusChatInput"],
+    actions: [
+      "toggleSidebar",
+      "focusSidebar",
+      "focusMain",
+      "focusTaskInput",
+      "focusChatInput",
+      "toggleTaskChat",
+      "focusTaskChatInput",
+    ],
   },
   {
     name: "Appearance",
