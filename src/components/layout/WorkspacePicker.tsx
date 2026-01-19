@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils"
-import { useAppStore, selectWorkspace, selectAccentColor } from "@/store"
+import { useAppStore, selectWorkspace, selectAccentColor, selectBranch } from "@/store"
 import { useState, useRef, useEffect, useCallback } from "react"
 import { IconFolderFilled, IconChevronDown, IconCheck, IconRefresh } from "@tabler/icons-react"
 
@@ -12,6 +12,7 @@ export interface WorkspaceInfo {
   daemonConnected?: boolean
   daemonStatus?: string
   accentColor?: string | null
+  branch?: string | null
 }
 
 export interface WorkspaceListEntry {
@@ -47,8 +48,10 @@ export function WorkspacePicker({
 }: WorkspacePickerProps) {
   const workspace = useAppStore(selectWorkspace)
   const accentColor = useAppStore(selectAccentColor)
+  const branch = useAppStore(selectBranch)
   const setWorkspace = useAppStore(state => state.setWorkspace)
   const setAccentColor = useAppStore(state => state.setAccentColor)
+  const setBranch = useAppStore(state => state.setBranch)
   const [isOpen, setIsOpen] = useState(false)
   const [workspaceInfo, setWorkspaceInfo] = useState<WorkspaceInfo | null>(null)
   const [allWorkspaces, setAllWorkspaces] = useState<WorkspaceListEntry[]>([])
@@ -77,6 +80,10 @@ export function WorkspacePicker({
         if (data.workspace.accentColor !== accentColor) {
           setAccentColor(data.workspace.accentColor ?? null)
         }
+        // Update the store with the git branch
+        if (data.workspace.branch !== branch) {
+          setBranch(data.workspace.branch ?? null)
+        }
       } else {
         throw new Error(data.error || "Unknown error")
       }
@@ -89,7 +96,7 @@ export function WorkspacePicker({
     } finally {
       setIsLoading(false)
     }
-  }, [workspace, accentColor, setWorkspace, setAccentColor])
+  }, [workspace, accentColor, branch, setWorkspace, setAccentColor, setBranch])
 
   // Fetch all available workspaces from the registry
   const fetchAllWorkspaces = useCallback(async () => {
@@ -129,6 +136,7 @@ export function WorkspacePicker({
           setWorkspaceInfo(data.workspace)
           setWorkspace(data.workspace.path)
           setAccentColor(data.workspace.accentColor ?? null)
+          setBranch(data.workspace.branch ?? null)
           // Update the list to reflect new active state
           setAllWorkspaces(prev =>
             prev.map(ws => ({
@@ -147,7 +155,7 @@ export function WorkspacePicker({
         setIsOpen(false)
       }
     },
-    [setWorkspace, setAccentColor],
+    [setWorkspace, setAccentColor, setBranch],
   )
 
   // Fetch workspace info on mount (only once)

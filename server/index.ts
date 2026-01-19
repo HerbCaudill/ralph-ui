@@ -2,10 +2,32 @@ import express, { type Express, type Request, type Response } from "express"
 import { createServer, type Server } from "node:http"
 import path from "node:path"
 import { readFile } from "node:fs/promises"
+import { execFile } from "node:child_process"
+import { promisify } from "node:util"
 import { WebSocketServer, type WebSocket, type RawData } from "ws"
 import { RalphManager, type RalphEvent, type RalphStatus } from "./RalphManager.js"
 import { BdProxy, type BdCreateOptions } from "./BdProxy.js"
 import { getAliveWorkspaces } from "./registry.js"
+
+const execFileAsync = promisify(execFile)
+
+// Git Branch Reader
+
+/**
+ * Get the current git branch name for a workspace.
+ * Returns null if not a git repo or on any error.
+ */
+export async function getGitBranch(workspacePath: string): Promise<string | null> {
+  try {
+    const { stdout } = await execFileAsync("git", ["rev-parse", "--abbrev-ref", "HEAD"], {
+      cwd: workspacePath,
+    })
+    return stdout.trim() || null
+  } catch {
+    // Not a git repo or git not installed - return null
+    return null
+  }
+}
 
 // Peacock Color Reader
 
@@ -176,8 +198,11 @@ function createApp(config: ServerConfig): Express {
       // Extract workspace path from database_path (remove .beads/beads.db suffix)
       const workspacePath = info.database_path.replace(/\/.beads\/beads\.db$/, "")
 
-      // Read peacock accent color from .vscode/settings.json
-      const accentColor = await readPeacockColor(workspacePath)
+      // Read peacock accent color and git branch in parallel
+      const [accentColor, branch] = await Promise.all([
+        readPeacockColor(workspacePath),
+        getGitBranch(workspacePath),
+      ])
 
       // Get count of open + in_progress issues (active issues)
       let activeIssueCount: number | undefined
@@ -200,6 +225,7 @@ function createApp(config: ServerConfig): Express {
           daemonConnected: info.daemon_connected,
           daemonStatus: info.daemon_status,
           accentColor,
+          branch,
         },
       })
     } catch (err) {
@@ -276,7 +302,12 @@ function createApp(config: ServerConfig): Express {
       // Get info from the new workspace to confirm it works
       const bdProxy = getBdProxy()
       const info = await bdProxy.getInfo()
-      const accentColor = await readPeacockColor(workspacePath)
+
+      // Read peacock accent color and git branch in parallel
+      const [accentColor, branch] = await Promise.all([
+        readPeacockColor(workspacePath),
+        getGitBranch(workspacePath),
+      ])
 
       // Get count of open + in_progress issues (active issues)
       let activeIssueCount: number | undefined
@@ -299,6 +330,7 @@ function createApp(config: ServerConfig): Express {
           daemonConnected: info.daemon_connected,
           daemonStatus: info.daemon_status,
           accentColor,
+          branch,
         },
       })
     } catch (err) {
