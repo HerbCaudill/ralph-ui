@@ -398,77 +398,104 @@ describe("TaskList", () => {
     })
   })
 
-  describe("epic grouping", () => {
-    const epicWithSubtasks: TaskCardTask[] = [
+  describe("epic grouping within status", () => {
+    // Tasks are grouped by status first, then by epic within each status
+    const tasksWithEpic: TaskCardTask[] = [
       { id: "epic-1", title: "Epic with tasks", status: "open", issue_type: "epic" },
       { id: "task-1", title: "Child task 1", status: "open", parent: "epic-1" },
-      { id: "task-2", title: "Child task 2", status: "in_progress", parent: "epic-1" },
+      { id: "task-2", title: "Child task 2", status: "open", parent: "epic-1" },
+      { id: "task-3", title: "Child task 3", status: "in_progress", parent: "epic-1" },
+    ]
+
+    const tasksWithMultipleEpics: TaskCardTask[] = [
+      { id: "epic-1", title: "Epic A", status: "open", issue_type: "epic", priority: 1 },
+      { id: "epic-2", title: "Epic B", status: "open", issue_type: "epic", priority: 2 },
+      { id: "task-1", title: "Child of A", status: "open", parent: "epic-1" },
+      { id: "task-2", title: "Child of B", status: "open", parent: "epic-2" },
+      { id: "task-3", title: "Ungrouped task", status: "open" },
     ]
 
     const epicWithoutSubtasks: TaskCardTask[] = [
       { id: "epic-1", title: "Empty epic", status: "open", issue_type: "epic" },
     ]
 
-    const mixedEpics: TaskCardTask[] = [
-      { id: "epic-1", title: "Epic with tasks", status: "open", issue_type: "epic" },
-      { id: "task-1", title: "Child task", status: "open", parent: "epic-1" },
-      { id: "epic-2", title: "Empty epic", status: "open", issue_type: "epic" },
-    ]
-
-    it("renders epic header with chevron when epic has subtasks", () => {
-      render(<TaskList tasks={epicWithSubtasks} persistCollapsedState={false} />)
-      const epicHeader = screen.getByLabelText("Epic with tasks epic, 2 tasks")
-      expect(epicHeader).toBeInTheDocument()
-      expect(epicHeader).toHaveAttribute("role", "button")
-      expect(epicHeader).toHaveAttribute("tabIndex", "0")
+    it("renders epic sub-header within status group", () => {
+      render(<TaskList tasks={tasksWithEpic} persistCollapsedState={false} />)
+      // Should have Ready status group with 2 tasks from epic
+      expect(screen.getByLabelText("Ready section, 2 tasks")).toBeInTheDocument()
+      // Should have In Progress status group with 1 task from epic
+      expect(screen.getByLabelText("In progress section, 1 task")).toBeInTheDocument()
+      // Should show epic sub-header within Ready group
+      expect(screen.getByLabelText("Epic with tasks epic, 2 tasks")).toBeInTheDocument()
     })
 
-    it("renders epic header without chevron when epic has no subtasks", () => {
-      render(<TaskList tasks={epicWithoutSubtasks} persistCollapsedState={false} />)
-      const epicHeader = screen.getByLabelText("Empty epic epic")
-      expect(epicHeader).toBeInTheDocument()
-      // Should not have button role or tabIndex when not interactive
-      expect(epicHeader).not.toHaveAttribute("role", "button")
-      expect(epicHeader).not.toHaveAttribute("tabIndex", "0")
+    it("groups tasks by epic within each status", () => {
+      render(<TaskList tasks={tasksWithMultipleEpics} persistCollapsedState={false} />)
+      // Should have one Ready group with all 3 tasks
+      expect(screen.getByLabelText("Ready section, 3 tasks")).toBeInTheDocument()
+      // Should show epic sub-headers
+      expect(screen.getByLabelText("Epic A epic, 1 task")).toBeInTheDocument()
+      expect(screen.getByLabelText("Epic B epic, 1 task")).toBeInTheDocument()
+      // Ungrouped task should be visible directly (no epic header)
+      expect(screen.getByText("Ungrouped task")).toBeInTheDocument()
     })
 
-    it("does not show task count badge for epics with no subtasks", () => {
-      render(<TaskList tasks={mixedEpics} persistCollapsedState={false} />)
-      // Epic with tasks should show count
-      expect(screen.getByLabelText("Epic with tasks epic, 1 task")).toBeInTheDocument()
-      // Epic without tasks should not show count in aria-label
-      expect(screen.getByLabelText("Empty epic epic")).toBeInTheDocument()
-    })
-
-    it("allows toggling epic with subtasks", () => {
-      render(<TaskList tasks={epicWithSubtasks} persistCollapsedState={false} />)
+    it("allows toggling epic sub-group within status", () => {
+      render(<TaskList tasks={tasksWithEpic} persistCollapsedState={false} />)
       const epicHeader = screen.getByLabelText("Epic with tasks epic, 2 tasks")
 
       // Initially expanded
       expect(screen.getByText("Child task 1")).toBeInTheDocument()
+      expect(screen.getByText("Child task 2")).toBeInTheDocument()
 
       // Click to collapse
       fireEvent.click(epicHeader)
       expect(screen.queryByText("Child task 1")).not.toBeInTheDocument()
+      expect(screen.queryByText("Child task 2")).not.toBeInTheDocument()
 
       // Click to expand
       fireEvent.click(epicHeader)
       expect(screen.getByText("Child task 1")).toBeInTheDocument()
     })
 
-    it("does not toggle epic without subtasks on click", () => {
+    it("shows empty state when epic has no subtasks", () => {
       render(<TaskList tasks={epicWithoutSubtasks} persistCollapsedState={false} />)
-      const epicHeader = screen.getByLabelText("Empty epic epic")
-
-      // Click should not cause any errors or state changes
-      fireEvent.click(epicHeader)
-      // Header should still be there
-      expect(screen.getByLabelText("Empty epic epic")).toBeInTheDocument()
+      // No tasks to display (epic itself is not shown as a task)
+      expect(screen.getByRole("status", { name: "No tasks" })).toBeInTheDocument()
     })
 
     it("does not show 'No tasks in this epic' message for empty epics", () => {
       render(<TaskList tasks={epicWithoutSubtasks} persistCollapsedState={false} />)
       expect(screen.queryByText("No tasks in this epic")).not.toBeInTheDocument()
+    })
+
+    it("sorts epic sub-groups by epic priority", () => {
+      const tasks: TaskCardTask[] = [
+        {
+          id: "epic-low",
+          title: "Low Priority Epic",
+          status: "open",
+          issue_type: "epic",
+          priority: 3,
+        },
+        {
+          id: "epic-high",
+          title: "High Priority Epic",
+          status: "open",
+          issue_type: "epic",
+          priority: 1,
+        },
+        { id: "task-low", title: "Low epic task", status: "open", parent: "epic-low" },
+        { id: "task-high", title: "High epic task", status: "open", parent: "epic-high" },
+      ]
+      render(<TaskList tasks={tasks} persistCollapsedState={false} />)
+
+      // Get all epic headers within the Ready group
+      const epicHeaders = screen.getAllByLabelText(/epic, 1 task/)
+      expect(epicHeaders).toHaveLength(2)
+      // High priority epic should come first
+      expect(epicHeaders[0]).toHaveTextContent("High Priority Epic")
+      expect(epicHeaders[1]).toHaveTextContent("Low Priority Epic")
     })
   })
 })

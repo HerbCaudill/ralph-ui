@@ -185,12 +185,12 @@ function EpicGroupHeader({
 // TaskList Component
 
 /**
- * List component for displaying tasks grouped by epic and status.
- * - First groups tasks by their parent epic
- * - Tasks without an epic are shown as a flat list at the bottom
- * - Within each group, tasks are grouped by status (Ready, In Progress, Blocked, Other)
- * - Each epic is collapsible independently
- * - Status groups are also collapsible
+ * List component for displaying tasks grouped by status and epic.
+ * - Primary grouping is by status (Ready, In Progress, Blocked, Closed)
+ * - Within each status group, tasks are sub-grouped by their parent epic
+ * - Tasks without an epic are shown at the end of each status group
+ * - Each status group is collapsible
+ * - Each epic sub-group is also collapsible independently
  */
 
 // Default collapsed state: Ready + In Progress expanded, Blocked + Closed collapsed
@@ -249,10 +249,17 @@ function saveEpicCollapsedState(state: Record<string, boolean>): void {
   }
 }
 
-/** Structure for an epic group with its tasks */
-interface EpicGroup {
-  epic: TaskCardTask
+/** Structure for an epic sub-group within a status group */
+interface EpicSubGroup {
+  epic: TaskCardTask | null // null for ungrouped tasks
   tasks: TaskCardTask[]
+}
+
+/** Structure for a status group with its epic sub-groups */
+interface StatusGroupData {
+  config: GroupConfig
+  epicSubGroups: EpicSubGroup[]
+  totalCount: number
 }
 
 export function TaskList({
@@ -311,83 +318,93 @@ export function TaskList({
     }))
   }, [])
 
-  // Group tasks by epic and status
-  const { epicGroups, ungroupedTasks } = useMemo(() => {
+  // Group tasks by status first, then by epic within each status
+  const statusGroups = useMemo(() => {
     // First, identify all epics and create a map
     const epicMap = new Map<string, TaskCardTask>()
-    const childTasksByEpic = new Map<string, TaskCardTask[]>()
-
     for (const task of tasks) {
       if (task.issue_type === "epic") {
         epicMap.set(task.id, task)
-        if (!childTasksByEpic.has(task.id)) {
-          childTasksByEpic.set(task.id, [])
+      }
+    }
+
+    // Group non-epic tasks by status, then by parent epic
+    const statusToEpicTasks = new Map<TaskGroup, Map<string | null, TaskCardTask[]>>()
+
+    // Initialize status groups
+    for (const config of groupConfigs) {
+      statusToEpicTasks.set(config.key, new Map())
+    }
+
+    for (const task of tasks) {
+      if (task.issue_type === "epic") continue // Don't show epics as tasks
+
+      // Find which status group this task belongs to
+      const config = groupConfigs.find(g => g.statusFilter(task.status))
+      if (!config) continue
+
+      const epicTasksMap = statusToEpicTasks.get(config.key)!
+      const epicId = task.parent && epicMap.has(task.parent) ? task.parent : null
+
+      if (!epicTasksMap.has(epicId)) {
+        epicTasksMap.set(epicId, [])
+      }
+      epicTasksMap.get(epicId)!.push(task)
+    }
+
+    // Build status groups with epic sub-groups
+    const result: StatusGroupData[] = []
+
+    for (const config of groupConfigs) {
+      const epicTasksMap = statusToEpicTasks.get(config.key)!
+      const epicSubGroups: EpicSubGroup[] = []
+
+      // Get all epics that have tasks in this status, sorted by epic priority
+      const epicsInStatus = Array.from(epicTasksMap.keys())
+        .filter((id): id is string => id !== null)
+        .map(id => epicMap.get(id)!)
+        .filter(Boolean)
+        .sort((a, b) => (a.priority ?? 4) - (b.priority ?? 4))
+
+      // Add epic sub-groups
+      for (const epic of epicsInStatus) {
+        const epicTasks = (epicTasksMap.get(epic.id) ?? []).sort(
+          (a, b) => (a.priority ?? 4) - (b.priority ?? 4),
+        )
+        if (epicTasks.length > 0) {
+          epicSubGroups.push({ epic, tasks: epicTasks })
         }
       }
-    }
 
-    // Group child tasks by their parent epic
-    const ungrouped: TaskCardTask[] = []
-    for (const task of tasks) {
-      if (task.issue_type === "epic") continue // Don't add epics as tasks
-
-      if (task.parent && epicMap.has(task.parent)) {
-        const children = childTasksByEpic.get(task.parent) ?? []
-        children.push(task)
-        childTasksByEpic.set(task.parent, children)
-      } else {
-        ungrouped.push(task)
-      }
-    }
-
-    // Build epic groups, sorted by epic priority
-    const epics = Array.from(epicMap.values()).sort((a, b) => (a.priority ?? 4) - (b.priority ?? 4))
-
-    const groups: EpicGroup[] = epics.map(epic => ({
-      epic,
-      tasks: (childTasksByEpic.get(epic.id) ?? []).sort(
+      // Add ungrouped tasks (null epic) at the end
+      const ungroupedTasks = (epicTasksMap.get(null) ?? []).sort(
         (a, b) => (a.priority ?? 4) - (b.priority ?? 4),
-      ),
-    }))
-
-    // Sort ungrouped tasks by priority
-    ungrouped.sort((a, b) => (a.priority ?? 4) - (b.priority ?? 4))
-
-    return { epicGroups: groups, ungroupedTasks: ungrouped }
-  }, [tasks])
-
-  // Group ungrouped tasks by status
-  const groupedUngroupedTasks = useMemo(() => {
-    const groups: Record<TaskGroup, TaskCardTask[]> = {
-      blocked: [],
-      ready: [],
-      in_progress: [],
-      closed: [],
-    }
-
-    for (const task of ungroupedTasks) {
-      const config = groupConfigs.find(g => g.statusFilter(task.status))
-      if (config) {
-        groups[config.key].push(task)
+      )
+      if (ungroupedTasks.length > 0) {
+        epicSubGroups.push({ epic: null, tasks: ungroupedTasks })
       }
+
+      const totalCount = epicSubGroups.reduce((sum, g) => sum + g.tasks.length, 0)
+
+      result.push({
+        config,
+        epicSubGroups,
+        totalCount,
+      })
     }
 
-    return groups
-  }, [ungroupedTasks])
+    return result
+  }, [tasks])
 
   // Filter to only non-empty status groups (or all if showEmptyGroups is true)
   const visibleStatusGroups = useMemo(() => {
-    return groupConfigs.filter(config => {
-      const count = groupedUngroupedTasks[config.key].length
-      return showEmptyGroups || count > 0
-    })
-  }, [groupedUngroupedTasks, showEmptyGroups])
+    return statusGroups.filter(group => showEmptyGroups || group.totalCount > 0)
+  }, [statusGroups, showEmptyGroups])
 
   // Check if we have any content to show
-  const hasEpics = epicGroups.length > 0
-  const hasUngroupedTasks = ungroupedTasks.length > 0
+  const hasTasks = statusGroups.some(g => g.totalCount > 0)
 
-  if (!hasEpics && !hasUngroupedTasks && !showEmptyGroups) {
+  if (!hasTasks && !showEmptyGroups) {
     return (
       <div
         className={cn(
@@ -404,72 +421,70 @@ export function TaskList({
 
   return (
     <div className={cn("flex flex-col", className)} role="list" aria-label="Task list">
-      {/* Epic groups */}
-      {epicGroups.map(({ epic, tasks: epicTasks }) => {
-        const isCollapsed = epicCollapsedState[epic.id] ?? false
-        const hasSubtasks = epicTasks.length > 0
+      {/* Status groups with epic sub-groups */}
+      {visibleStatusGroups.map(({ config, epicSubGroups, totalCount }) => {
+        const isStatusCollapsed = statusCollapsedState[config.key]
 
         return (
-          <div key={epic.id} role="listitem" aria-label={`${epic.title} epic group`}>
-            <EpicGroupHeader
-              epicId={epic.id}
-              epicTitle={epic.title}
-              taskCount={epicTasks.length}
-              isCollapsed={isCollapsed}
-              onToggle={() => toggleEpicGroup(epic.id)}
+          <div key={config.key} role="listitem" aria-label={`${config.label} group`}>
+            <TaskGroupHeader
+              label={config.label}
+              count={totalCount}
+              isCollapsed={isStatusCollapsed}
+              onToggle={() => toggleStatusGroup(config.key)}
             />
-            {/* Only show expandable content if epic has subtasks */}
-            {hasSubtasks && !isCollapsed && (
-              <div role="group" aria-label={`${epic.title} tasks`}>
-                {epicTasks.map(task => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    onStatusChange={onStatusChange}
-                    onClick={onTaskClick}
-                    className="pl-6"
-                  />
-                ))}
+            {!isStatusCollapsed && (
+              <div role="group" aria-label={`${config.label} tasks`}>
+                {epicSubGroups.length > 0 ?
+                  epicSubGroups.map(({ epic, tasks: epicTasks }) => {
+                    if (epic) {
+                      // Epic sub-group
+                      const isEpicCollapsed = epicCollapsedState[epic.id] ?? false
+                      return (
+                        <div key={epic.id} role="group" aria-label={`${epic.title} epic sub-group`}>
+                          <EpicGroupHeader
+                            epicId={epic.id}
+                            epicTitle={epic.title}
+                            taskCount={epicTasks.length}
+                            isCollapsed={isEpicCollapsed}
+                            onToggle={() => toggleEpicGroup(epic.id)}
+                          />
+                          {!isEpicCollapsed && (
+                            <div role="group" aria-label={`${epic.title} tasks`}>
+                              {epicTasks.map(task => (
+                                <TaskCard
+                                  key={task.id}
+                                  task={task}
+                                  onStatusChange={onStatusChange}
+                                  onClick={onTaskClick}
+                                  className="pl-6"
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    } else {
+                      // Ungrouped tasks (no epic parent)
+                      return epicTasks.map(task => (
+                        <TaskCard
+                          key={task.id}
+                          task={task}
+                          onStatusChange={onStatusChange}
+                          onClick={onTaskClick}
+                        />
+                      ))
+                    }
+                  })
+                : <div className="text-muted-foreground px-3 py-3 text-center text-xs italic">
+                    No tasks in this group
+                  </div>
+                }
               </div>
             )}
           </div>
         )
       })}
-
-      {/* Ungrouped tasks by status */}
-      {(hasUngroupedTasks || showEmptyGroups) &&
-        visibleStatusGroups.map(config => {
-          const groupTasks = groupedUngroupedTasks[config.key]
-          const isCollapsed = statusCollapsedState[config.key]
-
-          return (
-            <div key={config.key} role="listitem" aria-label={`${config.label} group`}>
-              <TaskGroupHeader
-                label={config.label}
-                count={groupTasks.length}
-                isCollapsed={isCollapsed}
-                onToggle={() => toggleStatusGroup(config.key)}
-              />
-              {!isCollapsed && (
-                <div role="group" aria-label={`${config.label} tasks`}>
-                  {groupTasks.length > 0 ?
-                    groupTasks.map(task => (
-                      <TaskCard
-                        key={task.id}
-                        task={task}
-                        onStatusChange={onStatusChange}
-                        onClick={onTaskClick}
-                      />
-                    ))
-                  : <div className="text-muted-foreground px-3 py-3 text-center text-xs italic">
-                      No tasks in this group
-                    </div>
-                  }
-                </div>
-              )}
-            </div>
-          )
-        })}
     </div>
   )
 }
