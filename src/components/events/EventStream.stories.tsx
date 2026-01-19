@@ -48,14 +48,25 @@ function parseJsonl(raw: string, limit = 200): Array<Record<string, unknown>> {
 }
 
 // Parse JSONL including stream events for real-time simulation
+// Only includes events from the first session to avoid incomplete streaming
+// at session boundaries
 function parseJsonlWithStreaming(raw: string): Array<Record<string, unknown>> {
   const lines = raw.trim().split("\n")
   const events: Array<Record<string, unknown>> = []
+  let sessionCount = 0
 
   for (const line of lines) {
     try {
       const event = JSON.parse(line)
-      // Include stream events plus user messages and tool results
+
+      // Track session boundaries - stop after first session
+      if (event.type === "system" && event.subtype === "init") {
+        sessionCount++
+        if (sessionCount > 1) break // Stop at second session
+        continue // Skip the init event itself
+      }
+
+      // Include stream events, user messages and tool results
       if (event.type === "stream_event" || event.type === "user" || event.type === "user_message") {
         events.push(event)
       }
