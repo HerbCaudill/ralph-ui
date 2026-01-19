@@ -1,7 +1,8 @@
 import { cn } from "@/lib/utils"
 import { useAppStore, selectEvents, selectRalphStatus, type RalphEvent } from "@/store"
-import { Loader2 } from "lucide-react"
+import { IconLoader } from "@tabler/icons-react"
 import { useCallback, useEffect, useRef, useState } from "react"
+import { IconChevronDown } from "@tabler/icons-react"
 import { UserMessage, type UserMessageEvent } from "./UserMessage"
 import { AssistantText, type AssistantTextEvent } from "./AssistantText"
 import { ToolUseCard, type ToolUseEvent } from "./ToolUseCard"
@@ -337,7 +338,10 @@ export function EventStream({ className, maxEvents = 1000 }: EventStreamProps) {
                 aria-label="Ralph is running"
                 data-testid="ralph-running-spinner"
               >
-                <Loader2 className="text-muted-foreground size-5 animate-spin" aria-hidden="true" />
+                <IconLoader
+                  className="text-muted-foreground size-5 animate-spin"
+                  aria-hidden="true"
+                />
               </div>
             )}
           </>
@@ -354,19 +358,7 @@ export function EventStream({ className, maxEvents = 1000 }: EventStreamProps) {
           )}
           aria-label="Scroll to latest events"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="m6 9 6 6 6-6" />
-          </svg>
+          <IconChevronDown className="size-4" />
           <span className="pr-1 text-xs font-medium">Latest</span>
         </button>
       )}

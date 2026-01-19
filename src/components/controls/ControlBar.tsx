@@ -5,6 +5,12 @@ import { TooltipButton } from "@/components/ui/tooltip"
 import { useAppStore, selectRalphStatus, selectIsConnected } from "@/store"
 import { useHotkeys } from "@/hooks"
 import type { RalphStatus } from "@/store"
+import {
+  IconPlayerPlayFilled,
+  IconPlayerPauseFilled,
+  IconPlayerStopFilled,
+  IconPlayerStop,
+} from "@tabler/icons-react"
 
 // Types
 
@@ -88,74 +94,6 @@ async function cancelStopAfterCurrentRalph(): Promise<{ ok: boolean; error?: str
       error: err instanceof Error ? err.message : "Failed to cancel stop after current",
     }
   }
-}
-
-// Icons
-
-function PlayIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className={className}
-    >
-      <polygon points="5 3 19 12 5 21 5 3" />
-    </svg>
-  )
-}
-
-function PauseIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className={className}
-    >
-      <rect x="6" y="4" width="4" height="16" />
-      <rect x="14" y="4" width="4" height="16" />
-    </svg>
-  )
-}
-
-function StopIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className={className}
-    >
-      <rect x="4" y="4" width="16" height="16" rx="2" />
-    </svg>
-  )
-}
-
-function StopAfterIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <rect x="4" y="4" width="16" height="16" rx="2" />
-      <polyline points="9 12 11 14 15 10" />
-    </svg>
-  )
 }
 
 // Helper Functions
@@ -303,7 +241,7 @@ export function ControlBar({ className }: ControlBarProps) {
           disabled={!buttonStates.start || isLoading}
           aria-label="Start"
         >
-          <PlayIcon />
+          <IconPlayerPlayFilled className="size-4" />
         </Button>
       </TooltipButton>
 
@@ -320,8 +258,8 @@ export function ControlBar({ className }: ControlBarProps) {
           aria-label={status === "paused" ? "Resume" : "Pause"}
         >
           {status === "paused" ?
-            <PlayIcon />
-          : <PauseIcon />}
+            <IconPlayerPlayFilled className="size-4" />
+          : <IconPlayerPauseFilled className="size-4" />}
         </Button>
       </TooltipButton>
 
@@ -334,7 +272,7 @@ export function ControlBar({ className }: ControlBarProps) {
           disabled={!buttonStates.stop || isLoading}
           aria-label="Stop"
         >
-          <StopIcon />
+          <IconPlayerStopFilled className="size-4" />
         </Button>
       </TooltipButton>
 
@@ -354,7 +292,7 @@ export function ControlBar({ className }: ControlBarProps) {
             status === "stopping_after_current" ? "Cancel stop after current" : "Stop after current"
           }
         >
-          <StopAfterIcon />
+          <IconPlayerStop className="size-4" />
         </Button>
       </TooltipButton>
 

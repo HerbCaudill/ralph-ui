@@ -1,5 +1,12 @@
 import { useState, useCallback, useEffect } from "react"
-import { Circle, CircleDot, CheckCircle2, Ban, Clock, type LucideIcon } from "lucide-react"
+import {
+  IconCircle,
+  IconCircleDot,
+  IconCircleCheck,
+  IconBan,
+  IconClock,
+  type TablerIcon,
+} from "@tabler/icons-react"
 import {
   Dialog,
   DialogContent,
@@ -47,34 +54,34 @@ export interface TaskUpdateData {
 // Status Configuration
 
 interface StatusConfig {
-  icon: LucideIcon
+  icon: TablerIcon
   label: string
   color: string
 }
 
 const statusConfig: Record<TaskStatus, StatusConfig> = {
   open: {
-    icon: Circle,
+    icon: IconCircle,
     label: "Open",
     color: "text-gray-500",
   },
   in_progress: {
-    icon: CircleDot,
+    icon: IconCircleDot,
     label: "In Progress",
     color: "text-blue-500",
   },
   blocked: {
-    icon: Ban,
+    icon: IconBan,
     label: "Blocked",
     color: "text-red-500",
   },
   deferred: {
-    icon: Clock,
+    icon: IconClock,
     label: "Deferred",
     color: "text-amber-500",
   },
   closed: {
-    icon: CheckCircle2,
+    icon: IconCircleCheck,
     label: "Closed",
     color: "text-green-500",
   },

@@ -3,7 +3,7 @@ import { useAppStore, selectAccentColor } from "@/store"
 import { useTheme } from "@/hooks"
 import { WorkspacePicker } from "./WorkspacePicker"
 import { Button } from "@/components/ui/button"
-import { Sun, Moon, Monitor } from "lucide-react"
+import { IconSun, IconMoon, IconDeviceDesktop } from "@tabler/icons-react"
 
 // Constants
 
@@ -28,9 +28,9 @@ function ThemeToggle({ textColor }: ThemeToggleProps) {
   const { theme, cycleTheme } = useTheme()
 
   const iconConfig = {
-    system: { Icon: Monitor, label: "System theme" },
-    light: { Icon: Sun, label: "Light theme" },
-    dark: { Icon: Moon, label: "Dark theme" },
+    system: { Icon: IconDeviceDesktop, label: "System theme" },
+    light: { Icon: IconSun, label: "Light theme" },
+    dark: { Icon: IconMoon, label: "Dark theme" },
   }
 
   const { Icon, label } = iconConfig[theme]

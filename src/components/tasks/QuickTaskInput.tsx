@@ -10,8 +10,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react"
-import { Loader2 } from "lucide-react"
-import { IconSquareRoundedPlusFilled } from "@tabler/icons-react"
+import { IconSquareRoundedPlusFilled, IconLoader } from "@tabler/icons-react"
 
 // Constants
 
@@ -191,8 +190,8 @@ export const QuickTaskInput = forwardRef<QuickTaskInputHandle, QuickTaskInputPro
             aria-label={isSubmitting ? "Creating task..." : "Add task"}
           >
             {isSubmitting ?
-              <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-            : <IconSquareRoundedPlusFilled size={20} aria-hidden="true" />}
+              <IconLoader className="size-4 animate-spin" aria-hidden="true" />
+            : <IconSquareRoundedPlusFilled className="size-5" aria-hidden="true" />}
           </button>
         </div>
       </form>

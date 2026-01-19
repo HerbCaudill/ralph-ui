@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite"
 import { Button } from "./button"
-import { Plus, Settings, Trash2 } from "lucide-react"
+import { IconPlus, IconSettings, IconTrash } from "@tabler/icons-react"
 
 const meta: Meta<typeof Button> = {
   title: "UI/Button",
@@ -89,7 +89,7 @@ export const WithIcon: Story = {
   args: {
     children: (
       <>
-        <Plus />
+        <IconPlus />
         Add Item
       </>
     ),
@@ -99,7 +99,7 @@ export const WithIcon: Story = {
 export const IconOnly: Story = {
   args: {
     size: "icon",
-    children: <Settings />,
+    children: <IconSettings />,
     "aria-label": "Settings",
   },
 }
@@ -107,7 +107,7 @@ export const IconOnly: Story = {
 export const IconSmall: Story = {
   args: {
     size: "icon-sm",
-    children: <Trash2 />,
+    children: <IconTrash />,
     "aria-label": "Delete",
   },
 }
@@ -139,13 +139,13 @@ export const AllSizes: Story = {
       <Button size="default">Default</Button>
       <Button size="lg">Large</Button>
       <Button size="icon-sm">
-        <Settings />
+        <IconSettings />
       </Button>
       <Button size="icon">
-        <Settings />
+        <IconSettings />
       </Button>
       <Button size="icon-lg">
-        <Settings />
+        <IconSettings />
       </Button>
     </div>
   ),

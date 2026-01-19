@@ -10,6 +10,7 @@ import {
   selectRunStartedAt,
 } from "@/store"
 import { ControlBar } from "@/components/controls/ControlBar"
+import { IconGitBranch, IconClock } from "@tabler/icons-react"
 
 // Types
 
@@ -44,7 +45,7 @@ function getRepoName(workspace: string | null): string | null {
  * Formats elapsed time in a human-readable format.
  * Shows seconds for < 1 minute, then minutes:seconds, then hours:minutes:seconds.
  */
-export function formatElapsedTime(elapsedMs: number): string {
+function formatElapsedTime(elapsedMs: number): string {
   const totalSeconds = Math.floor(elapsedMs / 1000)
   const hours = Math.floor(totalSeconds / 3600)
   const minutes = Math.floor((totalSeconds % 3600) / 60)
@@ -113,24 +114,7 @@ function RepoBranch() {
 
   return (
     <div className="text-muted-foreground flex items-center gap-1 text-xs">
-      {/* Git branch icon */}
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="12"
-        height="12"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="shrink-0"
-      >
-        <line x1="6" x2="6" y1="3" y2="15" />
-        <circle cx="18" cy="6" r="3" />
-        <circle cx="6" cy="18" r="3" />
-        <path d="M18 9a9 9 0 0 1-9 9" />
-      </svg>
+      <IconGitBranch className="size-3 shrink-0" />
       <span className="max-w-[150px] truncate">
         {repoName}
         {branch && (
@@ -222,22 +206,7 @@ function RunDuration() {
 
   return (
     <div className="text-muted-foreground flex items-center gap-1 text-xs" title="Time running">
-      {/* Clock icon */}
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="12"
-        height="12"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="shrink-0"
-      >
-        <circle cx="12" cy="12" r="10" />
-        <polyline points="12 6 12 12 16 14" />
-      </svg>
+      <IconClock className="size-3 shrink-0" />
       <span>{formatElapsedTime(elapsed)}</span>
     </div>
   )

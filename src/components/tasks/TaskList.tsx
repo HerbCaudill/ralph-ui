@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils"
 import { useState, useCallback, useMemo, useEffect } from "react"
-import { ChevronDown, Layers } from "lucide-react"
+import { IconChevronDown, IconStack2 } from "@tabler/icons-react"
 import { TaskCard, type TaskCardTask, type TaskStatus } from "./TaskCard"
 
 // Constants
@@ -167,10 +167,9 @@ function TaskGroupHeader({
       aria-expanded={!isCollapsed}
       aria-label={`${label} section, ${count} task${count === 1 ? "" : "s"}`}
     >
-      <ChevronDown
-        size={14}
+      <IconChevronDown
         className={cn(
-          "text-muted-foreground shrink-0 transition-transform",
+          "text-muted-foreground size-3.5 shrink-0 transition-transform",
           isCollapsed && "-rotate-90",
         )}
       />
@@ -254,15 +253,14 @@ function EpicGroupHeader({
       }
     >
       {hasSubtasks && (
-        <ChevronDown
-          size={14}
+        <IconChevronDown
           className={cn(
-            "text-muted-foreground shrink-0 transition-transform",
+            "text-muted-foreground size-3.5 shrink-0 transition-transform",
             isCollapsed && "-rotate-90",
           )}
         />
       )}
-      <Layers size={14} className="text-primary shrink-0" />
+      <IconStack2 className="text-primary size-3.5 shrink-0" />
       <span className="text-muted-foreground shrink-0 font-mono text-xs">{epicId}</span>
       <span className="min-w-0 flex-1 truncate text-sm font-medium">{epicTitle}</span>
       {hasSubtasks && (

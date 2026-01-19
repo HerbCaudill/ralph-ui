@@ -1,6 +1,13 @@
 import { cn } from "@/lib/utils"
 import { useState, useCallback } from "react"
-import { Circle, CircleDot, CheckCircle2, Ban, Clock, type LucideIcon } from "lucide-react"
+import {
+  IconCircle,
+  IconCircleDot,
+  IconCircleCheck,
+  IconBan,
+  IconClock,
+  type TablerIcon,
+} from "@tabler/icons-react"
 
 // Types
 
@@ -41,7 +48,7 @@ export interface TaskCardProps {
 // Status Configuration
 
 interface StatusConfig {
-  icon: LucideIcon
+  icon: TablerIcon
   label: string
   color: string
   bgColor: string
@@ -49,31 +56,31 @@ interface StatusConfig {
 
 const statusConfig: Record<TaskStatus, StatusConfig> = {
   open: {
-    icon: Circle,
+    icon: IconCircle,
     label: "Open",
     color: "text-gray-500",
     bgColor: "bg-gray-500/10",
   },
   in_progress: {
-    icon: CircleDot,
+    icon: IconCircleDot,
     label: "In Progress",
     color: "text-blue-500",
     bgColor: "bg-blue-500/10",
   },
   blocked: {
-    icon: Ban,
+    icon: IconBan,
     label: "Blocked",
     color: "text-red-500",
     bgColor: "bg-red-500/10",
   },
   deferred: {
-    icon: Clock,
+    icon: IconClock,
     label: "Deferred",
     color: "text-amber-500",
     bgColor: "bg-amber-500/10",
   },
   closed: {
-    icon: CheckCircle2,
+    icon: IconCircleCheck,
     label: "Closed",
     color: "text-green-500",
     bgColor: "bg-green-500/10",
@@ -166,7 +173,7 @@ export function TaskCard({
           aria-haspopup={onStatusChange ? "listbox" : undefined}
           aria-expanded={isStatusMenuOpen}
         >
-          <StatusIcon size={16} className={config.color} />
+          <StatusIcon className={cn("size-4", config.color)} />
 
           {/* Status dropdown menu */}
           {isStatusMenuOpen && (
@@ -200,7 +207,7 @@ export function TaskCard({
                       status === task.status && "bg-muted",
                     )}
                   >
-                    <Icon size={14} className={sc.color} />
+                    <Icon className={cn("size-3.5", sc.color)} />
                     <span>{sc.label}</span>
                   </div>
                 )

@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils"
 import { useAppStore, selectWorkspace, selectAccentColor } from "@/store"
 import { useState, useRef, useEffect, useCallback } from "react"
+import { IconFolderFilled, IconChevronDown, IconCheck, IconRefresh } from "@tabler/icons-react"
 
 // Types
 
@@ -31,90 +32,6 @@ export interface WorkspacePickerProps {
   variant?: "default" | "header"
   /** Text color to use when variant is "header" */
   textColor?: string
-}
-
-// Icons
-
-interface FolderIconProps {
-  className?: string
-  color?: string | null
-  size?: number
-}
-
-function FolderFilledIcon({ className, color, size = 16 }: FolderIconProps) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill={color || "currentColor"}
-      stroke="none"
-      className={className}
-    >
-      <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z" />
-    </svg>
-  )
-}
-
-function ChevronDownIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="12"
-      height="12"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="m6 9 6 6 6-6" />
-    </svg>
-  )
-}
-
-function CheckIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M20 6 9 17l-5-5" />
-    </svg>
-  )
-}
-
-function RefreshIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-      <path d="M3 3v5h5" />
-      <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-      <path d="M16 16h5v5" />
-    </svg>
-  )
 }
 
 // WorkspacePicker Component
@@ -296,17 +213,18 @@ export function WorkspacePicker({
         aria-haspopup="true"
         disabled={isLoading}
       >
-        <FolderFilledIcon
-          color={
-            isServerDown ? undefined
-            : isHeaderVariant ?
-              textColor
-            : accentColor
-          }
+        <IconFolderFilled
           className={cn(
+            "size-4",
             isServerDown && "text-red-500",
             !isHeaderVariant && !accentColor && "text-muted-foreground",
           )}
+          style={{
+            color:
+              isServerDown ? undefined
+              : isHeaderVariant ? textColor
+              : (accentColor ?? undefined),
+          }}
         />
         <span className="max-w-[200px] truncate">{displayName}</span>
         {issueCount !== undefined && (
@@ -319,7 +237,7 @@ export function WorkspacePicker({
             {issueCount}
           </span>
         )}
-        <ChevronDownIcon className={cn("transition-transform", isOpen && "rotate-180")} />
+        <IconChevronDown className={cn("size-3 transition-transform", isOpen && "rotate-180")} />
       </button>
 
       {isOpen && (
@@ -338,7 +256,7 @@ export function WorkspacePicker({
                   className="text-red-400 hover:text-red-300"
                   title="Retry"
                 >
-                  <RefreshIcon />
+                  <IconRefresh className="size-3.5" />
                 </button>
               </div>
               {isServerDown && (
@@ -376,10 +294,9 @@ export function WorkspacePicker({
                     )}
                   >
                     {/* Accent color folder icon */}
-                    <FolderFilledIcon
-                      color={ws.accentColor}
-                      size={14}
-                      className={cn(!ws.accentColor && "text-muted-foreground")}
+                    <IconFolderFilled
+                      className={cn("size-3.5", !ws.accentColor && "text-muted-foreground")}
+                      style={{ color: ws.accentColor ?? undefined }}
                     />
                     <div className="flex min-w-0 flex-1 items-center gap-2">
                       <span className="truncate text-sm font-medium">{ws.name}</span>
@@ -388,7 +305,7 @@ export function WorkspacePicker({
                           {ws.activeIssueCount}
                         </span>
                       )}
-                      {ws.isActive && <CheckIcon className="text-primary shrink-0" />}
+                      {ws.isActive && <IconCheck className="text-primary size-3.5 shrink-0" />}
                     </div>
                   </button>
                 ))
@@ -408,7 +325,7 @@ export function WorkspacePicker({
                 "hover:bg-accent transition-colors",
               )}
             >
-              <RefreshIcon className="text-muted-foreground" />
+              <IconRefresh className="text-muted-foreground size-3.5" />
               <span>Refresh</span>
             </button>
           </div>
