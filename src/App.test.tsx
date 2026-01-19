@@ -59,8 +59,9 @@ describe("App", () => {
     expect(screen.getByRole("textbox", { name: "Message input" })).toBeInTheDocument()
 
     // Wait for all async operations to complete to avoid act() warning
+    // workspace appears in both Header and StatusBar now
     await waitFor(() => {
-      expect(screen.getByText("workspace")).toBeInTheDocument()
+      expect(screen.getAllByText("workspace").length).toBeGreaterThan(0)
     })
   })
 
@@ -72,8 +73,9 @@ describe("App", () => {
     expect(screen.getByText("Ralph: stopped")).toBeInTheDocument()
 
     // Wait for all async operations to complete to avoid act() warning
+    // workspace appears in both Header and StatusBar now
     await waitFor(() => {
-      expect(screen.getByText("workspace")).toBeInTheDocument()
+      expect(screen.getAllByText("workspace").length).toBeGreaterThan(0)
     })
   })
 })

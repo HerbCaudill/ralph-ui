@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
 import {
   useAppStore,
@@ -6,7 +7,9 @@ import {
   selectBranch,
   selectTokenUsage,
   selectIteration,
+  selectRunStartedAt,
 } from "@/store"
+import { ControlBar } from "@/components/controls/ControlBar"
 
 // Types
 
@@ -35,6 +38,25 @@ function formatTokenCount(count: number): string {
 function getRepoName(workspace: string | null): string | null {
   if (!workspace) return null
   return workspace.split("/").pop() || workspace
+}
+
+/**
+ * Formats elapsed time in a human-readable format.
+ * Shows seconds for < 1 minute, then minutes:seconds, then hours:minutes:seconds.
+ */
+export function formatElapsedTime(elapsedMs: number): string {
+  const totalSeconds = Math.floor(elapsedMs / 1000)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+  }
+  if (minutes > 0) {
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`
+  }
+  return `${seconds}s`
 }
 
 // StatusIndicator Component
@@ -172,17 +194,68 @@ function IterationProgress() {
   )
 }
 
+// RunDuration Component
+
+function RunDuration() {
+  const runStartedAt = useAppStore(selectRunStartedAt)
+  const [elapsed, setElapsed] = useState(0)
+
+  useEffect(() => {
+    if (!runStartedAt) {
+      setElapsed(0)
+      return
+    }
+
+    // Update immediately
+    setElapsed(Date.now() - runStartedAt)
+
+    // Update every second
+    const interval = setInterval(() => {
+      setElapsed(Date.now() - runStartedAt)
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [runStartedAt])
+
+  // Don't show if not running
+  if (!runStartedAt) return null
+
+  return (
+    <div className="text-muted-foreground flex items-center gap-1 text-xs" title="Time running">
+      {/* Clock icon */}
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="12"
+        height="12"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="shrink-0"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+      <span>{formatElapsedTime(elapsed)}</span>
+    </div>
+  )
+}
+
 // StatusBar Component
 
 /**
- * Bottom status bar showing run status, repo/branch, token usage, and iteration progress.
+ * Bottom status bar showing run status, control buttons, repo/branch, token usage, and iteration progress.
  */
 export function StatusBar({ className }: StatusBarProps) {
   return (
     <div className={cn("flex items-center justify-between gap-4 text-sm", className)}>
-      {/* Left section: Status and repo/branch */}
+      {/* Left section: Control buttons, status, run duration, and repo/branch */}
       <div className="flex items-center gap-4">
+        <ControlBar />
         <StatusIndicator />
+        <RunDuration />
         <RepoBranch />
       </div>
 

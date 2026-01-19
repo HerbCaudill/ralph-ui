@@ -47,6 +47,9 @@ export interface AppState {
   // Ralph process status
   ralphStatus: RalphStatus
 
+  // Timestamp when Ralph started running (null if not running)
+  runStartedAt: number | null
+
   // Event stream from ralph
   events: RalphEvent[]
 
@@ -129,6 +132,7 @@ export interface AppActions {
 
 const initialState: AppState = {
   ralphStatus: "stopped",
+  runStartedAt: null,
   events: [],
   tasks: [],
   workspace: null,
@@ -148,7 +152,15 @@ export const useAppStore = create<AppState & AppActions>(set => ({
   ...initialState,
 
   // Ralph status
-  setRalphStatus: status => set({ ralphStatus: status }),
+  setRalphStatus: status =>
+    set(state => ({
+      ralphStatus: status,
+      // Set runStartedAt when transitioning to running, clear when stopped
+      runStartedAt:
+        status === "running" && state.ralphStatus !== "running" ? Date.now()
+        : status === "stopped" ? null
+        : state.runStartedAt,
+    })),
 
   // Events
   addEvent: event =>
@@ -208,6 +220,7 @@ export const useAppStore = create<AppState & AppActions>(set => ({
 // Selectors
 
 export const selectRalphStatus = (state: AppState) => state.ralphStatus
+export const selectRunStartedAt = (state: AppState) => state.runStartedAt
 export const selectEvents = (state: AppState) => state.events
 export const selectTasks = (state: AppState) => state.tasks
 export const selectWorkspace = (state: AppState) => state.workspace

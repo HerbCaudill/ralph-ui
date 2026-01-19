@@ -1,5 +1,5 @@
 import { useRef, useCallback } from "react"
-import { MainLayout, type MainLayoutHandle } from "./components/layout"
+import { MainLayout, type MainLayoutHandle, StatusBar } from "./components/layout"
 import { ChatInput, type ChatInputHandle } from "./components/chat/ChatInput"
 import { EventStream } from "./components/events"
 import { TaskSidebar } from "./components/tasks/TaskSidebar"
@@ -113,8 +113,8 @@ function AgentView({ chatInputRef }: AgentViewProps) {
 
   return (
     <div className="flex h-full flex-col">
-      {/* Status bar at top of main panel */}
-      <StatusBar />
+      {/* Task status bar at top of main panel */}
+      <TaskStatusBar />
 
       {/* Event stream */}
       <div className="min-h-0 flex-1">
@@ -139,7 +139,7 @@ function AgentView({ chatInputRef }: AgentViewProps) {
   )
 }
 
-function StatusBar() {
+function TaskStatusBar() {
   const connectionStatus = useAppStore(selectConnectionStatus)
   const ralphStatus = useAppStore(selectRalphStatus)
   const currentTask = useAppStore(selectCurrentTask)
@@ -147,7 +147,7 @@ function StatusBar() {
   return (
     <div
       role="status"
-      aria-label="Status bar"
+      aria-label="Task status bar"
       className="border-border bg-muted/50 flex items-center justify-between border-b px-4 py-2 text-sm"
     >
       {/* Left section: Current task */}
@@ -284,6 +284,7 @@ export function App() {
           <TasksSidebarPanel quickInputRef={quickTaskInputRef} onTaskClick={handleTaskClick} />
         }
         main={<AgentView chatInputRef={chatInputRef} />}
+        statusBar={<StatusBar />}
       />
       <TaskDetailsDialog
         task={taskDialog.selectedTask}
