@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils"
+import { cn, getContrastingColor } from "@/lib/utils"
 import { useAppStore, selectAccentColor } from "@/store"
 import { useTheme } from "@/hooks"
 import { WorkspacePicker } from "./WorkspacePicker"
@@ -8,8 +8,8 @@ import { Sun, Moon, Monitor } from "lucide-react"
 
 // Constants
 
-/** Default accent color (black) when peacock color is not set */
-const DEFAULT_ACCENT_COLOR = "#000000"
+/** Default accent color (neutral dark) when peacock color is not set */
+const DEFAULT_ACCENT_COLOR = "#374151"
 
 // Types
 
@@ -17,9 +17,15 @@ export interface HeaderProps {
   className?: string
 }
 
+// Types
+
+interface ThemeToggleProps {
+  textColor: string
+}
+
 // ThemeToggle Component
 
-function ThemeToggle() {
+function ThemeToggle({ textColor }: ThemeToggleProps) {
   const { theme, cycleTheme } = useTheme()
 
   const iconConfig = {
@@ -38,6 +44,8 @@ function ThemeToggle() {
       title={`${label} (click to cycle)`}
       aria-label={label}
       data-testid="theme-toggle"
+      className="hover:bg-white/20"
+      style={{ color: textColor }}
     >
       <Icon className="size-4" />
     </Button>
@@ -46,9 +54,13 @@ function ThemeToggle() {
 
 // Logo Component
 
-function Logo() {
+interface LogoProps {
+  textColor: string
+}
+
+function Logo({ textColor }: LogoProps) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2" style={{ color: textColor }}>
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="24"
@@ -59,7 +71,6 @@ function Logo() {
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
-        className="text-primary"
       >
         <path d="M12 8V4H8" />
         <rect width="16" height="12" x="4" y="8" rx="2" />
@@ -77,36 +88,27 @@ function Logo() {
 
 /**
  * Application header with logo, workspace picker, and theme toggle.
- * Features an accent color bar at the top from peacock settings.
+ * The entire header uses the accent color as background with contrasting text.
  */
 export function Header({ className }: HeaderProps) {
   const accentColor = useAppStore(selectAccentColor)
-  const barColor = accentColor ?? DEFAULT_ACCENT_COLOR
+  const backgroundColor = accentColor ?? DEFAULT_ACCENT_COLOR
+  const textColor = getContrastingColor(backgroundColor)
 
   return (
-    <header className={cn("flex shrink-0 flex-col", className)} data-testid="header">
-      {/* Accent color bar */}
-      <div
-        className="h-1 w-full shrink-0"
-        style={{ backgroundColor: barColor }}
-        data-testid="accent-bar"
-        aria-hidden="true"
-      />
-      {/* Main header content */}
-      <div
-        className={cn(
-          "bg-background border-border flex h-[calc(3.5rem-4px)] items-center justify-between border-b px-4",
-        )}
-      >
-        <div className="flex items-center gap-4">
-          <Logo />
-          <WorkspacePicker />
-        </div>
+    <header
+      className={cn("flex h-14 shrink-0 items-center justify-between px-4", className)}
+      style={{ backgroundColor }}
+      data-testid="header"
+    >
+      <div className="flex items-center gap-4">
+        <Logo textColor={textColor} />
+        <WorkspacePicker variant="header" textColor={textColor} />
+      </div>
 
-        <div className="flex items-center gap-4">
-          <ControlBar />
-          <ThemeToggle />
-        </div>
+      <div className="flex items-center gap-4">
+        <ControlBar variant="header" textColor={textColor} />
+        <ThemeToggle textColor={textColor} />
       </div>
     </header>
   )

@@ -10,6 +10,10 @@ import type { RalphStatus } from "@/store"
 
 export interface ControlBarProps {
   className?: string
+  /** Display variant - "header" for colored header background */
+  variant?: "default" | "header"
+  /** Text color to use when variant is "header" */
+  textColor?: string
 }
 
 // API Functions
@@ -233,7 +237,7 @@ function getButtonStates(status: RalphStatus, isConnected: boolean) {
  * Control bar with buttons for Start, Pause, Stop, and Stop-after-current.
  * Button states are disabled based on ralph status.
  */
-export function ControlBar({ className }: ControlBarProps) {
+export function ControlBar({ className, variant = "default", textColor }: ControlBarProps) {
   const status = useAppStore(selectRalphStatus)
   const isConnected = useAppStore(selectIsConnected)
   const [isLoading, setIsLoading] = useState(false)
@@ -292,16 +296,32 @@ export function ControlBar({ className }: ControlBarProps) {
     }
   }, [status])
 
+  const isHeaderVariant = variant === "header"
+
+  // Button styling for header variant
+  const headerButtonStyle =
+    isHeaderVariant ?
+      {
+        color: textColor,
+        borderColor: `${textColor}40`,
+        backgroundColor: "transparent",
+      }
+    : undefined
+
+  const headerButtonClassName = isHeaderVariant ? "hover:bg-white/20 border" : undefined
+
   return (
     <div className={cn("flex items-center gap-2", className)}>
       {/* Start button */}
       <TooltipButton tooltip="Start" hotkey={getHotkeyDisplay("agentStart")}>
         <Button
-          variant="outline"
+          variant={isHeaderVariant ? "ghost" : "outline"}
           size="icon-sm"
           onClick={handleStart}
           disabled={!buttonStates.start || isLoading}
           aria-label="Start"
+          className={headerButtonClassName}
+          style={headerButtonStyle}
         >
           <PlayIcon />
         </Button>
@@ -313,11 +333,13 @@ export function ControlBar({ className }: ControlBarProps) {
         hotkey={getHotkeyDisplay("agentPause")}
       >
         <Button
-          variant="outline"
+          variant={isHeaderVariant ? "ghost" : "outline"}
           size="icon-sm"
           onClick={handlePause}
           disabled={!buttonStates.pause || isLoading}
           aria-label={status === "paused" ? "Resume" : "Pause"}
+          className={headerButtonClassName}
+          style={headerButtonStyle}
         >
           {status === "paused" ?
             <PlayIcon />
@@ -328,11 +350,13 @@ export function ControlBar({ className }: ControlBarProps) {
       {/* Stop button */}
       <TooltipButton tooltip="Stop" hotkey={getHotkeyDisplay("agentStop")}>
         <Button
-          variant="outline"
+          variant={isHeaderVariant ? "ghost" : "outline"}
           size="icon-sm"
           onClick={handleStop}
           disabled={!buttonStates.stop || isLoading}
           aria-label="Stop"
+          className={headerButtonClassName}
+          style={headerButtonStyle}
         >
           <StopIcon />
         </Button>
@@ -346,20 +370,31 @@ export function ControlBar({ className }: ControlBarProps) {
         hotkey={getHotkeyDisplay("agentStopAfterCurrent")}
       >
         <Button
-          variant={status === "stopping_after_current" ? "default" : "outline"}
+          variant={
+            status === "stopping_after_current" ? "default"
+            : isHeaderVariant ?
+              "ghost"
+            : "outline"
+          }
           size="icon-sm"
           onClick={handleStopAfterCurrent}
           disabled={!buttonStates.stopAfterCurrent || isLoading}
           aria-label={
             status === "stopping_after_current" ? "Cancel stop after current" : "Stop after current"
           }
+          className={status !== "stopping_after_current" ? headerButtonClassName : undefined}
+          style={status !== "stopping_after_current" ? headerButtonStyle : undefined}
         >
           <StopAfterIcon />
         </Button>
       </TooltipButton>
 
       {/* Error display */}
-      {error && <span className="text-destructive text-xs">{error}</span>}
+      {error && (
+        <span className={cn("text-xs", isHeaderVariant ? "text-red-200" : "text-destructive")}>
+          {error}
+        </span>
+      )}
     </div>
   )
 }

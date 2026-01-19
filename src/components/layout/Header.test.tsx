@@ -242,13 +242,13 @@ describe("Header", () => {
     })
   })
 
-  describe("accent color bar", () => {
-    it("renders accent bar with default black color when no accent color set", async () => {
+  describe("accent color background", () => {
+    it("renders header with default neutral color when no accent color set", async () => {
       render(<Header />)
 
-      const accentBar = screen.getByTestId("accent-bar")
-      expect(accentBar).toBeInTheDocument()
-      expect(accentBar).toHaveStyle({ backgroundColor: "#000000" })
+      const header = screen.getByTestId("header")
+      expect(header).toBeInTheDocument()
+      expect(header).toHaveStyle({ backgroundColor: "#374151" })
 
       // Wait for workspace fetch to complete to avoid act() warning
       await waitFor(() => {
@@ -256,13 +256,13 @@ describe("Header", () => {
       })
     })
 
-    it("renders accent bar with peacock color from store", async () => {
+    it("renders header with peacock color from store", async () => {
       useAppStore.getState().setAccentColor("#4d9697")
       render(<Header />)
 
-      const accentBar = screen.getByTestId("accent-bar")
-      expect(accentBar).toBeInTheDocument()
-      expect(accentBar).toHaveStyle({ backgroundColor: "#4d9697" })
+      const header = screen.getByTestId("header")
+      expect(header).toBeInTheDocument()
+      expect(header).toHaveStyle({ backgroundColor: "#4d9697" })
 
       // Wait for workspace fetch to complete to avoid act() warning
       await waitFor(() => {
@@ -270,7 +270,7 @@ describe("Header", () => {
       })
     })
 
-    it("updates accent bar color when accent color changes in store", async () => {
+    it("updates header background when accent color changes in store", async () => {
       // Mock workspace response with initial accent color
       mockFetch.mockResolvedValue({
         ok: true,
@@ -292,8 +292,8 @@ describe("Header", () => {
       })
 
       // Verify initial color
-      let accentBar = screen.getByTestId("accent-bar")
-      expect(accentBar).toHaveStyle({ backgroundColor: "#4d9697" })
+      let header = screen.getByTestId("header")
+      expect(header).toHaveStyle({ backgroundColor: "#4d9697" })
 
       // Change the accent color - this triggers a re-render through store subscription
       // Wrap in act() since we're directly calling store methods that cause state updates
@@ -302,11 +302,11 @@ describe("Header", () => {
       })
 
       // Verify updated color
-      accentBar = screen.getByTestId("accent-bar")
-      expect(accentBar).toHaveStyle({ backgroundColor: "#ff5733" })
+      header = screen.getByTestId("header")
+      expect(header).toHaveStyle({ backgroundColor: "#ff5733" })
     })
 
-    it("falls back to black when accent color is cleared", async () => {
+    it("falls back to neutral gray when accent color is cleared", async () => {
       // Mock workspace response with initial accent color
       mockFetch.mockResolvedValue({
         ok: true,
@@ -328,8 +328,8 @@ describe("Header", () => {
       })
 
       // Verify initial color
-      let accentBar = screen.getByTestId("accent-bar")
-      expect(accentBar).toHaveStyle({ backgroundColor: "#4d9697" })
+      let header = screen.getByTestId("header")
+      expect(header).toHaveStyle({ backgroundColor: "#4d9697" })
 
       // Clear the accent color - this triggers a re-render through store subscription
       // Wrap in act() since we're directly calling store methods that cause state updates
@@ -337,9 +337,9 @@ describe("Header", () => {
         useAppStore.getState().setAccentColor(null)
       })
 
-      // Verify fallback to black
-      accentBar = screen.getByTestId("accent-bar")
-      expect(accentBar).toHaveStyle({ backgroundColor: "#000000" })
+      // Verify fallback to neutral gray
+      header = screen.getByTestId("header")
+      expect(header).toHaveStyle({ backgroundColor: "#374151" })
     })
   })
 

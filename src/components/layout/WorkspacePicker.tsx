@@ -27,6 +27,10 @@ export interface WorkspaceListEntry {
 
 export interface WorkspacePickerProps {
   className?: string
+  /** Display variant - "header" for colored header background */
+  variant?: "default" | "header"
+  /** Text color to use when variant is "header" */
+  textColor?: string
 }
 
 // Icons
@@ -119,7 +123,11 @@ function RefreshIcon({ className }: { className?: string }) {
  * Dropdown component to display and switch between bd workspaces.
  * Shows the current workspace name and allows switching to other workspaces.
  */
-export function WorkspacePicker({ className }: WorkspacePickerProps) {
+export function WorkspacePicker({
+  className,
+  variant = "default",
+  textColor,
+}: WorkspacePickerProps) {
   const workspace = useAppStore(selectWorkspace)
   const accentColor = useAppStore(selectAccentColor)
   const setWorkspace = useAppStore(state => state.setWorkspace)
@@ -265,28 +273,49 @@ export function WorkspacePicker({ className }: WorkspacePickerProps) {
   // Issue count badge
   const issueCount = workspaceInfo?.issueCount
 
+  const isHeaderVariant = variant === "header"
+
   return (
     <div className={cn("relative", className)} ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "flex items-center gap-2 rounded-md px-3 py-1.5",
-          "bg-secondary hover:bg-secondary/80 transition-colors",
+          "transition-colors",
           "text-sm font-medium",
           isLoading && "opacity-70",
-          isServerDown && "bg-red-500/10 text-red-500 hover:bg-red-500/20",
+          isHeaderVariant ?
+            cn("hover:bg-white/20", isServerDown && "bg-red-500/30 hover:bg-red-500/40")
+          : cn(
+              "bg-secondary hover:bg-secondary/80",
+              isServerDown && "bg-red-500/10 text-red-500 hover:bg-red-500/20",
+            ),
         )}
+        style={isHeaderVariant ? { color: isServerDown ? "#ff6b6b" : textColor } : undefined}
         aria-expanded={isOpen}
         aria-haspopup="true"
         disabled={isLoading}
       >
         <FolderFilledIcon
-          color={isServerDown ? undefined : accentColor}
-          className={cn(isServerDown && "text-red-500", !accentColor && "text-muted-foreground")}
+          color={
+            isServerDown ? undefined
+            : isHeaderVariant ?
+              textColor
+            : accentColor
+          }
+          className={cn(
+            isServerDown && "text-red-500",
+            !isHeaderVariant && !accentColor && "text-muted-foreground",
+          )}
         />
         <span className="max-w-[200px] truncate">{displayName}</span>
         {issueCount !== undefined && (
-          <span className="bg-muted text-muted-foreground rounded-full px-1.5 py-0.5 text-xs">
+          <span
+            className={cn(
+              "rounded-full px-1.5 py-0.5 text-xs",
+              isHeaderVariant ? "bg-white/20" : "bg-muted text-muted-foreground",
+            )}
+          >
             {issueCount}
           </span>
         )}
