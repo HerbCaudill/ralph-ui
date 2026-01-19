@@ -344,14 +344,9 @@ export function WorkspacePicker({ className }: WorkspacePickerProps) {
                       className="size-2.5 shrink-0 rounded-full"
                       style={{ backgroundColor: ws.accentColor || "#666" }}
                     />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="truncate text-sm font-medium">{ws.name}</span>
-                        {ws.isActive && <CheckIcon className="text-primary shrink-0" />}
-                      </div>
-                      <div className="text-muted-foreground truncate text-xs" title={ws.path}>
-                        {ws.path.replace(/^\/Users\/[^/]+\//, "~/")}
-                      </div>
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                      <span className="truncate text-sm font-medium">{ws.name}</span>
+                      {ws.isActive && <CheckIcon className="text-primary shrink-0" />}
                     </div>
                   </button>
                 ))
