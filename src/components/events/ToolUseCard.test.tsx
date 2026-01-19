@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from "@testing-library/react"
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, beforeEach } from "vitest"
 import { ToolUseCard, type ToolUseEvent, type ToolName } from "./ToolUseCard"
+import { useAppStore } from "@/store"
 
 // Helper to create a basic tool use event
 function createToolEvent(tool: ToolName, overrides?: Partial<ToolUseEvent>): ToolUseEvent {
@@ -13,6 +14,10 @@ function createToolEvent(tool: ToolName, overrides?: Partial<ToolUseEvent>): Too
 }
 
 describe("ToolUseCard", () => {
+  beforeEach(() => {
+    useAppStore.getState().reset()
+  })
+
   describe("rendering", () => {
     it("renders tool name", () => {
       render(<ToolUseCard event={createToolEvent("Read")} />)
@@ -303,6 +308,76 @@ describe("ToolUseCard", () => {
         <ToolUseCard event={createToolEvent("Read")} className="custom-class" />,
       )
       expect(container.firstChild).toHaveClass("custom-class")
+    })
+  })
+
+  describe("relative path display", () => {
+    it("shows relative path when file is within workspace", () => {
+      useAppStore.getState().setWorkspace("/Users/herbcaudill/Code/HerbCaudill/ralph-ui")
+      render(
+        <ToolUseCard
+          event={createToolEvent("Read", {
+            input: {
+              file_path: "/Users/herbcaudill/Code/HerbCaudill/ralph-ui/src/components/App.tsx",
+            },
+          })}
+        />,
+      )
+      expect(screen.getByText("src/components/App.tsx")).toBeInTheDocument()
+    })
+
+    it("shows absolute path when file is outside workspace", () => {
+      useAppStore.getState().setWorkspace("/Users/herbcaudill/Code/HerbCaudill/ralph-ui")
+      render(
+        <ToolUseCard
+          event={createToolEvent("Read", {
+            input: { file_path: "/Users/herbcaudill/Code/other-project/index.ts" },
+          })}
+        />,
+      )
+      expect(screen.getByText("/Users/herbcaudill/Code/other-project/index.ts")).toBeInTheDocument()
+    })
+
+    it("shows absolute path when workspace is not set", () => {
+      // workspace is null by default after reset
+      render(
+        <ToolUseCard
+          event={createToolEvent("Read", {
+            input: { file_path: "/Users/herbcaudill/Code/HerbCaudill/ralph-ui/src/App.tsx" },
+          })}
+        />,
+      )
+      expect(
+        screen.getByText("/Users/herbcaudill/Code/HerbCaudill/ralph-ui/src/App.tsx"),
+      ).toBeInTheDocument()
+    })
+
+    it("shows relative path for Edit tool", () => {
+      useAppStore.getState().setWorkspace("/Users/herbcaudill/Code/HerbCaudill/ralph-ui")
+      render(
+        <ToolUseCard
+          event={createToolEvent("Edit", {
+            input: {
+              file_path: "/Users/herbcaudill/Code/HerbCaudill/ralph-ui/src/lib/utils.ts",
+              old_string: "foo",
+              new_string: "bar",
+            },
+          })}
+        />,
+      )
+      expect(screen.getByText("src/lib/utils.ts")).toBeInTheDocument()
+    })
+
+    it("shows relative path for Write tool", () => {
+      useAppStore.getState().setWorkspace("/Users/herbcaudill/Code/HerbCaudill/ralph-ui")
+      render(
+        <ToolUseCard
+          event={createToolEvent("Write", {
+            input: { file_path: "/Users/herbcaudill/Code/HerbCaudill/ralph-ui/new-file.ts" },
+          })}
+        />,
+      )
+      expect(screen.getByText("new-file.ts")).toBeInTheDocument()
     })
   })
 })

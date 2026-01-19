@@ -1,5 +1,6 @@
-import { cn } from "@/lib/utils"
+import { cn, toRelativePath } from "@/lib/utils"
 import { useState } from "react"
+import { useAppStore, selectWorkspace } from "@/store"
 
 // Types
 
@@ -42,16 +43,20 @@ function getStatusColor(status?: string): string {
   }
 }
 
-function getToolSummary(tool: ToolName, input?: Record<string, unknown>): string {
+function getToolSummary(
+  tool: ToolName,
+  input?: Record<string, unknown>,
+  workspace?: string | null,
+): string {
   if (!input) return ""
 
   switch (tool) {
     case "Read":
-      return input.file_path ? String(input.file_path) : ""
+      return input.file_path ? toRelativePath(String(input.file_path), workspace ?? null) : ""
     case "Edit":
-      return input.file_path ? String(input.file_path) : ""
+      return input.file_path ? toRelativePath(String(input.file_path), workspace ?? null) : ""
     case "Write":
-      return input.file_path ? String(input.file_path) : ""
+      return input.file_path ? toRelativePath(String(input.file_path), workspace ?? null) : ""
     case "Bash":
       return input.command ? String(input.command) : ""
     case "Grep":
@@ -244,8 +249,9 @@ function getPreviewInfo(content: string): { preview: string; remainingLines: num
 
 export function ToolUseCard({ event, className, defaultExpanded = false }: ToolUseCardProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded)
+  const workspace = useAppStore(selectWorkspace)
 
-  const summary = getToolSummary(event.tool, event.input)
+  const summary = getToolSummary(event.tool, event.input, workspace)
   const outputSummary = getOutputSummary(event.tool, event.output)
   const statusColor = getStatusColor(event.status)
 
