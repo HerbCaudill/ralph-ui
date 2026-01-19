@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from "vitest"
-import { useAppStore, selectCurrentTask } from "./index"
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
+import { useAppStore, selectCurrentTask, SIDEBAR_WIDTH_STORAGE_KEY } from "./index"
 import type { RalphEvent, Task } from "./index"
 
 describe("useAppStore", () => {
@@ -289,6 +289,69 @@ describe("useAppStore", () => {
 
       useAppStore.getState().setSidebarWidth(250)
       expect(useAppStore.getState().sidebarWidth).toBe(250)
+    })
+
+    it("persists sidebar width to localStorage", () => {
+      useAppStore.getState().setSidebarWidth(450)
+      expect(localStorage.getItem(SIDEBAR_WIDTH_STORAGE_KEY)).toBe("450")
+    })
+  })
+
+  describe("sidebar width localStorage persistence", () => {
+    beforeEach(() => {
+      localStorage.clear()
+    })
+
+    afterEach(() => {
+      localStorage.clear()
+    })
+
+    it("loads sidebar width from localStorage on store creation", async () => {
+      // Set localStorage before recreating store
+      localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, "400")
+
+      // Re-import the module to get fresh store instance
+      // We need to use dynamic import to force re-evaluation
+      vi.resetModules()
+      const { useAppStore: freshStore } = await import("./index")
+
+      expect(freshStore.getState().sidebarWidth).toBe(400)
+    })
+
+    it("uses default width when localStorage is empty", async () => {
+      localStorage.clear()
+
+      vi.resetModules()
+      const { useAppStore: freshStore } = await import("./index")
+
+      expect(freshStore.getState().sidebarWidth).toBe(320)
+    })
+
+    it("uses default width when localStorage value is invalid", async () => {
+      localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, "invalid")
+
+      vi.resetModules()
+      const { useAppStore: freshStore } = await import("./index")
+
+      expect(freshStore.getState().sidebarWidth).toBe(320)
+    })
+
+    it("uses default width when localStorage value is below minimum", async () => {
+      localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, "100")
+
+      vi.resetModules()
+      const { useAppStore: freshStore } = await import("./index")
+
+      expect(freshStore.getState().sidebarWidth).toBe(320)
+    })
+
+    it("uses default width when localStorage value is above maximum", async () => {
+      localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, "800")
+
+      vi.resetModules()
+      const { useAppStore: freshStore } = await import("./index")
+
+      expect(freshStore.getState().sidebarWidth).toBe(320)
     })
   })
 

@@ -1,6 +1,33 @@
 import { create } from "zustand"
 import type { ConnectionStatus } from "../hooks/useWebSocket"
 
+// localStorage keys
+export const SIDEBAR_WIDTH_STORAGE_KEY = "ralph-ui-sidebar-width"
+
+// Helper functions for localStorage
+function loadSidebarWidth(): number {
+  try {
+    const stored = localStorage.getItem(SIDEBAR_WIDTH_STORAGE_KEY)
+    if (stored) {
+      const parsed = parseInt(stored, 10)
+      if (!isNaN(parsed) && parsed >= 200 && parsed <= 600) {
+        return parsed
+      }
+    }
+  } catch {
+    // localStorage may not be available (SSR, private mode, etc.)
+  }
+  return 320 // default
+}
+
+function saveSidebarWidth(width: number): void {
+  try {
+    localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, String(width))
+  } catch {
+    // localStorage may not be available
+  }
+}
+
 // Types
 
 export const RALPH_STATUSES = [
@@ -130,6 +157,8 @@ export interface AppActions {
 
 // Initial State
 
+const defaultSidebarWidth = 320
+
 const initialState: AppState = {
   ralphStatus: "stopped",
   runStartedAt: null,
@@ -142,14 +171,20 @@ const initialState: AppState = {
   connectionStatus: "disconnected",
   accentColor: null,
   sidebarOpen: true,
-  sidebarWidth: 320,
+  sidebarWidth: defaultSidebarWidth,
   theme: "system",
 }
+
+// Create the store with localStorage initialization
+const getInitialStateWithPersistence = (): AppState => ({
+  ...initialState,
+  sidebarWidth: loadSidebarWidth(),
+})
 
 // Store
 
 export const useAppStore = create<AppState & AppActions>(set => ({
-  ...initialState,
+  ...getInitialStateWithPersistence(),
 
   // Ralph status
   setRalphStatus: status =>
@@ -208,7 +243,10 @@ export const useAppStore = create<AppState & AppActions>(set => ({
   // UI State
   setSidebarOpen: open => set({ sidebarOpen: open }),
   toggleSidebar: () => set(state => ({ sidebarOpen: !state.sidebarOpen })),
-  setSidebarWidth: width => set({ sidebarWidth: width }),
+  setSidebarWidth: width => {
+    saveSidebarWidth(width)
+    set({ sidebarWidth: width })
+  },
 
   // Theme
   setTheme: theme => set({ theme }),
