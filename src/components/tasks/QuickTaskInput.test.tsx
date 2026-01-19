@@ -7,13 +7,17 @@ import { QuickTaskInput, type QuickTaskInputHandle } from "./QuickTaskInput"
 
 const mockFetch = vi.fn()
 
+const STORAGE_KEY = "ralph-ui-task-input-draft"
+
 beforeEach(() => {
   vi.stubGlobal("fetch", mockFetch)
   mockFetch.mockReset()
+  localStorage.clear()
 })
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  localStorage.clear()
 })
 
 // Helper functions
@@ -406,6 +410,72 @@ describe("QuickTaskInput", () => {
           json: () => Promise.resolve({ ok: true, issue: { id: "test" } }),
         })
       })
+    })
+  })
+
+  describe("localStorage persistence", () => {
+    it("persists input value to localStorage as user types", () => {
+      render(<QuickTaskInput />)
+
+      const input = screen.getByRole("textbox")
+      typeInInput(input, "My draft task")
+
+      expect(localStorage.getItem(STORAGE_KEY)).toBe("My draft task")
+    })
+
+    it("restores input value from localStorage on mount", () => {
+      localStorage.setItem(STORAGE_KEY, "Saved draft")
+
+      render(<QuickTaskInput />)
+
+      const input = screen.getByRole("textbox")
+      expect(input).toHaveValue("Saved draft")
+    })
+
+    it("clears localStorage when input is cleared", () => {
+      render(<QuickTaskInput />)
+
+      const input = screen.getByRole("textbox")
+      typeInInput(input, "Some text")
+      expect(localStorage.getItem(STORAGE_KEY)).toBe("Some text")
+
+      typeInInput(input, "")
+      expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
+    })
+
+    it("clears localStorage after successful submission", async () => {
+      mockSuccessResponse({ id: "rui-ls-1", title: "Task", status: "open", priority: 2 })
+
+      render(<QuickTaskInput />)
+
+      const input = screen.getByRole("textbox")
+      typeInInput(input, "Task to submit")
+      expect(localStorage.getItem(STORAGE_KEY)).toBe("Task to submit")
+
+      fireEvent.keyDown(input, { key: "Enter" })
+
+      await waitFor(() => {
+        expect(input).toHaveValue("")
+      })
+
+      expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
+    })
+
+    it("retains localStorage value after failed submission", async () => {
+      mockErrorResponse("Server error")
+
+      render(<QuickTaskInput />)
+
+      const input = screen.getByRole("textbox")
+      typeInInput(input, "Task that fails")
+      fireEvent.keyDown(input, { key: "Enter" })
+
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalled()
+      })
+
+      // Value should still be in localStorage
+      expect(localStorage.getItem(STORAGE_KEY)).toBe("Task that fails")
     })
   })
 })

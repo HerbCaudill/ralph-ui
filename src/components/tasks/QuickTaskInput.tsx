@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils"
 import {
   forwardRef,
   useCallback,
+  useEffect,
   useImperativeHandle,
   useRef,
   useState,
@@ -54,6 +55,8 @@ export interface QuickTaskInputHandle {
   focus: () => void
 }
 
+const STORAGE_KEY = "ralph-ui-task-input-draft"
+
 // QuickTaskInput Component
 
 /**
@@ -65,9 +68,26 @@ export const QuickTaskInput = forwardRef<QuickTaskInputHandle, QuickTaskInputPro
     { onTaskCreated, onError, placeholder = "Add a task...", disabled = false, className },
     ref,
   ) {
-    const [title, setTitle] = useState("")
+    const [title, setTitle] = useState(() => {
+      // Initialize from localStorage
+      if (typeof window !== "undefined") {
+        return localStorage.getItem(STORAGE_KEY) ?? ""
+      }
+      return ""
+    })
     const [isSubmitting, setIsSubmitting] = useState(false)
     const inputRef = useRef<HTMLInputElement>(null)
+
+    // Persist to localStorage as user types
+    useEffect(() => {
+      if (typeof window !== "undefined") {
+        if (title) {
+          localStorage.setItem(STORAGE_KEY, title)
+        } else {
+          localStorage.removeItem(STORAGE_KEY)
+        }
+      }
+    }, [title])
 
     useImperativeHandle(ref, () => ({
       focus: () => {
