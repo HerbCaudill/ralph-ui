@@ -136,8 +136,8 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function Ch
           strokeLinejoin="round"
           aria-hidden="true"
         >
-          <path d="m22 2-7 20-4-9-9-4Z" />
-          <path d="M22 2 11 13" />
+          <path d="m5 12 7-7 7 7" />
+          <path d="M12 19V5" />
         </svg>
       </button>
     </form>
