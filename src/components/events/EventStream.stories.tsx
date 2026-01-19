@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react"
+import type { Meta, StoryObj } from "@storybook/react-vite"
 import { EventStream } from "./EventStream"
 import { useAppStore } from "@/store"
 import { useEffect } from "react"

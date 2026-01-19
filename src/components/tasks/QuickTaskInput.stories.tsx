@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from "@storybook/react"
+import type { Meta, StoryObj } from "@storybook/react-vite"
 import { QuickTaskInput } from "./QuickTaskInput"
-import { fn } from "@storybook/test"
+import { fn } from "storybook/test"
 
 const meta: Meta<typeof QuickTaskInput> = {
   title: "Tasks/QuickTaskInput",

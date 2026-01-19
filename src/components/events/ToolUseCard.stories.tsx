@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react"
+import type { Meta, StoryObj } from "@storybook/react-vite"
 import { ToolUseCard, type ToolUseEvent, type ToolName } from "./ToolUseCard"
 
 const meta: Meta<typeof ToolUseCard> = {

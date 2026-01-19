@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from "@storybook/react"
+import type { Meta, StoryObj } from "@storybook/react-vite"
 import { TaskCard, type TaskCardTask } from "./TaskCard"
-import { fn } from "@storybook/test"
+import { fn } from "storybook/test"
 
 const meta: Meta<typeof TaskCard> = {
   title: "Tasks/TaskCard",

@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react"
+import type { Meta, StoryObj } from "@storybook/react-vite"
 import { MainLayout } from "./MainLayout"
 import { withStoreState, fullPageDecorator } from "../../../.storybook/decorators"
 import { StatusBar } from "./StatusBar"

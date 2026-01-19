@@ -1,4 +1,4 @@
-import type { Decorator } from "@storybook/react"
+import type { Decorator } from "@storybook/react-vite"
 import { useEffect } from "react"
 import { useAppStore } from "../src/store"
 import type { RalphStatus } from "../src/store"

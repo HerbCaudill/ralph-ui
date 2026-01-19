@@ -1,4 +1,4 @@
-import type { Preview } from "@storybook/react"
+import type { Preview } from "@storybook/react-vite"
 import React from "react"
 import "../src/index.css"
 
@@ -11,7 +11,7 @@ const preview: Preview = {
       },
     },
     backgrounds: {
-      disable: true, // Use our own theming instead
+      disabled: true,
     },
   },
   globalTypes: {
