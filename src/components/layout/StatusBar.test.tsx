@@ -165,29 +165,29 @@ describe("StatusBar", () => {
       expect(screen.queryByTitle("Current task")).not.toBeInTheDocument()
     })
 
-    it("shows current task id and content when in_progress task exists", () => {
+    it("shows current task id and title when in_progress task exists", () => {
       useAppStore
         .getState()
-        .setTasks([{ id: "rui-123", content: "Fix the bug", status: "in_progress" }])
+        .setTasks([{ id: "rui-123", title: "Fix the bug", status: "in_progress" }])
       render(<StatusBar />)
       expect(screen.getByText("rui-123")).toBeInTheDocument()
       expect(screen.getByText("Fix the bug")).toBeInTheDocument()
     })
 
-    it("truncates long task content", () => {
+    it("truncates long task title", () => {
       useAppStore.getState().setTasks([
         {
           id: "rui-456",
-          content: "This is a very long task description that should be truncated",
+          title: "This is a very long task description that should be truncated",
           status: "in_progress",
         },
       ])
       render(<StatusBar />)
       expect(screen.getByText("rui-456")).toBeInTheDocument()
-      const taskContent = screen.getByText(
+      const taskTitle = screen.getByText(
         "This is a very long task description that should be truncated",
       )
-      expect(taskContent).toHaveClass("truncate")
+      expect(taskTitle).toHaveClass("truncate")
     })
   })
 

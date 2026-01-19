@@ -77,10 +77,27 @@ export interface RalphEvent {
   [key: string]: unknown
 }
 
+export type TaskStatus = "open" | "in_progress" | "blocked" | "deferred" | "closed"
+
 export interface Task {
+  /** Unique task ID (e.g., "rui-4rt.5") */
   id: string
-  content: string
-  status: "pending" | "in_progress" | "completed"
+  /** Task title */
+  title: string
+  /** Optional description */
+  description?: string
+  /** Task status */
+  status: TaskStatus
+  /** Priority (0 = highest, 4 = lowest) */
+  priority?: number
+  /** Issue type (e.g., "task", "bug", "epic") */
+  issue_type?: string
+  /** Parent issue ID */
+  parent?: string
+  /** Timestamp when task was created */
+  created_at?: string
+  /** Timestamp when task was closed */
+  closed_at?: string
 }
 
 export interface TokenUsage {

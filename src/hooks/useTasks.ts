@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react"
 import type { TaskCardTask, TaskStatus } from "@/components/tasks/TaskCard"
+import { useAppStore } from "@/store"
 
 // Types
 
@@ -68,18 +69,23 @@ export function useTasks(options: UseTasksOptions = {}): UseTasksResult {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Get the store's setTasks to sync tasks to global state
+  const setStoreTasks = useAppStore(state => state.setTasks)
+
   const refresh = useCallback(async () => {
     const result = await fetchTasks({ status, ready, all })
 
     if (result.ok && result.issues) {
       setTasks(result.issues)
+      // Sync tasks to global store so StatusBar can access current task
+      setStoreTasks(result.issues)
       setError(null)
     } else {
       setError(result.error ?? "Failed to fetch tasks")
     }
 
     setIsLoading(false)
-  }, [status, ready, all])
+  }, [status, ready, all, setStoreTasks])
 
   // Initial fetch
   useEffect(() => {

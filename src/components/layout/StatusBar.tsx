@@ -263,7 +263,7 @@ function CurrentTask() {
       title="Current task"
     >
       <span className="shrink-0 font-mono opacity-70">{currentTask.id}</span>
-      <span className="truncate">{currentTask.content}</span>
+      <span className="truncate">{currentTask.title}</span>
     </div>
   )
 }

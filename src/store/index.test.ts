@@ -97,9 +97,9 @@ describe("useAppStore", () => {
 
   describe("tasks", () => {
     const sampleTasks: Task[] = [
-      { id: "1", content: "Task 1", status: "pending" },
-      { id: "2", content: "Task 2", status: "in_progress" },
-      { id: "3", content: "Task 3", status: "completed" },
+      { id: "1", title: "Task 1", status: "open" },
+      { id: "2", title: "Task 2", status: "in_progress" },
+      { id: "3", title: "Task 3", status: "closed" },
     ]
 
     it("sets tasks", () => {
@@ -112,29 +112,29 @@ describe("useAppStore", () => {
 
     it("updates a specific task", () => {
       useAppStore.getState().setTasks(sampleTasks)
-      useAppStore.getState().updateTask("2", { status: "completed" })
+      useAppStore.getState().updateTask("2", { status: "closed" })
 
       const tasks = useAppStore.getState().tasks
       const updatedTask = tasks.find(t => t.id === "2")
-      expect(updatedTask?.status).toBe("completed")
+      expect(updatedTask?.status).toBe("closed")
     })
 
-    it("updates task content", () => {
+    it("updates task title", () => {
       useAppStore.getState().setTasks(sampleTasks)
-      useAppStore.getState().updateTask("1", { content: "Updated content" })
+      useAppStore.getState().updateTask("1", { title: "Updated title" })
 
       const tasks = useAppStore.getState().tasks
       const updatedTask = tasks.find(t => t.id === "1")
-      expect(updatedTask?.content).toBe("Updated content")
+      expect(updatedTask?.title).toBe("Updated title")
     })
 
     it("does not modify other tasks when updating", () => {
       useAppStore.getState().setTasks(sampleTasks)
-      useAppStore.getState().updateTask("2", { status: "completed" })
+      useAppStore.getState().updateTask("2", { status: "closed" })
 
       const tasks = useAppStore.getState().tasks
-      expect(tasks.find(t => t.id === "1")?.status).toBe("pending")
-      expect(tasks.find(t => t.id === "3")?.status).toBe("completed")
+      expect(tasks.find(t => t.id === "1")?.status).toBe("open")
+      expect(tasks.find(t => t.id === "3")?.status).toBe("closed")
     })
 
     it("clears all tasks", () => {
@@ -156,8 +156,8 @@ describe("useAppStore", () => {
 
       it("returns null when no task is in progress", () => {
         const tasksWithoutInProgress: Task[] = [
-          { id: "1", content: "Task 1", status: "pending" },
-          { id: "2", content: "Task 2", status: "completed" },
+          { id: "1", title: "Task 1", status: "open" },
+          { id: "2", title: "Task 2", status: "closed" },
         ]
         useAppStore.getState().setTasks(tasksWithoutInProgress)
         const currentTask = selectCurrentTask(useAppStore.getState())
@@ -172,8 +172,8 @@ describe("useAppStore", () => {
 
       it("returns first in_progress task when multiple exist", () => {
         const tasksWithMultipleInProgress: Task[] = [
-          { id: "1", content: "Task 1", status: "in_progress" },
-          { id: "2", content: "Task 2", status: "in_progress" },
+          { id: "1", title: "Task 1", status: "in_progress" },
+          { id: "2", title: "Task 2", status: "in_progress" },
         ]
         useAppStore.getState().setTasks(tasksWithMultipleInProgress)
         const currentTask = selectCurrentTask(useAppStore.getState())
@@ -564,7 +564,7 @@ describe("useAppStore", () => {
 
       setRalphStatus("running")
       addEvent({ type: "test", timestamp: 1 })
-      setTasks([{ id: "1", content: "Task", status: "pending" }])
+      setTasks([{ id: "1", title: "Task", status: "open" }])
       setWorkspace("/path")
       setAccentColor("#4d9697")
       setBranch("feature/test")
