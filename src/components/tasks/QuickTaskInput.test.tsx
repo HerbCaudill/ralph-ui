@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react"
-import { QuickTaskInput } from "./QuickTaskInput"
+import { createRef } from "react"
+import { QuickTaskInput, type QuickTaskInputHandle } from "./QuickTaskInput"
 
 // Mock fetch
 
@@ -323,6 +324,26 @@ describe("QuickTaskInput", () => {
         expect(input).toBeEnabled()
         expect(screen.getByRole("button", { name: /add task/i })).toBeEnabled()
       })
+    })
+  })
+
+  describe("imperative handle", () => {
+    it("exposes focus method via ref", () => {
+      const ref = createRef<QuickTaskInputHandle>()
+      render(<QuickTaskInput ref={ref} />)
+
+      const input = screen.getByRole("textbox")
+
+      // Initially not focused
+      expect(document.activeElement).not.toBe(input)
+
+      // Call focus via ref
+      act(() => {
+        ref.current?.focus()
+      })
+
+      // Now should be focused
+      expect(document.activeElement).toBe(input)
     })
   })
 

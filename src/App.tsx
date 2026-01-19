@@ -4,7 +4,7 @@ import { ChatInput, type ChatInputHandle } from "./components/chat/ChatInput"
 import { EventStream } from "./components/events"
 import { TaskSidebar } from "./components/tasks/TaskSidebar"
 import { TaskList } from "./components/tasks/TaskList"
-import { QuickTaskInput } from "./components/tasks/QuickTaskInput"
+import { QuickTaskInput, type QuickTaskInputHandle } from "./components/tasks/QuickTaskInput"
 import {
   useAppStore,
   selectConnectionStatus,
@@ -79,12 +79,16 @@ async function stopAfterCurrentRalph(): Promise<{ ok: boolean; error?: string }>
 
 // Tasks Sidebar
 
-function TasksSidebarPanel() {
+interface TasksSidebarPanelProps {
+  quickInputRef?: React.RefObject<QuickTaskInputHandle | null>
+}
+
+function TasksSidebarPanel({ quickInputRef }: TasksSidebarPanelProps) {
   const { tasks, refresh } = useTasks({ all: true })
 
   return (
     <TaskSidebar
-      quickInput={<QuickTaskInput onTaskCreated={refresh} />}
+      quickInput={<QuickTaskInput ref={quickInputRef} onTaskCreated={refresh} />}
       taskList={<TaskList tasks={tasks} />}
     />
   )
@@ -158,6 +162,7 @@ function StatusBar() {
 export function App() {
   const layoutRef = useRef<MainLayoutHandle>(null)
   const chatInputRef = useRef<ChatInputHandle>(null)
+  const quickTaskInputRef = useRef<QuickTaskInputHandle>(null)
 
   // Initialize theme management (applies dark class and listens for system changes)
   useTheme()
@@ -208,8 +213,7 @@ export function App() {
   }, [])
 
   const handleFocusTaskInput = useCallback(() => {
-    // See rui-7bu: Focus quick task input when wired up
-    layoutRef.current?.focusSidebar()
+    quickTaskInputRef.current?.focus()
   }, [])
 
   const handleFocusChatInput = useCallback(() => {
@@ -234,7 +238,7 @@ export function App() {
   return (
     <MainLayout
       ref={layoutRef}
-      sidebar={<TasksSidebarPanel />}
+      sidebar={<TasksSidebarPanel quickInputRef={quickTaskInputRef} />}
       main={<AgentView chatInputRef={chatInputRef} />}
       statusBar={<StatusBar />}
     />
