@@ -176,12 +176,24 @@ function createApp(config: ServerConfig): Express {
       // Read peacock accent color from .vscode/settings.json
       const accentColor = await readPeacockColor(workspacePath)
 
+      // Get count of open + in_progress issues (active issues)
+      let activeIssueCount: number | undefined
+      try {
+        const [openIssues, inProgressIssues] = await Promise.all([
+          bdProxy.list({ status: "open" }),
+          bdProxy.list({ status: "in_progress" }),
+        ])
+        activeIssueCount = openIssues.length + inProgressIssues.length
+      } catch {
+        // If we can't get issue count, leave it undefined
+      }
+
       res.status(200).json({
         ok: true,
         workspace: {
           path: workspacePath,
           name: workspacePath.split("/").pop() || workspacePath,
-          issueCount: info.issue_count,
+          issueCount: activeIssueCount,
           daemonConnected: info.daemon_connected,
           daemonStatus: info.daemon_status,
           accentColor,
@@ -208,17 +220,35 @@ function createApp(config: ServerConfig): Express {
 
       const workspaces = getAliveWorkspaces(currentWorkspacePath)
 
-      // Add accent colors for each workspace
-      const workspacesWithColors = await Promise.all(
-        workspaces.map(async ws => ({
-          ...ws,
-          accentColor: await readPeacockColor(ws.path),
-        })),
+      // Add accent colors and active issue counts for each workspace
+      const workspacesWithMetadata = await Promise.all(
+        workspaces.map(async ws => {
+          const accentColor = await readPeacockColor(ws.path)
+
+          // Get count of open + in_progress issues for this workspace
+          let activeIssueCount: number | undefined
+          try {
+            const wsProxy = new BdProxy({ cwd: ws.path })
+            const [openIssues, inProgressIssues] = await Promise.all([
+              wsProxy.list({ status: "open" }),
+              wsProxy.list({ status: "in_progress" }),
+            ])
+            activeIssueCount = openIssues.length + inProgressIssues.length
+          } catch {
+            // If we can't get issue count, leave it undefined
+          }
+
+          return {
+            ...ws,
+            accentColor,
+            activeIssueCount,
+          }
+        }),
       )
 
       res.status(200).json({
         ok: true,
-        workspaces: workspacesWithColors,
+        workspaces: workspacesWithMetadata,
         currentPath: currentWorkspacePath,
       })
     } catch (err) {
@@ -245,12 +275,24 @@ function createApp(config: ServerConfig): Express {
       const info = await bdProxy.getInfo()
       const accentColor = await readPeacockColor(workspacePath)
 
+      // Get count of open + in_progress issues (active issues)
+      let activeIssueCount: number | undefined
+      try {
+        const [openIssues, inProgressIssues] = await Promise.all([
+          bdProxy.list({ status: "open" }),
+          bdProxy.list({ status: "in_progress" }),
+        ])
+        activeIssueCount = openIssues.length + inProgressIssues.length
+      } catch {
+        // If we can't get issue count, leave it undefined
+      }
+
       res.status(200).json({
         ok: true,
         workspace: {
           path: workspacePath,
           name: workspacePath.split("/").pop(),
-          issueCount: info.issue_count,
+          issueCount: activeIssueCount,
           daemonConnected: info.daemon_connected,
           daemonStatus: info.daemon_status,
           accentColor,

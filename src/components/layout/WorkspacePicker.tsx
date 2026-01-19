@@ -22,6 +22,7 @@ export interface WorkspaceListEntry {
   startedAt: string
   isActive: boolean
   accentColor?: string | null
+  activeIssueCount?: number
 }
 
 export interface WorkspacePickerProps {
@@ -353,6 +354,11 @@ export function WorkspacePicker({ className }: WorkspacePickerProps) {
                     />
                     <div className="flex min-w-0 flex-1 items-center gap-2">
                       <span className="truncate text-sm font-medium">{ws.name}</span>
+                      {ws.activeIssueCount !== undefined && (
+                        <span className="bg-muted text-muted-foreground rounded-full px-1.5 py-0.5 text-xs">
+                          {ws.activeIssueCount}
+                        </span>
+                      )}
                       {ws.isActive && <CheckIcon className="text-primary shrink-0" />}
                     </div>
                   </button>

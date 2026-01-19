@@ -176,6 +176,69 @@ describe("WorkspacePicker", () => {
     })
   })
 
+  it("shows active issue count badge for each workspace in dropdown", async () => {
+    const mockWorkspacesResponse = {
+      ok: true,
+      workspaces: [
+        {
+          path: "/Users/test/my-project",
+          name: "my-project",
+          database: "/Users/test/my-project/.beads/beads.db",
+          pid: 1234,
+          version: "0.47.1",
+          startedAt: "2026-01-18T10:00:00Z",
+          isActive: true,
+          accentColor: "#ff0000",
+          activeIssueCount: 5,
+        },
+        {
+          path: "/Users/test/other-project",
+          name: "other-project",
+          database: "/Users/test/other-project/.beads/beads.db",
+          pid: 5678,
+          version: "0.47.1",
+          startedAt: "2026-01-18T11:00:00Z",
+          isActive: false,
+          accentColor: "#00ff00",
+          activeIssueCount: 12,
+        },
+      ],
+      currentPath: "/Users/test/my-project",
+    }
+
+    mockFetch.mockImplementation((url: string) => {
+      if (url === "/api/workspace") {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockWorkspaceResponse),
+        })
+      }
+      if (url === "/api/workspaces") {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockWorkspacesResponse),
+        })
+      }
+      return Promise.reject(new Error("Unknown URL"))
+    })
+
+    render(<WorkspacePicker />)
+
+    await waitFor(() => {
+      expect(screen.getByText("my-project")).toBeInTheDocument()
+    })
+
+    // Open dropdown
+    const workspaceButton = screen.getByRole("button", { expanded: false })
+    fireEvent.click(workspaceButton)
+
+    // Should show issue counts for both workspaces in dropdown
+    await waitFor(() => {
+      expect(screen.getByText("5")).toBeInTheDocument()
+      expect(screen.getByText("12")).toBeInTheDocument()
+    })
+  })
+
   it("closes dropdown when clicking outside", async () => {
     mockFetch.mockResolvedValue({
       ok: true,
