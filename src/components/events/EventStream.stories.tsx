@@ -48,12 +48,11 @@ function parseJsonl(raw: string, limit = 200): Array<Record<string, unknown>> {
 }
 
 // Parse JSONL including stream events for real-time simulation
-function parseJsonlWithStreaming(raw: string, limit = 10000): Array<Record<string, unknown>> {
+function parseJsonlWithStreaming(raw: string): Array<Record<string, unknown>> {
   const lines = raw.trim().split("\n")
   const events: Array<Record<string, unknown>> = []
 
   for (const line of lines) {
-    if (events.length >= limit) break
     try {
       const event = JSON.parse(line)
       // Include stream events plus user messages and tool results
