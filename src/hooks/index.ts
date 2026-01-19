@@ -27,3 +27,10 @@ export {
   type StreamingTextBlock,
   type StreamingToolUseBlock,
 } from "./useStreamingState"
+
+export {
+  useEventLogRouter,
+  parseEventLogHash,
+  buildEventLogHash,
+  type UseEventLogRouterReturn,
+} from "./useEventLogRouter"

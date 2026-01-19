@@ -15,7 +15,14 @@ import {
   selectTaskChatWidth,
 } from "./store"
 import { TaskChatPanel } from "./components/chat/TaskChatPanel"
-import { useRalphConnection, useHotkeys, useTheme, useTasks, useTaskDialog } from "./hooks"
+import {
+  useRalphConnection,
+  useHotkeys,
+  useTheme,
+  useTasks,
+  useTaskDialog,
+  useEventLogRouter,
+} from "./hooks"
 import { TaskDialogProvider } from "./contexts"
 
 // API Functions (for hotkeys)
@@ -150,6 +157,9 @@ export function App() {
 
   // Task dialog state
   const taskDialog = useTaskDialog()
+
+  // Event log URL routing - handles #eventlog={id} hash parsing and navigation
+  useEventLogRouter()
 
   // Hotkeys dialog state
   const [hotkeysDialogOpen, setHotkeysDialogOpen] = useState(false)
