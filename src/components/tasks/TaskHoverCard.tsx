@@ -93,12 +93,7 @@ export function TaskHoverCard({
   return (
     <HoverCard openDelay={400} closeDelay={100}>
       <HoverCardTrigger asChild>{children}</HoverCardTrigger>
-      <HoverCardContent
-        className="w-72 p-0"
-        side="right"
-        align="start"
-        sideOffset={8}
-      >
+      <HoverCardContent className="w-72 p-0" side="right" align="start" sideOffset={8}>
         <div className="flex flex-col">
           {/* Metadata row - above the title */}
           <div className="border-border flex items-center gap-2 border-b px-3 py-2">

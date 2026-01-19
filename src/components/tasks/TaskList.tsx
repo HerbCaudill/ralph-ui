@@ -611,11 +611,7 @@ export function TaskList({
                     } else {
                       // Ungrouped tasks (no epic parent)
                       return epicTasks.map(task => (
-                        <TaskHoverCard
-                          key={task.id}
-                          task={task}
-                          onOpenDetails={onTaskClick}
-                        >
+                        <TaskHoverCard key={task.id} task={task} onOpenDetails={onTaskClick}>
                           <TaskCard
                             task={task}
                             onStatusChange={onStatusChange}
