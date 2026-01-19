@@ -63,7 +63,7 @@ describe("systemPrompt", () => {
     it("loads default prompt when no custom prompt exists", () => {
       // No custom prompt in testDir, should fall back to default
       const result = loadSystemPrompt(testDir)
-      expect(result).toContain("# Task Management Assistant")
+      expect(result).toContain("task management assistant")
       expect(result).toContain("beads")
     })
 
@@ -90,7 +90,7 @@ describe("systemPrompt", () => {
 
       // Verify content matches default
       const content = await readFile(customPromptPath, "utf-8")
-      expect(content).toContain("# Task Management Assistant")
+      expect(content).toContain("task management assistant")
     })
 
     it("does not overwrite existing custom prompt", async () => {
