@@ -266,9 +266,13 @@ export class BdProxy {
    *
    * @param id - Issue ID to add comment to
    * @param comment - The comment text
+   * @param author - Optional author name (defaults to git user)
    */
-  async addComment(id: string, comment: string): Promise<void> {
+  async addComment(id: string, comment: string, author?: string): Promise<void> {
     const args = ["comments", "add", id, comment]
+    if (author) {
+      args.push("--author", author)
+    }
     await this.exec(args)
   }
 

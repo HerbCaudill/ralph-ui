@@ -460,7 +460,7 @@ function createApp(config: ServerConfig): Express {
   app.post("/api/tasks/:id/comments", async (req: Request, res: Response) => {
     try {
       const id = req.params.id as string
-      const { comment } = req.body as { comment?: string }
+      const { comment, author } = req.body as { comment?: string; author?: string }
 
       if (!comment?.trim()) {
         res.status(400).json({ ok: false, error: "Comment is required" })
@@ -468,7 +468,7 @@ function createApp(config: ServerConfig): Express {
       }
 
       const bdProxy = getBdProxy()
-      await bdProxy.addComment(id, comment.trim())
+      await bdProxy.addComment(id, comment.trim(), author)
 
       res.status(201).json({ ok: true })
     } catch (err) {

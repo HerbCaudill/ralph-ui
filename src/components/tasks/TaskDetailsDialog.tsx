@@ -153,6 +153,7 @@ async function saveEventLogAndAddComment(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         comment: `Closed. Event log: #eventlog=${eventLogId}`,
+        author: "Ralph",
       }),
     })
 

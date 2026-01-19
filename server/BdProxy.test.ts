@@ -559,6 +559,21 @@ describe("BdProxy", () => {
       )
     })
 
+    it("adds a comment with author", async () => {
+      const commentPromise = proxy.addComment("rui-123", "This is a comment", "Ralph")
+
+      mockProcess.stdout.emit("data", Buffer.from(""))
+      mockProcess.emit("close", 0)
+
+      await commentPromise
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        "bd",
+        ["comments", "add", "rui-123", "This is a comment", "--author", "Ralph"],
+        expect.anything(),
+      )
+    })
+
     it("rejects on command failure", async () => {
       const commentPromise = proxy.addComment("rui-123", "Comment")
 
