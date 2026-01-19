@@ -98,10 +98,9 @@ describe("ControlBar", () => {
       expect(screen.getByRole("button", { name: "Start" })).toBeDisabled()
     })
 
-    it("disables Pause button when running (not yet implemented)", () => {
-      // Pause is not yet implemented in ralph
+    it("enables Pause button when running", () => {
       render(<ControlBar />)
-      expect(screen.getByRole("button", { name: "Pause" })).toBeDisabled()
+      expect(screen.getByRole("button", { name: "Pause" })).not.toBeDisabled()
     })
 
     it("enables Stop button when running", () => {
@@ -111,6 +110,33 @@ describe("ControlBar", () => {
 
     it("disables Stop after current button when running (not yet implemented)", () => {
       // Stop-after-current is not yet implemented in ralph
+      render(<ControlBar />)
+      expect(screen.getByRole("button", { name: "Stop after current" })).toBeDisabled()
+    })
+  })
+
+  describe("button states when paused", () => {
+    beforeEach(() => {
+      useAppStore.getState().setConnectionStatus("connected")
+      useAppStore.getState().setRalphStatus("paused")
+    })
+
+    it("disables Start button when paused", () => {
+      render(<ControlBar />)
+      expect(screen.getByRole("button", { name: "Start" })).toBeDisabled()
+    })
+
+    it("enables Resume button when paused (shows as Resume instead of Pause)", () => {
+      render(<ControlBar />)
+      expect(screen.getByRole("button", { name: "Resume" })).not.toBeDisabled()
+    })
+
+    it("enables Stop button when paused", () => {
+      render(<ControlBar />)
+      expect(screen.getByRole("button", { name: "Stop" })).not.toBeDisabled()
+    })
+
+    it("disables Stop after current button when paused", () => {
       render(<ControlBar />)
       expect(screen.getByRole("button", { name: "Stop after current" })).toBeDisabled()
     })
@@ -212,6 +238,78 @@ describe("ControlBar", () => {
 
       await waitFor(() => {
         expect(screen.getByText("Failed to stop ralph")).toBeInTheDocument()
+      })
+    })
+  })
+
+  describe("Pause button action", () => {
+    beforeEach(() => {
+      useAppStore.getState().setConnectionStatus("connected")
+      useAppStore.getState().setRalphStatus("running")
+    })
+
+    it("calls /api/pause when Pause is clicked", async () => {
+      mockFetch.mockResolvedValueOnce({
+        json: () => Promise.resolve({ ok: true, status: "paused" }),
+      })
+
+      render(<ControlBar />)
+      fireEvent.click(screen.getByRole("button", { name: "Pause" }))
+
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith("/api/pause", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        })
+      })
+    })
+
+    it("shows error when Pause fails", async () => {
+      mockFetch.mockResolvedValueOnce({
+        json: () => Promise.resolve({ ok: false, error: "Failed to pause ralph" }),
+      })
+
+      render(<ControlBar />)
+      fireEvent.click(screen.getByRole("button", { name: "Pause" }))
+
+      await waitFor(() => {
+        expect(screen.getByText("Failed to pause ralph")).toBeInTheDocument()
+      })
+    })
+  })
+
+  describe("Resume button action", () => {
+    beforeEach(() => {
+      useAppStore.getState().setConnectionStatus("connected")
+      useAppStore.getState().setRalphStatus("paused")
+    })
+
+    it("calls /api/resume when Resume is clicked", async () => {
+      mockFetch.mockResolvedValueOnce({
+        json: () => Promise.resolve({ ok: true, status: "running" }),
+      })
+
+      render(<ControlBar />)
+      fireEvent.click(screen.getByRole("button", { name: "Resume" }))
+
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith("/api/resume", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        })
+      })
+    })
+
+    it("shows error when Resume fails", async () => {
+      mockFetch.mockResolvedValueOnce({
+        json: () => Promise.resolve({ ok: false, error: "Failed to resume ralph" }),
+      })
+
+      render(<ControlBar />)
+      fireEvent.click(screen.getByRole("button", { name: "Resume" }))
+
+      await waitFor(() => {
+        expect(screen.getByText("Failed to resume ralph")).toBeInTheDocument()
       })
     })
   })

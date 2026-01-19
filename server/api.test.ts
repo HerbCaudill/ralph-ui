@@ -21,7 +21,11 @@ function createMockChildProcess() {
   }
   proc.stdout = new EventEmitter()
   proc.stderr = new EventEmitter()
-  proc.kill = () => {
+  proc.kill = (signal?: string) => {
+    // SIGTSTP and SIGCONT don't terminate the process
+    if (signal === "SIGTSTP" || signal === "SIGCONT") {
+      return
+    }
     proc.emit("exit", 0, null)
   }
   proc.pid = 12345
@@ -56,7 +60,7 @@ function createTestApp(getManager: () => RalphManager): Express {
   app.post("/api/stop", async (_req: Request, res: Response) => {
     try {
       const manager = getManager()
-      if (!manager.isRunning) {
+      if (!manager.isRunning && manager.status !== "paused") {
         res.status(409).json({ ok: false, error: "Ralph is not running" })
         return
       }
@@ -65,6 +69,28 @@ function createTestApp(getManager: () => RalphManager): Express {
       res.status(200).json({ ok: true, status: manager.status })
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to stop"
+      res.status(500).json({ ok: false, error: message })
+    }
+  })
+
+  app.post("/api/pause", (_req: Request, res: Response) => {
+    try {
+      const manager = getManager()
+      manager.pause()
+      res.status(200).json({ ok: true, status: manager.status })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to pause"
+      res.status(500).json({ ok: false, error: message })
+    }
+  })
+
+  app.post("/api/resume", (_req: Request, res: Response) => {
+    try {
+      const manager = getManager()
+      manager.resume()
+      res.status(200).json({ ok: true, status: manager.status })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to resume"
       res.status(500).json({ ok: false, error: message })
     }
   })
@@ -137,15 +163,15 @@ describe("REST API endpoints", () => {
   })
 
   beforeEach(async () => {
-    // Ensure manager is stopped before each test
-    if (manager.isRunning) {
+    // Ensure manager is stopped before each test (also check paused state)
+    if (manager.isRunning || manager.status === "paused") {
       await manager.stop()
     }
   })
 
   afterEach(async () => {
-    // Clean up after each test
-    if (manager.isRunning) {
+    // Clean up after each test (also check paused state)
+    if (manager.isRunning || manager.status === "paused") {
       await manager.stop()
     }
   })
@@ -289,6 +315,61 @@ describe("REST API endpoints", () => {
 
       expect(response.status).toBe(409)
       expect(data).toEqual({ ok: false, error: "Ralph is not running" })
+    })
+  })
+
+  describe("POST /api/pause", () => {
+    it("pauses ralph successfully when running", async () => {
+      await manager.start()
+
+      const response = await fetch(`http://localhost:${port}/api/pause`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      })
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data).toEqual({ ok: true, status: "paused" })
+    })
+
+    it("returns 500 when not running", async () => {
+      const response = await fetch(`http://localhost:${port}/api/pause`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      })
+      const data = await response.json()
+
+      expect(response.status).toBe(500)
+      expect(data).toEqual({ ok: false, error: "Ralph is not running" })
+    })
+  })
+
+  describe("POST /api/resume", () => {
+    it("resumes ralph successfully when paused", async () => {
+      await manager.start()
+      manager.pause()
+
+      const response = await fetch(`http://localhost:${port}/api/resume`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      })
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data).toEqual({ ok: true, status: "running" })
+    })
+
+    it("returns 500 when not paused", async () => {
+      await manager.start()
+
+      const response = await fetch(`http://localhost:${port}/api/resume`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      })
+      const data = await response.json()
+
+      expect(response.status).toBe(500)
+      expect(data).toEqual({ ok: false, error: "Cannot resume ralph in running state" })
     })
   })
 })

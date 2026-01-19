@@ -55,6 +55,10 @@ function StatusIndicator() {
       color: "bg-green-500",
       label: "Running",
     },
+    paused: {
+      color: "bg-orange-500",
+      label: "Paused",
+    },
     stopping: {
       color: "bg-yellow-500 animate-pulse",
       label: "Stopping",

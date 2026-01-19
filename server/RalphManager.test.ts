@@ -313,4 +313,90 @@ describe("RalphManager", () => {
       expect(errors[0].message).toBe("stderr: Something went wrong")
     })
   })
+
+  describe("pause", () => {
+    it("sends SIGTSTP to process", async () => {
+      const startPromise = manager.start()
+      mockProcess.emit("spawn")
+      await startPromise
+
+      manager.pause()
+
+      expect(mockProcess.kill).toHaveBeenCalledWith("SIGTSTP")
+    })
+
+    it("transitions to paused status", async () => {
+      const statusChanges: string[] = []
+      manager.on("status", status => statusChanges.push(status))
+
+      const startPromise = manager.start()
+      mockProcess.emit("spawn")
+      await startPromise
+
+      manager.pause()
+
+      expect(manager.status).toBe("paused")
+      expect(statusChanges).toContain("paused")
+    })
+
+    it("throws if not running", () => {
+      expect(() => manager.pause()).toThrow("Ralph is not running")
+    })
+
+    it("throws if in wrong state", async () => {
+      const startPromise = manager.start()
+      mockProcess.emit("spawn")
+      await startPromise
+
+      manager.pause()
+
+      // Already paused - should be a no-op
+      manager.pause()
+      expect(manager.status).toBe("paused")
+    })
+
+    it("throws if trying to pause while stopped", () => {
+      expect(() => manager.pause()).toThrow("Ralph is not running")
+    })
+  })
+
+  describe("resume", () => {
+    it("sends SIGCONT to process", async () => {
+      const startPromise = manager.start()
+      mockProcess.emit("spawn")
+      await startPromise
+
+      manager.pause()
+      manager.resume()
+
+      expect(mockProcess.kill).toHaveBeenCalledWith("SIGCONT")
+    })
+
+    it("transitions back to running status", async () => {
+      const statusChanges: string[] = []
+      manager.on("status", status => statusChanges.push(status))
+
+      const startPromise = manager.start()
+      mockProcess.emit("spawn")
+      await startPromise
+
+      manager.pause()
+      manager.resume()
+
+      expect(manager.status).toBe("running")
+      expect(statusChanges).toContain("running")
+    })
+
+    it("throws if not paused", async () => {
+      const startPromise = manager.start()
+      mockProcess.emit("spawn")
+      await startPromise
+
+      expect(() => manager.resume()).toThrow("Cannot resume ralph in running state")
+    })
+
+    it("throws if not running", () => {
+      expect(() => manager.resume()).toThrow("Ralph is not running")
+    })
+  })
 })

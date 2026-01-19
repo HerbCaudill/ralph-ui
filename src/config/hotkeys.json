@@ -14,7 +14,7 @@
     "agentPause": {
       "key": "/",
       "modifiers": ["cmd"],
-      "description": "Pause Ralph agent (coming soon)"
+      "description": "Pause/Resume Ralph agent"
     },
     "agentStopAfterCurrent": {
       "key": ".",

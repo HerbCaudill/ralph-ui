@@ -3,7 +3,7 @@ import type { ConnectionStatus } from "../hooks/useWebSocket"
 
 // Types
 
-export type RalphStatus = "stopped" | "starting" | "running" | "stopping"
+export type RalphStatus = "stopped" | "starting" | "running" | "paused" | "stopping"
 export type Theme = "system" | "light" | "dark"
 
 export interface RalphEvent {

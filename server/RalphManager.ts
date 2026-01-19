@@ -3,7 +3,7 @@ import { EventEmitter } from "node:events"
 
 // Types
 
-export type RalphStatus = "stopped" | "starting" | "running" | "stopping"
+export type RalphStatus = "stopped" | "starting" | "running" | "paused" | "stopping"
 
 export interface RalphEvent {
   type: string
@@ -146,6 +146,40 @@ export class RalphManager extends EventEmitter {
         reject(err)
       }
     })
+  }
+
+  /**
+   * Pause the ralph process by sending SIGTSTP.
+   * The process can be resumed later with resume().
+   */
+  pause(): void {
+    if (!this.process) {
+      throw new Error("Ralph is not running")
+    }
+    if (this._status === "paused") {
+      return // Already paused
+    }
+    if (this._status !== "running") {
+      throw new Error(`Cannot pause ralph in ${this._status} state`)
+    }
+
+    this.process.kill("SIGTSTP")
+    this.setStatus("paused")
+  }
+
+  /**
+   * Resume a paused ralph process by sending SIGCONT.
+   */
+  resume(): void {
+    if (!this.process) {
+      throw new Error("Ralph is not running")
+    }
+    if (this._status !== "paused") {
+      throw new Error(`Cannot resume ralph in ${this._status} state`)
+    }
+
+    this.process.kill("SIGCONT")
+    this.setStatus("running")
   }
 
   /**

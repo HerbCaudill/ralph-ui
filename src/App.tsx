@@ -41,6 +41,30 @@ async function stopRalph(): Promise<{ ok: boolean; error?: string }> {
   }
 }
 
+async function pauseRalph(): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const response = await fetch("/api/pause", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    })
+    return await response.json()
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Failed to pause" }
+  }
+}
+
+async function resumeRalph(): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const response = await fetch("/api/resume", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    })
+    return await response.json()
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Failed to resume" }
+  }
+}
+
 // Tasks Sidebar
 
 function TasksSidebarPanel() {
@@ -144,10 +168,14 @@ export function App() {
     await stopRalph()
   }, [ralphStatus, isConnected])
 
-  const handleAgentPause = useCallback(() => {
-    // See rui-fsd: Implement when ralph supports pause
-    console.log("Pause not yet implemented in ralph")
-  }, [])
+  const handleAgentPause = useCallback(async () => {
+    // Toggle between pause and resume based on current status
+    if (ralphStatus === "paused") {
+      await resumeRalph()
+    } else if (ralphStatus === "running" && isConnected) {
+      await pauseRalph()
+    }
+  }, [ralphStatus, isConnected])
 
   const handleAgentStopAfterCurrent = useCallback(() => {
     // See rui-4p3: Implement when ralph supports stop-after-current

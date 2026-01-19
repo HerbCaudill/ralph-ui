@@ -79,7 +79,7 @@ function createApp(config: ServerConfig): Express {
   app.post("/api/stop", async (_req: Request, res: Response) => {
     try {
       const manager = getRalphManager()
-      if (!manager.isRunning) {
+      if (!manager.isRunning && manager.status !== "paused") {
         res.status(409).json({ ok: false, error: "Ralph is not running" })
         return
       }
@@ -88,6 +88,28 @@ function createApp(config: ServerConfig): Express {
       res.status(200).json({ ok: true, status: manager.status })
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to stop"
+      res.status(500).json({ ok: false, error: message })
+    }
+  })
+
+  app.post("/api/pause", (_req: Request, res: Response) => {
+    try {
+      const manager = getRalphManager()
+      manager.pause()
+      res.status(200).json({ ok: true, status: manager.status })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to pause"
+      res.status(500).json({ ok: false, error: message })
+    }
+  })
+
+  app.post("/api/resume", (_req: Request, res: Response) => {
+    try {
+      const manager = getRalphManager()
+      manager.resume()
+      res.status(200).json({ ok: true, status: manager.status })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to resume"
       res.status(500).json({ ok: false, error: message })
     }
   })

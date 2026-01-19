@@ -37,6 +37,30 @@ async function stopRalph(): Promise<{ ok: boolean; error?: string }> {
   }
 }
 
+async function pauseRalph(): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const response = await fetch("/api/pause", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    })
+    return await response.json()
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Failed to pause" }
+  }
+}
+
+async function resumeRalph(): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const response = await fetch("/api/resume", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    })
+    return await response.json()
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Failed to resume" }
+  }
+}
+
 // Icons
 
 function PlayIcon({ className }: { className?: string }) {
@@ -139,7 +163,14 @@ function getButtonStates(status: RalphStatus, isConnected: boolean) {
     case "running":
       return {
         start: false,
-        pause: false,
+        pause: true,
+        stop: true,
+        stopAfterCurrent: false,
+      }
+    case "paused":
+      return {
+        start: false,
+        pause: true, // Acts as resume when paused
         stop: true,
         stopAfterCurrent: false,
       }
@@ -184,10 +215,16 @@ export function ControlBar({ className }: ControlBarProps) {
     }
   }, [])
 
-  const handlePause = useCallback(() => {
-    // See rui-fsd: Implement when ralph supports pause
-    console.log("Pause not yet implemented in ralph")
-  }, [])
+  const handlePause = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+    // Toggle between pause and resume based on current status
+    const result = status === "paused" ? await resumeRalph() : await pauseRalph()
+    setIsLoading(false)
+    if (!result.ok) {
+      setError(result.error || (status === "paused" ? "Failed to resume" : "Failed to pause"))
+    }
+  }, [status])
 
   const handleStop = useCallback(async () => {
     setIsLoading(true)
@@ -218,16 +255,18 @@ export function ControlBar({ className }: ControlBarProps) {
         <PlayIcon />
       </Button>
 
-      {/* Pause button */}
+      {/* Pause/Resume button */}
       <Button
         variant="outline"
         size="icon-sm"
         onClick={handlePause}
         disabled={!buttonStates.pause || isLoading}
-        title="Pause ralph (coming soon)"
-        aria-label="Pause"
+        title={status === "paused" ? "Resume ralph" : "Pause ralph"}
+        aria-label={status === "paused" ? "Resume" : "Pause"}
       >
-        <PauseIcon />
+        {status === "paused" ?
+          <PlayIcon />
+        : <PauseIcon />}
       </Button>
 
       {/* Stop button */}
