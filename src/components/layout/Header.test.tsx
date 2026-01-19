@@ -342,4 +342,50 @@ describe("Header", () => {
       expect(accentBar).toHaveStyle({ backgroundColor: "#000000" })
     })
   })
+
+  describe("control bar", () => {
+    it("renders control bar with play/pause/stop buttons", async () => {
+      useAppStore.getState().setConnectionStatus("connected")
+      render(<Header />)
+
+      // Wait for workspace fetch to complete
+      await waitFor(() => {
+        expect(screen.getByText("my-project")).toBeInTheDocument()
+      })
+
+      // Control bar buttons should be present
+      expect(screen.getByRole("button", { name: "Start" })).toBeInTheDocument()
+      expect(screen.getByRole("button", { name: "Pause" })).toBeInTheDocument()
+      expect(screen.getByRole("button", { name: "Stop" })).toBeInTheDocument()
+      expect(screen.getByRole("button", { name: "Stop after current" })).toBeInTheDocument()
+    })
+
+    it("enables start button when ralph is stopped and connected", async () => {
+      useAppStore.getState().setConnectionStatus("connected")
+      useAppStore.getState().setRalphStatus("stopped")
+      render(<Header />)
+
+      // Wait for workspace fetch to complete
+      await waitFor(() => {
+        expect(screen.getByText("my-project")).toBeInTheDocument()
+      })
+
+      expect(screen.getByRole("button", { name: "Start" })).not.toBeDisabled()
+    })
+
+    it("disables all control buttons when disconnected", async () => {
+      useAppStore.getState().setConnectionStatus("disconnected")
+      render(<Header />)
+
+      // Wait for workspace fetch to complete
+      await waitFor(() => {
+        expect(screen.getByText("my-project")).toBeInTheDocument()
+      })
+
+      expect(screen.getByRole("button", { name: "Start" })).toBeDisabled()
+      expect(screen.getByRole("button", { name: "Pause" })).toBeDisabled()
+      expect(screen.getByRole("button", { name: "Stop" })).toBeDisabled()
+      expect(screen.getByRole("button", { name: "Stop after current" })).toBeDisabled()
+    })
+  })
 })

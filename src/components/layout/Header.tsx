@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils"
 import { useAppStore, selectAccentColor } from "@/store"
 import { useTheme } from "@/hooks"
 import { WorkspacePicker } from "./WorkspacePicker"
+import { ControlBar } from "@/components/controls/ControlBar"
 import { Button } from "@/components/ui/button"
 import { Sun, Moon, Monitor } from "lucide-react"
 
@@ -103,6 +104,7 @@ export function Header({ className }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-4">
+          <ControlBar />
           <ThemeToggle />
         </div>
       </div>
