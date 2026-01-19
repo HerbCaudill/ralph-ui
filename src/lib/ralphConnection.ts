@@ -4,7 +4,7 @@
  */
 
 import { useAppStore } from "../store"
-import { RALPH_STATUSES, isRalphStatus, type RalphStatus } from "../store"
+import { isRalphStatus } from "../store"
 
 // Connection status constants and type guard
 export const CONNECTION_STATUSES = ["disconnected", "connecting", "connected"] as const
