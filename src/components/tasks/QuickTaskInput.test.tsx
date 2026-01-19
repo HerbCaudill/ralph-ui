@@ -150,6 +150,27 @@ describe("QuickTaskInput", () => {
       })
     })
 
+    it("keeps input focused after successful submission", async () => {
+      mockSuccessResponse({ id: "rui-focus", title: "Task", status: "open", priority: 2 })
+
+      render(<QuickTaskInput />)
+
+      const input = screen.getByRole("textbox")
+      // Focus the input first (simulating user interaction)
+      input.focus()
+      expect(document.activeElement).toBe(input)
+
+      typeInInput(input, "Task")
+      fireEvent.keyDown(input, { key: "Enter" })
+
+      await waitFor(() => {
+        expect(input).toHaveValue("")
+      })
+
+      // Input should still be focused after submission
+      expect(document.activeElement).toBe(input)
+    })
+
     it("trims whitespace from title", async () => {
       mockSuccessResponse({ id: "rui-abc", title: "Trimmed", status: "open", priority: 2 })
 

@@ -98,6 +98,8 @@ export const QuickTaskInput = forwardRef<QuickTaskInputHandle, QuickTaskInputPro
           }
 
           setTitle("")
+          // Keep input focused after submission
+          inputRef.current?.focus()
           onTaskCreated?.(data.issue)
         } catch (err) {
           const message = err instanceof Error ? err.message : "Failed to create task"
