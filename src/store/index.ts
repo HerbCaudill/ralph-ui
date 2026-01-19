@@ -3,6 +3,7 @@ import type { ConnectionStatus } from "../hooks/useWebSocket"
 
 // localStorage keys
 export const SIDEBAR_WIDTH_STORAGE_KEY = "ralph-ui-sidebar-width"
+export const TASK_CHAT_WIDTH_STORAGE_KEY = "ralph-ui-task-chat-width"
 
 // Helper functions for localStorage
 function loadSidebarWidth(): number {
@@ -23,6 +24,30 @@ function loadSidebarWidth(): number {
 function saveSidebarWidth(width: number): void {
   try {
     localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, String(width))
+  } catch {
+    // localStorage may not be available
+  }
+}
+
+// Task chat panel localStorage persistence
+function loadTaskChatWidth(): number {
+  try {
+    const stored = localStorage.getItem(TASK_CHAT_WIDTH_STORAGE_KEY)
+    if (stored) {
+      const parsed = parseInt(stored, 10)
+      if (!isNaN(parsed) && parsed >= 280 && parsed <= 800) {
+        return parsed
+      }
+    }
+  } catch {
+    // localStorage may not be available (SSR, private mode, etc.)
+  }
+  return 400 // default
+}
+
+function saveTaskChatWidth(width: number): void {
+  try {
+    localStorage.setItem(TASK_CHAT_WIDTH_STORAGE_KEY, String(width))
   } catch {
     // localStorage may not be available
   }
@@ -92,6 +117,14 @@ export interface EventLog {
   metadata?: EventLogMetadata
 }
 
+// Task chat message type for task management conversations
+export interface TaskChatMessage {
+  id: string
+  role: "user" | "assistant"
+  content: string
+  timestamp: number
+}
+
 // Store State
 
 export interface AppState {
@@ -140,6 +173,12 @@ export interface AppState {
   viewingEventLog: EventLog | null
   eventLogLoading: boolean
   eventLogError: string | null
+
+  // Task chat panel state
+  taskChatOpen: boolean
+  taskChatWidth: number
+  taskChatMessages: TaskChatMessage[]
+  taskChatLoading: boolean
 }
 
 // Store Actions
@@ -195,6 +234,14 @@ export interface AppActions {
   setEventLogError: (error: string | null) => void
   clearEventLogViewer: () => void
 
+  // Task chat panel
+  setTaskChatOpen: (open: boolean) => void
+  toggleTaskChat: () => void
+  setTaskChatWidth: (width: number) => void
+  addTaskChatMessage: (message: TaskChatMessage) => void
+  clearTaskChatMessages: () => void
+  setTaskChatLoading: (loading: boolean) => void
+
   // Reset
   reset: () => void
 }
@@ -202,6 +249,7 @@ export interface AppActions {
 // Initial State
 
 const defaultSidebarWidth = 320
+const defaultTaskChatWidth = 400
 
 const initialState: AppState = {
   ralphStatus: "stopped",
@@ -222,12 +270,17 @@ const initialState: AppState = {
   viewingEventLog: null,
   eventLogLoading: false,
   eventLogError: null,
+  taskChatOpen: false,
+  taskChatWidth: defaultTaskChatWidth,
+  taskChatMessages: [],
+  taskChatLoading: false,
 }
 
 // Create the store with localStorage initialization
 const getInitialStateWithPersistence = (): AppState => ({
   ...initialState,
   sidebarWidth: loadSidebarWidth(),
+  taskChatWidth: loadTaskChatWidth(),
 })
 
 // Store
@@ -320,6 +373,20 @@ export const useAppStore = create<AppState & AppActions>(set => ({
       eventLogError: null,
     }),
 
+  // Task chat panel
+  setTaskChatOpen: open => set({ taskChatOpen: open }),
+  toggleTaskChat: () => set(state => ({ taskChatOpen: !state.taskChatOpen })),
+  setTaskChatWidth: width => {
+    saveTaskChatWidth(width)
+    set({ taskChatWidth: width })
+  },
+  addTaskChatMessage: message =>
+    set(state => ({
+      taskChatMessages: [...state.taskChatMessages, message],
+    })),
+  clearTaskChatMessages: () => set({ taskChatMessages: [] }),
+  setTaskChatLoading: loading => set({ taskChatLoading: loading }),
+
   // Reset
   reset: () => set(initialState),
 }))
@@ -348,3 +415,7 @@ export const selectViewingEventLogId = (state: AppState) => state.viewingEventLo
 export const selectViewingEventLog = (state: AppState) => state.viewingEventLog
 export const selectEventLogLoading = (state: AppState) => state.eventLogLoading
 export const selectEventLogError = (state: AppState) => state.eventLogError
+export const selectTaskChatOpen = (state: AppState) => state.taskChatOpen
+export const selectTaskChatWidth = (state: AppState) => state.taskChatWidth
+export const selectTaskChatMessages = (state: AppState) => state.taskChatMessages
+export const selectTaskChatLoading = (state: AppState) => state.taskChatLoading

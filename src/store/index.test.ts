@@ -1,6 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
-import { useAppStore, selectCurrentTask, SIDEBAR_WIDTH_STORAGE_KEY } from "./index"
-import type { RalphEvent, Task } from "./index"
+import {
+  useAppStore,
+  selectCurrentTask,
+  SIDEBAR_WIDTH_STORAGE_KEY,
+  TASK_CHAT_WIDTH_STORAGE_KEY,
+} from "./index"
+import type { RalphEvent, Task, TaskChatMessage } from "./index"
 
 describe("useAppStore", () => {
   beforeEach(() => {
@@ -23,6 +28,10 @@ describe("useAppStore", () => {
       expect(state.accentColor).toBeNull()
       expect(state.sidebarOpen).toBe(true)
       expect(state.sidebarWidth).toBe(320)
+      expect(state.taskChatOpen).toBe(false)
+      expect(state.taskChatWidth).toBe(400)
+      expect(state.taskChatMessages).toEqual([])
+      expect(state.taskChatLoading).toBe(false)
     })
   })
 
@@ -320,6 +329,87 @@ describe("useAppStore", () => {
     })
   })
 
+  describe("task chat panel state", () => {
+    it("sets task chat open state", () => {
+      useAppStore.getState().setTaskChatOpen(true)
+      expect(useAppStore.getState().taskChatOpen).toBe(true)
+
+      useAppStore.getState().setTaskChatOpen(false)
+      expect(useAppStore.getState().taskChatOpen).toBe(false)
+    })
+
+    it("toggles task chat state", () => {
+      // Initial state is false
+      expect(useAppStore.getState().taskChatOpen).toBe(false)
+
+      useAppStore.getState().toggleTaskChat()
+      expect(useAppStore.getState().taskChatOpen).toBe(true)
+
+      useAppStore.getState().toggleTaskChat()
+      expect(useAppStore.getState().taskChatOpen).toBe(false)
+    })
+
+    it("sets task chat width", () => {
+      useAppStore.getState().setTaskChatWidth(500)
+      expect(useAppStore.getState().taskChatWidth).toBe(500)
+
+      useAppStore.getState().setTaskChatWidth(350)
+      expect(useAppStore.getState().taskChatWidth).toBe(350)
+    })
+
+    it("persists task chat width to localStorage", () => {
+      useAppStore.getState().setTaskChatWidth(550)
+      expect(localStorage.getItem(TASK_CHAT_WIDTH_STORAGE_KEY)).toBe("550")
+    })
+
+    it("adds task chat messages", () => {
+      const message: TaskChatMessage = {
+        id: "msg-1",
+        role: "user",
+        content: "Hello",
+        timestamp: Date.now(),
+      }
+      useAppStore.getState().addTaskChatMessage(message)
+
+      const messages = useAppStore.getState().taskChatMessages
+      expect(messages).toHaveLength(1)
+      expect(messages[0]).toEqual(message)
+    })
+
+    it("preserves message order", () => {
+      const { addTaskChatMessage } = useAppStore.getState()
+
+      addTaskChatMessage({ id: "1", role: "user", content: "First", timestamp: 1 })
+      addTaskChatMessage({ id: "2", role: "assistant", content: "Second", timestamp: 2 })
+      addTaskChatMessage({ id: "3", role: "user", content: "Third", timestamp: 3 })
+
+      const messages = useAppStore.getState().taskChatMessages
+      expect(messages).toHaveLength(3)
+      expect(messages[0].content).toBe("First")
+      expect(messages[1].content).toBe("Second")
+      expect(messages[2].content).toBe("Third")
+    })
+
+    it("clears all task chat messages", () => {
+      const { addTaskChatMessage, clearTaskChatMessages } = useAppStore.getState()
+
+      addTaskChatMessage({ id: "1", role: "user", content: "Test", timestamp: 1 })
+      addTaskChatMessage({ id: "2", role: "assistant", content: "Test", timestamp: 2 })
+      expect(useAppStore.getState().taskChatMessages).toHaveLength(2)
+
+      clearTaskChatMessages()
+      expect(useAppStore.getState().taskChatMessages).toEqual([])
+    })
+
+    it("sets task chat loading state", () => {
+      useAppStore.getState().setTaskChatLoading(true)
+      expect(useAppStore.getState().taskChatLoading).toBe(true)
+
+      useAppStore.getState().setTaskChatLoading(false)
+      expect(useAppStore.getState().taskChatLoading).toBe(false)
+    })
+  })
+
   describe("sidebar width localStorage persistence", () => {
     beforeEach(() => {
       localStorage.clear()
@@ -378,6 +468,61 @@ describe("useAppStore", () => {
     })
   })
 
+  describe("task chat width localStorage persistence", () => {
+    beforeEach(() => {
+      localStorage.clear()
+    })
+
+    afterEach(() => {
+      localStorage.clear()
+    })
+
+    it("loads task chat width from localStorage on store creation", async () => {
+      localStorage.setItem(TASK_CHAT_WIDTH_STORAGE_KEY, "500")
+
+      vi.resetModules()
+      const { useAppStore: freshStore } = await import("./index")
+
+      expect(freshStore.getState().taskChatWidth).toBe(500)
+    })
+
+    it("uses default width when localStorage is empty", async () => {
+      localStorage.clear()
+
+      vi.resetModules()
+      const { useAppStore: freshStore } = await import("./index")
+
+      expect(freshStore.getState().taskChatWidth).toBe(400)
+    })
+
+    it("uses default width when localStorage value is invalid", async () => {
+      localStorage.setItem(TASK_CHAT_WIDTH_STORAGE_KEY, "invalid")
+
+      vi.resetModules()
+      const { useAppStore: freshStore } = await import("./index")
+
+      expect(freshStore.getState().taskChatWidth).toBe(400)
+    })
+
+    it("uses default width when localStorage value is below minimum", async () => {
+      localStorage.setItem(TASK_CHAT_WIDTH_STORAGE_KEY, "100")
+
+      vi.resetModules()
+      const { useAppStore: freshStore } = await import("./index")
+
+      expect(freshStore.getState().taskChatWidth).toBe(400)
+    })
+
+    it("uses default width when localStorage value is above maximum", async () => {
+      localStorage.setItem(TASK_CHAT_WIDTH_STORAGE_KEY, "1000")
+
+      vi.resetModules()
+      const { useAppStore: freshStore } = await import("./index")
+
+      expect(freshStore.getState().taskChatWidth).toBe(400)
+    })
+  })
+
   describe("reset", () => {
     it("resets all state to initial values", () => {
       // Modify all state
@@ -393,6 +538,10 @@ describe("useAppStore", () => {
         setConnectionStatus,
         setSidebarOpen,
         setSidebarWidth,
+        setTaskChatOpen,
+        setTaskChatWidth,
+        addTaskChatMessage,
+        setTaskChatLoading,
       } = useAppStore.getState()
 
       setRalphStatus("running")
@@ -406,6 +555,10 @@ describe("useAppStore", () => {
       setConnectionStatus("connected")
       setSidebarOpen(false)
       setSidebarWidth(400)
+      setTaskChatOpen(true)
+      setTaskChatWidth(500)
+      addTaskChatMessage({ id: "1", role: "user", content: "Test", timestamp: 1 })
+      setTaskChatLoading(true)
 
       // Verify state is modified
       let state = useAppStore.getState()
@@ -420,6 +573,10 @@ describe("useAppStore", () => {
       expect(state.connectionStatus).toBe("connected")
       expect(state.sidebarOpen).toBe(false)
       expect(state.sidebarWidth).toBe(400)
+      expect(state.taskChatOpen).toBe(true)
+      expect(state.taskChatWidth).toBe(500)
+      expect(state.taskChatMessages).toHaveLength(1)
+      expect(state.taskChatLoading).toBe(true)
 
       // Reset
       useAppStore.getState().reset()
@@ -437,6 +594,10 @@ describe("useAppStore", () => {
       expect(state.connectionStatus).toBe("disconnected")
       expect(state.sidebarOpen).toBe(true)
       expect(state.sidebarWidth).toBe(320)
+      expect(state.taskChatOpen).toBe(false)
+      expect(state.taskChatWidth).toBe(400)
+      expect(state.taskChatMessages).toEqual([])
+      expect(state.taskChatLoading).toBe(false)
     })
   })
 })
