@@ -125,10 +125,10 @@ function createApp(config: ServerConfig): Express {
     }
   })
 
-  app.post("/api/cancel-stop-after-current", (_req: Request, res: Response) => {
+  app.post("/api/cancel-stop-after-current", async (_req: Request, res: Response) => {
     try {
       const manager = getRalphManager()
-      manager.cancelStopAfterCurrent()
+      await manager.cancelStopAfterCurrent()
       res.status(200).json({ ok: true, status: manager.status })
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to cancel stop after current"

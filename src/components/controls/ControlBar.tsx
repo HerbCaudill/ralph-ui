@@ -214,7 +214,7 @@ export function ControlBar({ className }: ControlBarProps) {
   const handleStopAfterCurrent = useCallback(async () => {
     setIsLoading(true)
     setError(null)
-    // Toggle between stop-after-current and cancel based on current status
+    // Toggle between stop-after-current and cancel (restart) based on current status
     const result =
       status === "stopping_after_current" ?
         await cancelStopAfterCurrentRalph()

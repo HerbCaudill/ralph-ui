@@ -53,7 +53,6 @@ export class RalphManager extends EventEmitter {
   private process: ChildProcess | null = null
   private _status: RalphStatus = "stopped"
   private buffer = ""
-  private pausedEvents: RalphEvent[] = [] // Buffer for events while paused
   private options: {
     command: string
     args: string[]
@@ -132,7 +131,6 @@ export class RalphManager extends EventEmitter {
         this.process.on("exit", (code, signal) => {
           this.process = null
           this.buffer = ""
-          this.pausedEvents = [] // Clear any buffered events
           this.setStatus("stopped")
           this.emit("exit", { code, signal })
         })
@@ -157,7 +155,8 @@ export class RalphManager extends EventEmitter {
   }
 
   /**
-   * Pause the ralph process by sending SIGTSTP.
+   * Pause the ralph process by sending a pause command via stdin.
+   * Ralph will pause after the current iteration completes.
    * The process can be resumed later with resume().
    */
   pause(): void {
@@ -171,12 +170,12 @@ export class RalphManager extends EventEmitter {
       throw new Error(`Cannot pause ralph in ${this._status} state`)
     }
 
-    this.process.kill("SIGTSTP")
+    this.send({ type: "pause" })
     this.setStatus("paused")
   }
 
   /**
-   * Resume a paused ralph process by sending SIGCONT.
+   * Resume a paused ralph process by sending a resume command via stdin.
    */
   resume(): void {
     if (!this.process) {
@@ -186,19 +185,14 @@ export class RalphManager extends EventEmitter {
       throw new Error(`Cannot resume ralph in ${this._status} state`)
     }
 
-    this.process.kill("SIGCONT")
+    this.send({ type: "resume" })
     this.setStatus("running")
-
-    // Emit any events that were buffered while paused
-    for (const event of this.pausedEvents) {
-      this.emit("event", event)
-    }
-    this.pausedEvents = []
   }
 
   /**
    * Request ralph to stop after completing the current task.
-   * This sets a flag that ralph will check after each task.
+   * Sends the stop command via stdin which Ralph handles gracefully,
+   * stopping after the current iteration completes.
    */
   stopAfterCurrent(): void {
     if (!this.process) {
@@ -208,15 +202,16 @@ export class RalphManager extends EventEmitter {
       throw new Error(`Cannot stop-after-current ralph in ${this._status} state`)
     }
 
-    // Send the stop-after-current signal to ralph via stdin
-    this.send({ type: "stop_after_current" })
+    // Send the stop signal to ralph via stdin - tells Ralph to stop after current iteration
+    this.send({ type: "stop" })
     this.setStatus("stopping_after_current")
   }
 
   /**
-   * Cancel a pending stop-after-current request.
+   * Cancel a pending stop-after-current request by restarting Ralph after it stops.
+   * Returns a promise that resolves when Ralph has restarted.
    */
-  cancelStopAfterCurrent(): void {
+  async cancelStopAfterCurrent(): Promise<void> {
     if (!this.process) {
       throw new Error("Ralph is not running")
     }
@@ -224,13 +219,21 @@ export class RalphManager extends EventEmitter {
       throw new Error(`Cannot cancel stop-after-current in ${this._status} state`)
     }
 
-    // Send cancel signal to ralph
-    this.send({ type: "cancel_stop_after_current" })
-    this.setStatus("running")
+    // Wait for Ralph to stop, then restart
+    return new Promise<void>(resolve => {
+      const onExit = () => {
+        this.removeListener("exit", onExit)
+        // Restart Ralph after it stops
+        this.start().then(resolve)
+      }
+      this.once("exit", onExit)
+    })
   }
 
   /**
-   * Stop the ralph process gracefully.
+   * Stop the ralph process immediately.
+   *
+   * Sends SIGTERM for immediate termination. Falls back to SIGKILL after timeout.
    *
    * @param timeout - Timeout in ms before force kill (default: 5000)
    * @returns Promise that resolves when process exits
@@ -243,7 +246,7 @@ export class RalphManager extends EventEmitter {
     this.setStatus("stopping")
 
     return new Promise(resolve => {
-      const timer = setTimeout(() => {
+      const forceKillTimer = setTimeout(() => {
         // Force kill if timeout exceeded
         if (this.process) {
           this.process.kill("SIGKILL")
@@ -251,13 +254,13 @@ export class RalphManager extends EventEmitter {
       }, timeout)
 
       const cleanup = () => {
-        clearTimeout(timer)
+        clearTimeout(forceKillTimer)
         resolve()
       }
 
       this.process!.once("exit", cleanup)
 
-      // Send SIGTERM for graceful shutdown
+      // Send SIGTERM for immediate termination
       this.process!.kill("SIGTERM")
     })
   }
@@ -300,17 +303,10 @@ export class RalphManager extends EventEmitter {
   private parseLine(line: string): void {
     try {
       const event = JSON.parse(line) as RalphEvent
-      // Buffer events while paused, emit immediately otherwise
-      if (this._status === "paused") {
-        this.pausedEvents.push(event)
-      } else {
-        this.emit("event", event)
-      }
+      this.emit("event", event)
     } catch {
-      // Not valid JSON - emit as raw output (only if not paused)
-      if (this._status !== "paused") {
-        this.emit("output", line)
-      }
+      // Not valid JSON - emit as raw output
+      this.emit("output", line)
     }
   }
 

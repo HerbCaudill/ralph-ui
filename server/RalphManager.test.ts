@@ -315,14 +315,14 @@ describe("RalphManager", () => {
   })
 
   describe("pause", () => {
-    it("sends SIGTSTP to process", async () => {
+    it("sends pause command via stdin", async () => {
       const startPromise = manager.start()
       mockProcess.emit("spawn")
       await startPromise
 
       manager.pause()
 
-      expect(mockProcess.kill).toHaveBeenCalledWith("SIGTSTP")
+      expect(mockProcess.stdin.write).toHaveBeenCalledWith('{"type":"pause"}\n')
     })
 
     it("transitions to paused status", async () => {
@@ -361,7 +361,7 @@ describe("RalphManager", () => {
   })
 
   describe("resume", () => {
-    it("sends SIGCONT to process", async () => {
+    it("sends resume command via stdin", async () => {
       const startPromise = manager.start()
       mockProcess.emit("spawn")
       await startPromise
@@ -369,7 +369,7 @@ describe("RalphManager", () => {
       manager.pause()
       manager.resume()
 
-      expect(mockProcess.kill).toHaveBeenCalledWith("SIGCONT")
+      expect(mockProcess.stdin.write).toHaveBeenCalledWith('{"type":"resume"}\n')
     })
 
     it("transitions back to running status", async () => {
@@ -398,101 +398,17 @@ describe("RalphManager", () => {
     it("throws if not running", () => {
       expect(() => manager.resume()).toThrow("Ralph is not running")
     })
-
-    it("emits buffered events when resumed", async () => {
-      const events: RalphEvent[] = []
-      manager.on("event", evt => events.push(evt))
-
-      const startPromise = manager.start()
-      mockProcess.emit("spawn")
-      await startPromise
-
-      manager.pause()
-
-      // Simulate events arriving while paused
-      mockProcess.stdout.emit("data", Buffer.from('{"type":"buffered1","timestamp":1}\n'))
-      mockProcess.stdout.emit("data", Buffer.from('{"type":"buffered2","timestamp":2}\n'))
-
-      // Events should not be emitted while paused
-      expect(events).toHaveLength(0)
-
-      manager.resume()
-
-      // Events should now be emitted
-      expect(events).toHaveLength(2)
-      expect(events[0]).toMatchObject({ type: "buffered1" })
-      expect(events[1]).toMatchObject({ type: "buffered2" })
-    })
-  })
-
-  describe("pause event buffering", () => {
-    it("does not emit events while paused", async () => {
-      const events: RalphEvent[] = []
-      manager.on("event", evt => events.push(evt))
-
-      const startPromise = manager.start()
-      mockProcess.emit("spawn")
-      await startPromise
-
-      manager.pause()
-
-      mockProcess.stdout.emit("data", Buffer.from('{"type":"test","timestamp":123}\n'))
-
-      expect(events).toHaveLength(0)
-    })
-
-    it("does not emit output while paused", async () => {
-      const outputs: string[] = []
-      manager.on("output", line => outputs.push(line))
-
-      const startPromise = manager.start()
-      mockProcess.emit("spawn")
-      await startPromise
-
-      manager.pause()
-
-      mockProcess.stdout.emit("data", Buffer.from("plain text line\n"))
-
-      expect(outputs).toHaveLength(0)
-    })
-
-    it("clears buffered events on process exit", async () => {
-      const events: RalphEvent[] = []
-      manager.on("event", evt => events.push(evt))
-
-      const startPromise = manager.start()
-      mockProcess.emit("spawn")
-      await startPromise
-
-      manager.pause()
-
-      // Buffer some events
-      mockProcess.stdout.emit("data", Buffer.from('{"type":"buffered","timestamp":1}\n'))
-
-      // Process exits
-      mockProcess.emit("exit", 0, null)
-
-      // Restart the manager
-      const newProcess = createMockProcess()
-      mockSpawn.mockReturnValue(newProcess)
-      const startPromise2 = manager.start()
-      newProcess.emit("spawn")
-      await startPromise2
-
-      // Events should not include the old buffered event
-      expect(events).toHaveLength(0)
-    })
   })
 
   describe("stopAfterCurrent", () => {
-    it("sends stop_after_current message to stdin", async () => {
+    it("sends stop message to stdin", async () => {
       const startPromise = manager.start()
       mockProcess.emit("spawn")
       await startPromise
 
       manager.stopAfterCurrent()
 
-      expect(mockProcess.stdin.write).toHaveBeenCalledWith('{"type":"stop_after_current"}\n')
+      expect(mockProcess.stdin.write).toHaveBeenCalledWith('{"type":"stop"}\n')
     })
 
     it("transitions to stopping_after_current status", async () => {
@@ -534,33 +450,34 @@ describe("RalphManager", () => {
       manager.stopAfterCurrent()
 
       expect(manager.status).toBe("stopping_after_current")
-      expect(mockProcess.stdin.write).toHaveBeenCalledWith('{"type":"stop_after_current"}\n')
+      expect(mockProcess.stdin.write).toHaveBeenCalledWith('{"type":"stop"}\n')
     })
   })
 
   describe("cancelStopAfterCurrent", () => {
-    it("sends cancel_stop_after_current message to stdin", async () => {
+    it("waits for exit and restarts ralph", async () => {
       const startPromise = manager.start()
       mockProcess.emit("spawn")
       await startPromise
 
       manager.stopAfterCurrent()
-      manager.cancelStopAfterCurrent()
 
-      expect(mockProcess.stdin.write).toHaveBeenCalledWith('{"type":"cancel_stop_after_current"}\n')
-    })
+      // Start the cancel operation (it will wait for exit)
+      const cancelPromise = manager.cancelStopAfterCurrent()
 
-    it("transitions back to running status", async () => {
-      const statusChanges: string[] = []
-      manager.on("status", status => statusChanges.push(status))
+      // Create a new mock process for the restart
+      const newProcess = createMockProcess()
+      mockSpawn.mockReturnValue(newProcess)
 
-      const startPromise = manager.start()
-      mockProcess.emit("spawn")
-      await startPromise
+      // Simulate Ralph exiting
+      mockProcess.emit("exit", 0, null)
 
-      manager.stopAfterCurrent()
-      manager.cancelStopAfterCurrent()
+      // Simulate the new process spawning
+      newProcess.emit("spawn")
 
+      await cancelPromise
+
+      // Should have restarted and be running
       expect(manager.status).toBe("running")
     })
 
@@ -569,13 +486,13 @@ describe("RalphManager", () => {
       mockProcess.emit("spawn")
       await startPromise
 
-      expect(() => manager.cancelStopAfterCurrent()).toThrow(
+      await expect(manager.cancelStopAfterCurrent()).rejects.toThrow(
         "Cannot cancel stop-after-current in running state",
       )
     })
 
-    it("throws if not running", () => {
-      expect(() => manager.cancelStopAfterCurrent()).toThrow("Ralph is not running")
+    it("throws if not running", async () => {
+      await expect(manager.cancelStopAfterCurrent()).rejects.toThrow("Ralph is not running")
     })
   })
 })
