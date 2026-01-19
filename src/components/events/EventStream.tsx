@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils"
 import { useAppStore, selectEvents, selectRalphStatus, type RalphEvent } from "@/store"
-import { IconLoader } from "@tabler/icons-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { IconChevronDown } from "@tabler/icons-react"
+import { TopologySpinner } from "@/components/ui/TopologySpinner"
 import { UserMessage, type UserMessageEvent } from "./UserMessage"
 import { AssistantText, type AssistantTextEvent } from "./AssistantText"
 import { ToolUseCard, type ToolUseEvent } from "./ToolUseCard"
@@ -334,14 +334,11 @@ export function EventStream({ className, maxEvents = 1000 }: EventStreamProps) {
             {/* Spinner shown when Ralph is running */}
             {isRunning && (
               <div
-                className="flex items-center justify-center py-4"
+                className="flex items-center justify-start px-4 py-4"
                 aria-label="Ralph is running"
                 data-testid="ralph-running-spinner"
               >
-                <IconLoader
-                  className="text-muted-foreground size-5 animate-spin"
-                  aria-hidden="true"
-                />
+                <TopologySpinner />
               </div>
             )}
           </>
