@@ -68,7 +68,7 @@ const STORAGE_KEY = "ralph-ui-task-input-draft"
 
 /**
  * Text input for quickly adding tasks.
- * Submits on Enter key, calls bd create via API.
+ * Submits on Enter key (Shift+Enter for new line), calls bd create via API.
  */
 export const QuickTaskInput = forwardRef<QuickTaskInputHandle, QuickTaskInputProps>(
   function QuickTaskInput(
@@ -144,11 +144,12 @@ export const QuickTaskInput = forwardRef<QuickTaskInputHandle, QuickTaskInputPro
 
     const handleKeyDown = useCallback(
       (e: KeyboardEvent<HTMLTextAreaElement>) => {
-        // Cmd/Ctrl+Enter to submit
-        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+        // Enter to submit, Shift+Enter for new line
+        if (e.key === "Enter" && !e.shiftKey) {
           e.preventDefault()
           handleSubmit()
         }
+        // Shift+Enter allows default behavior (new line)
       },
       [handleSubmit],
     )
