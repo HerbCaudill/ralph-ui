@@ -84,7 +84,6 @@ export const WithDescription: Story = {
       description:
         "This task involves setting up OAuth2 authentication with Google and GitHub providers. Need to configure callback URLs and store tokens securely.",
     },
-    defaultExpanded: true,
   },
 }
 
@@ -95,7 +94,6 @@ export const WithParent: Story = {
       parent: "rui-1",
       issue_type: "task",
     },
-    defaultExpanded: true,
   },
 }
 
@@ -111,7 +109,6 @@ export const FullDetails: Story = {
       issue_type: "task",
       parent: "rui-4rt",
     },
-    defaultExpanded: true,
   },
 }
 

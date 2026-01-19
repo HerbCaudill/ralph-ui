@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils"
-import { useState, useCallback } from "react"
+import { useCallback, useState } from "react"
 import {
   IconCircle,
   IconCircleDot,
@@ -37,8 +37,6 @@ export interface TaskCardProps {
   task: TaskCardTask
   /** Additional CSS classes */
   className?: string
-  /** Whether to show expanded details by default */
-  defaultExpanded?: boolean
   /** Callback when status is changed */
   onStatusChange?: (id: string, status: TaskStatus) => void
   /** Callback when task is clicked */
@@ -95,30 +93,19 @@ const availableStatuses: TaskStatus[] = ["open", "in_progress", "blocked", "defe
 
 /**
  * Card component for displaying an individual task.
- * Shows task ID, title, status with expandable details.
+ * Shows task title and status indicator.
+ * Clicking opens the task details dialog.
  * Supports inline status changes via dropdown.
  */
-export function TaskCard({
-  task,
-  className,
-  defaultExpanded = false,
-  onStatusChange,
-  onClick,
-}: TaskCardProps) {
-  const [isExpanded, setIsExpanded] = useState(defaultExpanded)
+export function TaskCard({ task, className, onStatusChange, onClick }: TaskCardProps) {
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false)
 
   const config = statusConfig[task.status]
   const StatusIcon = config.icon
 
-  const toggleExpanded = useCallback(() => {
-    setIsExpanded(prev => !prev)
-  }, [])
-
   const handleClick = useCallback(() => {
     onClick?.(task.id)
-    toggleExpanded()
-  }, [onClick, task.id, toggleExpanded])
+  }, [onClick, task.id])
 
   const handleStatusClick = useCallback(
     (e: React.MouseEvent) => {
@@ -147,8 +134,6 @@ export function TaskCard({
     },
     [handleClick],
   )
-
-  const hasDetails = task.description || task.parent || task.issue_type
 
   return (
     <div
@@ -223,7 +208,6 @@ export function TaskCard({
           onClick={handleClick}
           onKeyDown={handleKeyDown}
           className="flex min-w-0 flex-1 cursor-pointer items-center gap-2"
-          aria-expanded={isExpanded}
           aria-label={task.title}
         >
           {/* Title */}
@@ -237,28 +221,6 @@ export function TaskCard({
           </span>
         </div>
       </div>
-
-      {/* Expanded details */}
-      {isExpanded && hasDetails && (
-        <div className="bg-muted/30 border-border border-t px-3 py-2">
-          {/* Type and parent info */}
-          {(task.issue_type || task.parent) && (
-            <div className="text-muted-foreground mb-2 flex flex-wrap gap-2 text-xs">
-              {task.issue_type && (
-                <span className="bg-muted rounded px-1.5 py-0.5 capitalize">{task.issue_type}</span>
-              )}
-              {task.parent && (
-                <span className="bg-muted rounded px-1.5 py-0.5">Parent: {task.parent}</span>
-              )}
-            </div>
-          )}
-
-          {/* Description */}
-          {task.description && (
-            <p className="text-foreground/80 text-sm whitespace-pre-wrap">{task.description}</p>
-          )}
-        </div>
-      )}
     </div>
   )
 }

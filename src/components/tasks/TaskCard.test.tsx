@@ -74,60 +74,25 @@ describe("TaskCard", () => {
     })
   })
 
-  describe("expand/collapse", () => {
-    it("expands details on click", () => {
-      render(<TaskCard task={fullTask} />)
-
-      // Details should not be visible initially
-      expect(screen.queryByText(fullTask.description!)).not.toBeInTheDocument()
-
-      // Click the content area to expand
-      const contentButton = screen.getByRole("button", { name: fullTask.title })
-      fireEvent.click(contentButton)
-
-      // Details should now be visible
-      expect(screen.getByText(fullTask.description!)).toBeInTheDocument()
-    })
-
-    it("collapses details on second click", () => {
-      render(<TaskCard task={fullTask} />)
+  describe("click behavior", () => {
+    it("supports keyboard navigation with Enter", () => {
+      const onClick = vi.fn()
+      render(<TaskCard task={fullTask} onClick={onClick} />)
 
       const contentButton = screen.getByRole("button", { name: fullTask.title })
-
-      // Expand
-      fireEvent.click(contentButton)
-      expect(screen.getByText(fullTask.description!)).toBeInTheDocument()
-
-      // Collapse
-      fireEvent.click(contentButton)
-      expect(screen.queryByText(fullTask.description!)).not.toBeInTheDocument()
-    })
-
-    it("respects defaultExpanded prop", () => {
-      render(<TaskCard task={fullTask} defaultExpanded />)
-      expect(screen.getByText(fullTask.description!)).toBeInTheDocument()
-    })
-
-    it("shows expanded details content", () => {
-      render(<TaskCard task={fullTask} defaultExpanded />)
-
-      expect(screen.getByText(fullTask.description!)).toBeInTheDocument()
-      expect(screen.getByText(fullTask.issue_type!)).toBeInTheDocument()
-      expect(screen.getByText(`Parent: ${fullTask.parent}`)).toBeInTheDocument()
-    })
-
-    it("supports keyboard navigation", () => {
-      render(<TaskCard task={fullTask} />)
-
-      const contentButton = screen.getByRole("button", { name: fullTask.title })
-
-      // Press Enter to expand
       fireEvent.keyDown(contentButton, { key: "Enter" })
-      expect(screen.getByText(fullTask.description!)).toBeInTheDocument()
 
-      // Press Space to collapse
+      expect(onClick).toHaveBeenCalledWith(fullTask.id)
+    })
+
+    it("supports keyboard navigation with Space", () => {
+      const onClick = vi.fn()
+      render(<TaskCard task={fullTask} onClick={onClick} />)
+
+      const contentButton = screen.getByRole("button", { name: fullTask.title })
       fireEvent.keyDown(contentButton, { key: " " })
-      expect(screen.queryByText(fullTask.description!)).not.toBeInTheDocument()
+
+      expect(onClick).toHaveBeenCalledWith(fullTask.id)
     })
   })
 
@@ -200,14 +165,15 @@ describe("TaskCard", () => {
       )
     })
 
-    it("status button click does not trigger card expand", () => {
+    it("status button click does not trigger onClick", () => {
       const onStatusChange = vi.fn()
-      render(<TaskCard task={fullTask} onStatusChange={onStatusChange} />)
+      const onClick = vi.fn()
+      render(<TaskCard task={fullTask} onStatusChange={onStatusChange} onClick={onClick} />)
 
       fireEvent.click(screen.getByLabelText(/Status: In Progress/))
 
-      // Card should not expand
-      expect(screen.queryByText(fullTask.description!)).not.toBeInTheDocument()
+      // onClick should not have been called
+      expect(onClick).not.toHaveBeenCalled()
       // Status menu should be open
       expect(screen.getByRole("listbox")).toBeInTheDocument()
     })
@@ -223,14 +189,15 @@ describe("TaskCard", () => {
       expect(onClick).toHaveBeenCalledWith("rui-4rt.5")
     })
 
-    it("calls onClick and expands together", () => {
+    it("calls onClick without showing expanded details", () => {
       const onClick = vi.fn()
       render(<TaskCard task={fullTask} onClick={onClick} />)
 
       fireEvent.click(screen.getByRole("button", { name: fullTask.title }))
 
       expect(onClick).toHaveBeenCalledWith("rui-4rt.5")
-      expect(screen.getByText(fullTask.description!)).toBeInTheDocument()
+      // Description should NOT be visible (clicking opens dialog instead of expanding inline)
+      expect(screen.queryByText(fullTask.description!)).not.toBeInTheDocument()
     })
   })
 
@@ -250,15 +217,6 @@ describe("TaskCard", () => {
     it("content area has button role", () => {
       render(<TaskCard task={baseTask} />)
       expect(screen.getByRole("button", { name: baseTask.title })).toBeInTheDocument()
-    })
-
-    it("content area has aria-expanded attribute", () => {
-      render(<TaskCard task={fullTask} />)
-      const contentButton = screen.getByRole("button", { name: fullTask.title })
-      expect(contentButton).toHaveAttribute("aria-expanded", "false")
-
-      fireEvent.click(contentButton)
-      expect(contentButton).toHaveAttribute("aria-expanded", "true")
     })
 
     it("status button has aria-haspopup when interactive", () => {
