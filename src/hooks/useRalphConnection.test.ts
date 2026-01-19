@@ -385,6 +385,107 @@ describe("useRalphConnection", () => {
       // Status should remain starting (don't override transitional states)
       expect(useAppStore.getState().ralphStatus).toBe("starting")
     })
+
+    it("extracts token usage from stream_event message_delta events", () => {
+      renderHook(() => useRalphConnection())
+
+      act(() => {
+        getWs()?.simulateOpen()
+      })
+
+      // Initial token usage should be zero
+      expect(useAppStore.getState().tokenUsage).toEqual({ input: 0, output: 0 })
+
+      // Simulate a message_delta event with token usage (like from Claude API)
+      const streamEvent = {
+        type: "stream_event",
+        timestamp: 1234,
+        event: {
+          type: "message_delta",
+          delta: { stop_reason: "tool_use", stop_sequence: null },
+          usage: {
+            input_tokens: 100,
+            cache_creation_input_tokens: 500,
+            cache_read_input_tokens: 200,
+            output_tokens: 50,
+          },
+        },
+      }
+
+      act(() => {
+        getWs()?.simulateMessage({ type: "ralph:event", event: streamEvent })
+      })
+
+      // Should add up all input tokens (100 + 500 + 200 = 800)
+      expect(useAppStore.getState().tokenUsage).toEqual({ input: 800, output: 50 })
+    })
+
+    it("accumulates token usage across multiple message_delta events", () => {
+      renderHook(() => useRalphConnection())
+
+      act(() => {
+        getWs()?.simulateOpen()
+      })
+
+      // First message
+      act(() => {
+        getWs()?.simulateMessage({
+          type: "ralph:event",
+          event: {
+            type: "stream_event",
+            timestamp: 1234,
+            event: {
+              type: "message_delta",
+              usage: { input_tokens: 100, output_tokens: 50 },
+            },
+          },
+        })
+      })
+
+      // Second message
+      act(() => {
+        getWs()?.simulateMessage({
+          type: "ralph:event",
+          event: {
+            type: "stream_event",
+            timestamp: 1235,
+            event: {
+              type: "message_delta",
+              usage: { input_tokens: 200, output_tokens: 100 },
+            },
+          },
+        })
+      })
+
+      // Should accumulate: 100+200 = 300 input, 50+100 = 150 output
+      expect(useAppStore.getState().tokenUsage).toEqual({ input: 300, output: 150 })
+    })
+
+    it("ignores stream events without usage data", () => {
+      renderHook(() => useRalphConnection())
+
+      act(() => {
+        getWs()?.simulateOpen()
+      })
+
+      // Simulate a message_start event (no usage extraction)
+      act(() => {
+        getWs()?.simulateMessage({
+          type: "ralph:event",
+          event: {
+            type: "stream_event",
+            timestamp: 1234,
+            event: {
+              type: "message_start",
+              message: { id: "msg_123" },
+            },
+          },
+        })
+      })
+
+      // Token usage should remain zero
+      expect(useAppStore.getState().tokenUsage).toEqual({ input: 0, output: 0 })
+    })
   })
 
   describe("connect and disconnect", () => {

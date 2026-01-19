@@ -67,10 +67,27 @@ function handleMessage(event: MessageEvent): void {
 
       case "ralph:event":
         if (data.event && typeof data.event === "object") {
-          store.addEvent(data.event as { type: string; timestamp: number; [key: string]: unknown })
+          const event = data.event as { type: string; timestamp: number; [key: string]: unknown }
+          store.addEvent(event)
           // If we're receiving events, Ralph must be running - fix any inconsistent status
           if (store.ralphStatus === "stopped") {
             store.setRalphStatus("running")
+          }
+          // Extract token usage from stream events
+          if (event.type === "stream_event") {
+            const streamEvent = (event as any).event
+            if (streamEvent?.type === "message_delta" && streamEvent.usage) {
+              const usage = streamEvent.usage
+              // Calculate total input tokens (including cache tokens which are billed)
+              const inputTokens =
+                (usage.input_tokens || 0) +
+                (usage.cache_creation_input_tokens || 0) +
+                (usage.cache_read_input_tokens || 0)
+              const outputTokens = usage.output_tokens || 0
+              if (inputTokens > 0 || outputTokens > 0) {
+                store.addTokenUsage({ input: inputTokens, output: outputTokens })
+              }
+            }
           }
         }
         break
