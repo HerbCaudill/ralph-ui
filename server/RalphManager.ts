@@ -53,6 +53,7 @@ export class RalphManager extends EventEmitter {
   private process: ChildProcess | null = null
   private _status: RalphStatus = "stopped"
   private buffer = ""
+  private pausedEvents: RalphEvent[] = [] // Buffer for events while paused
   private options: {
     command: string
     args: string[]
@@ -131,6 +132,7 @@ export class RalphManager extends EventEmitter {
         this.process.on("exit", (code, signal) => {
           this.process = null
           this.buffer = ""
+          this.pausedEvents = [] // Clear any buffered events
           this.setStatus("stopped")
           this.emit("exit", { code, signal })
         })
@@ -186,6 +188,12 @@ export class RalphManager extends EventEmitter {
 
     this.process.kill("SIGCONT")
     this.setStatus("running")
+
+    // Emit any events that were buffered while paused
+    for (const event of this.pausedEvents) {
+      this.emit("event", event)
+    }
+    this.pausedEvents = []
   }
 
   /**
@@ -292,10 +300,17 @@ export class RalphManager extends EventEmitter {
   private parseLine(line: string): void {
     try {
       const event = JSON.parse(line) as RalphEvent
-      this.emit("event", event)
+      // Buffer events while paused, emit immediately otherwise
+      if (this._status === "paused") {
+        this.pausedEvents.push(event)
+      } else {
+        this.emit("event", event)
+      }
     } catch {
-      // Not valid JSON - emit as raw output
-      this.emit("output", line)
+      // Not valid JSON - emit as raw output (only if not paused)
+      if (this._status !== "paused") {
+        this.emit("output", line)
+      }
     }
   }
 

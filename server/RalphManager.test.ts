@@ -398,6 +398,90 @@ describe("RalphManager", () => {
     it("throws if not running", () => {
       expect(() => manager.resume()).toThrow("Ralph is not running")
     })
+
+    it("emits buffered events when resumed", async () => {
+      const events: RalphEvent[] = []
+      manager.on("event", evt => events.push(evt))
+
+      const startPromise = manager.start()
+      mockProcess.emit("spawn")
+      await startPromise
+
+      manager.pause()
+
+      // Simulate events arriving while paused
+      mockProcess.stdout.emit("data", Buffer.from('{"type":"buffered1","timestamp":1}\n'))
+      mockProcess.stdout.emit("data", Buffer.from('{"type":"buffered2","timestamp":2}\n'))
+
+      // Events should not be emitted while paused
+      expect(events).toHaveLength(0)
+
+      manager.resume()
+
+      // Events should now be emitted
+      expect(events).toHaveLength(2)
+      expect(events[0]).toMatchObject({ type: "buffered1" })
+      expect(events[1]).toMatchObject({ type: "buffered2" })
+    })
+  })
+
+  describe("pause event buffering", () => {
+    it("does not emit events while paused", async () => {
+      const events: RalphEvent[] = []
+      manager.on("event", evt => events.push(evt))
+
+      const startPromise = manager.start()
+      mockProcess.emit("spawn")
+      await startPromise
+
+      manager.pause()
+
+      mockProcess.stdout.emit("data", Buffer.from('{"type":"test","timestamp":123}\n'))
+
+      expect(events).toHaveLength(0)
+    })
+
+    it("does not emit output while paused", async () => {
+      const outputs: string[] = []
+      manager.on("output", line => outputs.push(line))
+
+      const startPromise = manager.start()
+      mockProcess.emit("spawn")
+      await startPromise
+
+      manager.pause()
+
+      mockProcess.stdout.emit("data", Buffer.from("plain text line\n"))
+
+      expect(outputs).toHaveLength(0)
+    })
+
+    it("clears buffered events on process exit", async () => {
+      const events: RalphEvent[] = []
+      manager.on("event", evt => events.push(evt))
+
+      const startPromise = manager.start()
+      mockProcess.emit("spawn")
+      await startPromise
+
+      manager.pause()
+
+      // Buffer some events
+      mockProcess.stdout.emit("data", Buffer.from('{"type":"buffered","timestamp":1}\n'))
+
+      // Process exits
+      mockProcess.emit("exit", 0, null)
+
+      // Restart the manager
+      const newProcess = createMockProcess()
+      mockSpawn.mockReturnValue(newProcess)
+      const startPromise2 = manager.start()
+      newProcess.emit("spawn")
+      await startPromise2
+
+      // Events should not include the old buffered event
+      expect(events).toHaveLength(0)
+    })
   })
 
   describe("stopAfterCurrent", () => {
