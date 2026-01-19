@@ -2,3 +2,4 @@ export { MainLayout, type MainLayoutProps, type MainLayoutHandle } from "./MainL
 export { Header, type HeaderProps } from "./Header"
 export { StatusBar, type StatusBarProps } from "./StatusBar"
 export { WorkspacePicker, type WorkspacePickerProps, type WorkspaceInfo } from "./WorkspacePicker"
+export { HotkeysDialog, type HotkeysDialogProps } from "./HotkeysDialog"

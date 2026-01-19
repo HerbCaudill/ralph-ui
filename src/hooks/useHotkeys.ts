@@ -174,6 +174,7 @@ export function useHotkeys({ handlers, enabled = true }: UseHotkeysOptions): Use
               "agentPause",
               "agentStopAfterCurrent",
               "cycleTheme",
+              "showHotkeys",
             ]
 
             if (isInput && !allowedInInput.includes(action)) {

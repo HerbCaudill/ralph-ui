@@ -1,5 +1,5 @@
-import { useRef, useCallback } from "react"
-import { MainLayout, type MainLayoutHandle, StatusBar } from "./components/layout"
+import { useRef, useCallback, useState } from "react"
+import { MainLayout, type MainLayoutHandle, StatusBar, HotkeysDialog } from "./components/layout"
 import { ChatInput, type ChatInputHandle } from "./components/chat/ChatInput"
 import { EventStream } from "./components/events"
 import { TaskSidebar } from "./components/tasks/TaskSidebar"
@@ -200,6 +200,9 @@ export function App() {
   // Task dialog state
   const taskDialog = useTaskDialog()
 
+  // Hotkeys dialog state
+  const [hotkeysDialogOpen, setHotkeysDialogOpen] = useState(false)
+
   // Handle task click - open the dialog
   const handleTaskClick = useCallback(
     (taskId: string) => {
@@ -265,6 +268,14 @@ export function App() {
     cycleTheme()
   }, [cycleTheme])
 
+  const handleShowHotkeys = useCallback(() => {
+    setHotkeysDialogOpen(true)
+  }, [])
+
+  const handleCloseHotkeysDialog = useCallback(() => {
+    setHotkeysDialogOpen(false)
+  }, [])
+
   // Register hotkeys
   useHotkeys({
     handlers: {
@@ -278,6 +289,7 @@ export function App() {
       focusTaskInput: handleFocusTaskInput,
       focusChatInput: handleFocusChatInput,
       cycleTheme: handleCycleTheme,
+      showHotkeys: handleShowHotkeys,
     },
   })
 
@@ -297,6 +309,7 @@ export function App() {
         onClose={taskDialog.closeDialog}
         onSave={taskDialog.saveTask}
       />
+      <HotkeysDialog open={hotkeysDialogOpen} onClose={handleCloseHotkeysDialog} />
     </>
   )
 }
