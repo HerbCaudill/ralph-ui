@@ -348,6 +348,34 @@ export function ToolUseCard({ event, className, defaultExpanded = false }: ToolU
                 </pre>
               )}
 
+              {/* Generic output for Glob, Grep, WebSearch, WebFetch, etc. */}
+              {event.output &&
+                !outputSummary &&
+                !bashPreviewInfo &&
+                event.tool !== "Edit" &&
+                (() => {
+                  const { preview, remainingLines } = getPreviewInfo(event.output)
+                  return (
+                    <pre
+                      onClick={
+                        !isExpanded && remainingLines > 0 ? () => setIsExpanded(true) : undefined
+                      }
+                      className={cn(
+                        "bg-muted/30 text-foreground/80 mt-1 overflow-auto rounded border p-2 font-mono text-xs whitespace-pre-wrap",
+                        !isExpanded && remainingLines > 0 && "cursor-pointer",
+                      )}
+                    >
+                      {isExpanded ? event.output : preview}
+                      {!isExpanded && remainingLines > 0 && (
+                        <>
+                          {"\n"}
+                          <span className="text-muted-foreground">... +{remainingLines} lines</span>
+                        </>
+                      )}
+                    </pre>
+                  )
+                })()}
+
               {/* Error - show first line only */}
               {event.error && <div className="my-1 text-red-500">{event.error.split("\n")[0]}</div>}
             </div>

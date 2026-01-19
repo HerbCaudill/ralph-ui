@@ -278,6 +278,66 @@ describe("ToolUseCard", () => {
     })
   })
 
+  describe("Glob tool output display", () => {
+    it("shows glob results when output is present", () => {
+      render(
+        <ToolUseCard
+          event={createToolEvent("Glob", {
+            input: { pattern: "**/*.tsx" },
+            output: "src/App.tsx\nsrc/Button.tsx\nsrc/Header.tsx",
+          })}
+        />,
+      )
+
+      expect(screen.getByText(/src\/App\.tsx/)).toBeInTheDocument()
+      expect(screen.getByText(/src\/Button\.tsx/)).toBeInTheDocument()
+      expect(screen.getByText(/src\/Header\.tsx/)).toBeInTheDocument()
+    })
+
+    it("shows truncated preview and expands on click for long glob results", () => {
+      const manyFiles = Array.from({ length: 10 }, (_, i) => `src/file${i}.tsx`).join("\n")
+      render(
+        <ToolUseCard
+          event={createToolEvent("Glob", {
+            input: { pattern: "**/*.tsx" },
+            output: manyFiles,
+          })}
+        />,
+      )
+
+      // First 5 files should be visible
+      expect(screen.getByText(/src\/file0\.tsx/)).toBeInTheDocument()
+
+      // Expand indicator should be present
+      expect(screen.getByText(/\.\.\. \+5 lines/)).toBeInTheDocument()
+
+      // File9 should not be visible initially
+      expect(screen.queryByText("src/file9.tsx")).not.toBeInTheDocument()
+
+      // Click to expand
+      fireEvent.click(screen.getByText(/src\/file0\.tsx/))
+
+      // All files should now be visible
+      expect(screen.getByText(/src\/file9\.tsx/)).toBeInTheDocument()
+    })
+  })
+
+  describe("Grep tool output display", () => {
+    it("shows grep results when output is present", () => {
+      render(
+        <ToolUseCard
+          event={createToolEvent("Grep", {
+            input: { pattern: "TODO" },
+            output: "src/App.tsx:15: // TODO: fix this\nsrc/utils.ts:42: // TODO: refactor",
+          })}
+        />,
+      )
+
+      expect(screen.getByText(/src\/App\.tsx:15:/)).toBeInTheDocument()
+      expect(screen.getByText(/src\/utils\.ts:42:/)).toBeInTheDocument()
+    })
+  })
+
   describe("accessibility", () => {
     it("shows expand indicator and expands on click", () => {
       const longOutput = "line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7"
