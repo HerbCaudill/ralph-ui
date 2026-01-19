@@ -2,8 +2,10 @@ import { cn } from "@/lib/utils"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { CodeBlock } from "@/components/ui/code-block"
+import { TaskIdLink } from "@/components/ui/TaskIdLink"
 import { useTheme } from "@/hooks/useTheme"
 import type { Components } from "react-markdown"
+import type { ReactNode } from "react"
 
 export interface AssistantTextEvent {
   type: "assistant_text" | "text"
@@ -15,7 +17,35 @@ export function AssistantText({ event, className }: Props) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
 
+  // Helper to process children and replace text nodes with TaskIdLink
+  const processChildren = (children: ReactNode): ReactNode => {
+    if (typeof children === "string") {
+      return <TaskIdLink>{children}</TaskIdLink>
+    }
+    return children
+  }
+
   const components: Components = {
+    // Process text in paragraph elements
+    p(props) {
+      const { children, ...rest } = props
+      return <p {...rest}>{processChildren(children)}</p>
+    },
+    // Process text in list items
+    li(props) {
+      const { children, ...rest } = props
+      return <li {...rest}>{processChildren(children)}</li>
+    },
+    // Process text in strong elements
+    strong(props) {
+      const { children, ...rest } = props
+      return <strong {...rest}>{processChildren(children)}</strong>
+    },
+    // Process text in emphasis elements
+    em(props) {
+      const { children, ...rest } = props
+      return <em {...rest}>{processChildren(children)}</em>
+    },
     code(props) {
       const { children, className: codeClassName, ...rest } = props
       // Check if this is a code block (inside a pre) by looking at the className
@@ -29,10 +59,10 @@ export function AssistantText({ event, className }: Props) {
         return <CodeBlock code={code} language={language} isDark={isDark} />
       }
 
-      // Otherwise it's inline code
+      // Otherwise it's inline code - process for task IDs
       return (
         <code className={codeClassName} {...rest}>
-          {children}
+          {processChildren(children)}
         </code>
       )
     },

@@ -8,6 +8,7 @@ import { TaskDetailsDialog } from "./components/tasks/TaskDetailsDialog"
 import { QuickTaskInput, type QuickTaskInputHandle } from "./components/tasks/QuickTaskInput"
 import { useAppStore, selectRalphStatus, selectIsRalphRunning, selectIsConnected } from "./store"
 import { useRalphConnection, useHotkeys, useTheme, useTasks, useTaskDialog } from "./hooks"
+import { TaskDialogProvider } from "./contexts"
 
 // API Functions (for hotkeys)
 
@@ -259,7 +260,7 @@ export function App() {
   }, [])
 
   return (
-    <>
+    <TaskDialogProvider openTaskById={taskDialog.openDialogById}>
       <MainLayout
         ref={layoutRef}
         sidebar={
@@ -275,6 +276,6 @@ export function App() {
         onSave={taskDialog.saveTask}
       />
       <HotkeysDialog open={hotkeysDialogOpen} onClose={handleCloseHotkeysDialog} />
-    </>
+    </TaskDialogProvider>
   )
 }

@@ -1,6 +1,7 @@
 import { cn, toRelativePath } from "@/lib/utils"
 import { useState } from "react"
 import { useAppStore, selectWorkspace } from "@/store"
+import { TaskIdLink } from "@/components/ui/TaskIdLink"
 
 // Types
 
@@ -301,7 +302,7 @@ export function ToolUseCard({ event, className, defaultExpanded = false }: ToolU
           {/* Summary (file path, command, etc.) */}
           {summary && (
             <span className="text-foreground/80 min-w-0 flex-1 truncate font-mono text-xs">
-              {summary}
+              <TaskIdLink>{summary}</TaskIdLink>
             </span>
           )}
         </div>
@@ -336,7 +337,9 @@ export function ToolUseCard({ event, className, defaultExpanded = false }: ToolU
                     !isExpanded && bashPreviewInfo.remainingLines > 0 && "cursor-pointer",
                   )}
                 >
-                  {isExpanded ? event.output : bashPreviewInfo.preview}
+                  <TaskIdLink>
+                    {isExpanded ? (event.output ?? "") : bashPreviewInfo.preview}
+                  </TaskIdLink>
                   {!isExpanded && bashPreviewInfo.remainingLines > 0 && (
                     <>
                       {"\n"}
@@ -365,7 +368,7 @@ export function ToolUseCard({ event, className, defaultExpanded = false }: ToolU
                         !isExpanded && remainingLines > 0 && "cursor-pointer",
                       )}
                     >
-                      {isExpanded ? event.output : preview}
+                      <TaskIdLink>{isExpanded ? event.output : preview}</TaskIdLink>
                       {!isExpanded && remainingLines > 0 && (
                         <>
                           {"\n"}
