@@ -40,6 +40,12 @@ export interface ChatInputProps {
    * Additional CSS classes.
    */
   className?: string
+
+  /**
+   * Aria label for the textarea.
+   * @default "Message input"
+   */
+  "aria-label"?: string
 }
 
 export interface ChatInputHandle {
@@ -53,7 +59,13 @@ export interface ChatInputHandle {
  * Submits on Enter key (Shift+Enter for new line), clears after send.
  */
 export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function ChatInput(
-  { onSubmit, placeholder = "Send Ralph a message...", disabled = false, className },
+  {
+    onSubmit,
+    placeholder = "Send Ralph a message...",
+    disabled = false,
+    className,
+    "aria-label": ariaLabel = "Message input",
+  },
   ref,
 ) {
   const accentColor = useAppStore(selectAccentColor)
@@ -110,7 +122,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function Ch
           "focus:ring-0 focus:outline-none",
           "disabled:cursor-not-allowed disabled:opacity-50",
         )}
-        aria-label="Message input"
+        aria-label={ariaLabel}
       />
       <div className="flex justify-end">
         <button
