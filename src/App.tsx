@@ -4,6 +4,7 @@ import { ChatInput, type ChatInputHandle } from "./components/chat/ChatInput"
 import { EventStream } from "./components/events"
 import { TaskSidebar } from "./components/tasks/TaskSidebar"
 import { TaskList } from "./components/tasks/TaskList"
+import { TaskDetailsDialog } from "./components/tasks/TaskDetailsDialog"
 import { QuickTaskInput, type QuickTaskInputHandle } from "./components/tasks/QuickTaskInput"
 import {
   useAppStore,
@@ -12,7 +13,7 @@ import {
   selectIsRalphRunning,
   selectIsConnected,
 } from "./store"
-import { useRalphConnection, useHotkeys, useTheme, useTasks } from "./hooks"
+import { useRalphConnection, useHotkeys, useTheme, useTasks, useTaskDialog } from "./hooks"
 
 // API Functions (for hotkeys)
 
@@ -81,15 +82,22 @@ async function stopAfterCurrentRalph(): Promise<{ ok: boolean; error?: string }>
 
 interface TasksSidebarPanelProps {
   quickInputRef?: React.RefObject<QuickTaskInputHandle | null>
+  onTaskClick?: (taskId: string) => void
+  onTaskCreated?: () => void
 }
 
-function TasksSidebarPanel({ quickInputRef }: TasksSidebarPanelProps) {
+function TasksSidebarPanel({ quickInputRef, onTaskClick, onTaskCreated }: TasksSidebarPanelProps) {
   const { tasks, refresh } = useTasks({ all: true })
+
+  const handleTaskCreated = useCallback(async () => {
+    await refresh()
+    onTaskCreated?.()
+  }, [refresh, onTaskCreated])
 
   return (
     <TaskSidebar
-      quickInput={<QuickTaskInput ref={quickInputRef} onTaskCreated={refresh} />}
-      taskList={<TaskList tasks={tasks} />}
+      quickInput={<QuickTaskInput ref={quickInputRef} onTaskCreated={handleTaskCreated} />}
+      taskList={<TaskList tasks={tasks} onTaskClick={onTaskClick} />}
     />
   )
 }
@@ -167,6 +175,17 @@ export function App() {
   // Initialize theme management (applies dark class and listens for system changes)
   useTheme()
 
+  // Task dialog state
+  const taskDialog = useTaskDialog()
+
+  // Handle task click - open the dialog
+  const handleTaskClick = useCallback(
+    (taskId: string) => {
+      taskDialog.openDialogById(taskId)
+    },
+    [taskDialog],
+  )
+
   // Get state for hotkey conditions
   const ralphStatus = useAppStore(selectRalphStatus)
   const isConnected = useAppStore(selectIsConnected)
@@ -236,11 +255,21 @@ export function App() {
   })
 
   return (
-    <MainLayout
-      ref={layoutRef}
-      sidebar={<TasksSidebarPanel quickInputRef={quickTaskInputRef} />}
-      main={<AgentView chatInputRef={chatInputRef} />}
-      statusBar={<StatusBar />}
-    />
+    <>
+      <MainLayout
+        ref={layoutRef}
+        sidebar={
+          <TasksSidebarPanel quickInputRef={quickTaskInputRef} onTaskClick={handleTaskClick} />
+        }
+        main={<AgentView chatInputRef={chatInputRef} />}
+        statusBar={<StatusBar />}
+      />
+      <TaskDetailsDialog
+        task={taskDialog.selectedTask}
+        open={taskDialog.isOpen}
+        onClose={taskDialog.closeDialog}
+        onSave={taskDialog.saveTask}
+      />
+    </>
   )
 }

@@ -22,6 +22,8 @@ export { useTheme, getStoredTheme, type UseThemeReturn } from "./useTheme"
 
 export { useTasks, type UseTasksOptions, type UseTasksResult } from "./useTasks"
 
+export { useTaskDialog, type UseTaskDialogOptions, type UseTaskDialogResult } from "./useTaskDialog"
+
 export {
   useStreamingState,
   type StreamingMessage,

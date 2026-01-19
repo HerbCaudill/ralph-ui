@@ -1,0 +1,302 @@
+import { useState, useCallback, useEffect } from "react"
+import { Circle, CircleDot, CheckCircle2, Ban, Clock, type LucideIcon } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { cn } from "@/lib/utils"
+import type { TaskCardTask, TaskStatus } from "./TaskCard"
+
+// Types
+
+export interface TaskDetailsDialogProps {
+  /** The task to display/edit, or null if dialog should be closed */
+  task: TaskCardTask | null
+  /** Whether the dialog is open */
+  open: boolean
+  /** Callback when the dialog should close */
+  onClose: () => void
+  /** Callback when the task is saved */
+  onSave?: (id: string, updates: TaskUpdateData) => void | Promise<void>
+  /** Whether the dialog is in read-only mode (default: false) */
+  readOnly?: boolean
+}
+
+export interface TaskUpdateData {
+  title?: string
+  description?: string
+  status?: TaskStatus
+  priority?: number
+}
+
+// Status Configuration
+
+interface StatusConfig {
+  icon: LucideIcon
+  label: string
+  color: string
+}
+
+const statusConfig: Record<TaskStatus, StatusConfig> = {
+  open: {
+    icon: Circle,
+    label: "Open",
+    color: "text-gray-500",
+  },
+  in_progress: {
+    icon: CircleDot,
+    label: "In Progress",
+    color: "text-blue-500",
+  },
+  blocked: {
+    icon: Ban,
+    label: "Blocked",
+    color: "text-red-500",
+  },
+  deferred: {
+    icon: Clock,
+    label: "Deferred",
+    color: "text-amber-500",
+  },
+  closed: {
+    icon: CheckCircle2,
+    label: "Closed",
+    color: "text-green-500",
+  },
+}
+
+const statusOptions: TaskStatus[] = ["open", "in_progress", "blocked", "deferred", "closed"]
+
+const priorityOptions = [
+  { value: 0, label: "P0 - Critical" },
+  { value: 1, label: "P1 - High" },
+  { value: 2, label: "P2 - Medium" },
+  { value: 3, label: "P3 - Low" },
+  { value: 4, label: "P4 - Lowest" },
+]
+
+// TaskDetailsDialog Component
+
+/**
+ * Dialog for viewing and editing task details.
+ * Displays task title, description, status, and priority with editable fields.
+ */
+export function TaskDetailsDialog({
+  task,
+  open,
+  onClose,
+  onSave,
+  readOnly = false,
+}: TaskDetailsDialogProps) {
+  // Local state for editable fields
+  const [title, setTitle] = useState("")
+  const [description, setDescription] = useState("")
+  const [status, setStatus] = useState<TaskStatus>("open")
+  const [priority, setPriority] = useState<number>(2)
+  const [isSaving, setIsSaving] = useState(false)
+  const [hasChanges, setHasChanges] = useState(false)
+
+  // Reset local state when task changes
+  useEffect(() => {
+    if (task) {
+      setTitle(task.title)
+      setDescription(task.description ?? "")
+      setStatus(task.status)
+      setPriority(task.priority ?? 2)
+      setHasChanges(false)
+    }
+  }, [task])
+
+  // Track changes
+  useEffect(() => {
+    if (!task) return
+    const changed =
+      title !== task.title ||
+      description !== (task.description ?? "") ||
+      status !== task.status ||
+      priority !== (task.priority ?? 2)
+    setHasChanges(changed)
+  }, [task, title, description, status, priority])
+
+  const handleSave = useCallback(async () => {
+    if (!task || !onSave || readOnly) return
+
+    const updates: TaskUpdateData = {}
+    if (title !== task.title) updates.title = title
+    if (description !== (task.description ?? "")) updates.description = description
+    if (status !== task.status) updates.status = status
+    if (priority !== (task.priority ?? 2)) updates.priority = priority
+
+    if (Object.keys(updates).length === 0) {
+      onClose()
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      await onSave(task.id, updates)
+      onClose()
+    } catch (error) {
+      console.error("Failed to save task:", error)
+    } finally {
+      setIsSaving(false)
+    }
+  }, [task, onSave, readOnly, title, description, status, priority, onClose])
+
+  const handleClose = useCallback(() => {
+    onClose()
+  }, [onClose])
+
+  if (!task) return null
+
+  const StatusIcon = statusConfig[status].icon
+
+  return (
+    <Dialog open={open} onOpenChange={isOpen => !isOpen && handleClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <StatusIcon className={cn("h-5 w-5", statusConfig[status].color)} />
+            <span className="text-muted-foreground font-mono text-sm">{task.id}</span>
+          </DialogTitle>
+          <DialogDescription className="sr-only">Edit task details</DialogDescription>
+        </DialogHeader>
+
+        <div className="grid gap-4 py-4">
+          {/* Title */}
+          <div className="grid gap-2">
+            <Label htmlFor="task-title">Title</Label>
+            {readOnly ?
+              <p className="text-sm">{title}</p>
+            : <Input
+                id="task-title"
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                placeholder="Task title"
+              />
+            }
+          </div>
+
+          {/* Description */}
+          <div className="grid gap-2">
+            <Label htmlFor="task-description">Description</Label>
+            {readOnly ?
+              <p className="text-muted-foreground text-sm whitespace-pre-wrap">
+                {description || "No description"}
+              </p>
+            : <Textarea
+                id="task-description"
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                placeholder="Task description (optional)"
+                rows={4}
+              />
+            }
+          </div>
+
+          {/* Status and Priority row */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Status */}
+            <div className="grid gap-2">
+              <Label htmlFor="task-status">Status</Label>
+              {readOnly ?
+                <div className="flex items-center gap-2">
+                  <StatusIcon className={cn("h-4 w-4", statusConfig[status].color)} />
+                  <span className="text-sm">{statusConfig[status].label}</span>
+                </div>
+              : <Select value={status} onValueChange={value => setStatus(value as TaskStatus)}>
+                  <SelectTrigger id="task-status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map(s => {
+                      const config = statusConfig[s]
+                      const Icon = config.icon
+                      return (
+                        <SelectItem key={s} value={s}>
+                          <div className="flex items-center gap-2">
+                            <Icon className={cn("h-4 w-4", config.color)} />
+                            <span>{config.label}</span>
+                          </div>
+                        </SelectItem>
+                      )
+                    })}
+                  </SelectContent>
+                </Select>
+              }
+            </div>
+
+            {/* Priority */}
+            <div className="grid gap-2">
+              <Label htmlFor="task-priority">Priority</Label>
+              {readOnly ?
+                <span className="text-sm">
+                  {priorityOptions.find(p => p.value === priority)?.label ?? `P${priority}`}
+                </span>
+              : <Select
+                  value={String(priority)}
+                  onValueChange={value => setPriority(Number(value))}
+                >
+                  <SelectTrigger id="task-priority">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {priorityOptions.map(p => (
+                      <SelectItem key={p.value} value={String(p.value)}>
+                        {p.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              }
+            </div>
+          </div>
+
+          {/* Metadata (read-only) */}
+          {(task.issue_type || task.parent) && (
+            <div className="border-border text-muted-foreground border-t pt-4 text-xs">
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                {task.issue_type && (
+                  <span>
+                    Type: <span className="text-foreground capitalize">{task.issue_type}</span>
+                  </span>
+                )}
+                {task.parent && (
+                  <span>
+                    Parent: <span className="text-foreground font-mono">{task.parent}</span>
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {!readOnly && (
+          <DialogFooter>
+            <Button variant="outline" onClick={handleClose} disabled={isSaving}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave} disabled={isSaving || !hasChanges}>
+              {isSaving ? "Saving..." : "Save changes"}
+            </Button>
+          </DialogFooter>
+        )}
+      </DialogContent>
+    </Dialog>
+  )
+}

@@ -361,6 +361,63 @@ function createApp(config: ServerConfig): Express {
     }
   })
 
+  // Get a single task by ID
+  app.get("/api/tasks/:id", async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params
+
+      const bdProxy = getBdProxy()
+      const issues = await bdProxy.show(id)
+
+      if (issues.length === 0) {
+        res.status(404).json({ ok: false, error: "Task not found" })
+        return
+      }
+
+      res.status(200).json({ ok: true, issue: issues[0] })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to get task"
+      res.status(500).json({ ok: false, error: message })
+    }
+  })
+
+  // Update a task
+  app.patch("/api/tasks/:id", async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params
+      const { title, description, priority, status, type, assignee, parent } = req.body as {
+        title?: string
+        description?: string
+        priority?: number
+        status?: "open" | "in_progress" | "blocked" | "deferred" | "closed"
+        type?: string
+        assignee?: string
+        parent?: string
+      }
+
+      const bdProxy = getBdProxy()
+      const issues = await bdProxy.update(id, {
+        title,
+        description,
+        priority,
+        status,
+        type,
+        assignee,
+        parent,
+      })
+
+      if (issues.length === 0) {
+        res.status(404).json({ ok: false, error: "Task not found" })
+        return
+      }
+
+      res.status(200).json({ ok: true, issue: issues[0] })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to update task"
+      res.status(500).json({ ok: false, error: message })
+    }
+  })
+
   // Static assets from dist (built by Vite)
   app.use(express.static(config.appDir))
 
