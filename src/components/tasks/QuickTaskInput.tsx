@@ -146,9 +146,9 @@ export const QuickTaskInput = forwardRef<QuickTaskInputHandle, QuickTaskInputPro
             type="submit"
             disabled={isDisabled || !title.trim()}
             className={cn(
-              "text-muted-foreground hover:text-foreground",
-              "inline-flex shrink-0 items-center justify-center p-1",
-              "focus-visible:text-foreground focus:outline-none",
+              "bg-primary text-primary-foreground hover:bg-primary/90",
+              "inline-flex shrink-0 items-center justify-center rounded-md p-1",
+              "focus-visible:ring-ring/50 focus:outline-none focus-visible:ring-[3px]",
               "disabled:pointer-events-none disabled:opacity-50",
               "transition-colors",
             )}
