@@ -68,6 +68,10 @@ function handleMessage(event: MessageEvent): void {
       case "ralph:event":
         if (data.event && typeof data.event === "object") {
           store.addEvent(data.event as { type: string; timestamp: number; [key: string]: unknown })
+          // If we're receiving events, Ralph must be running - fix any inconsistent status
+          if (store.ralphStatus === "stopped") {
+            store.setRalphStatus("running")
+          }
         }
         break
 
@@ -83,6 +87,10 @@ function handleMessage(event: MessageEvent): void {
           timestamp: timestamp ?? Date.now(),
           line: data.line,
         })
+        // If we're receiving output, Ralph must be running - fix any inconsistent status
+        if (store.ralphStatus === "stopped") {
+          store.setRalphStatus("running")
+        }
         break
 
       case "ralph:error":

@@ -307,6 +307,84 @@ describe("useRalphConnection", () => {
         expect.objectContaining({ type: "server_error", error: "Ralph is not running" }),
       )
     })
+
+    it("updates status to running when ralph:event is received while stopped", () => {
+      renderHook(() => useRalphConnection())
+
+      act(() => {
+        getWs()?.simulateOpen()
+      })
+
+      // Ensure status is stopped initially
+      expect(useAppStore.getState().ralphStatus).toBe("stopped")
+
+      const event = { type: "tool_use", timestamp: 1234, tool: "read" }
+
+      act(() => {
+        getWs()?.simulateMessage({ type: "ralph:event", event })
+      })
+
+      // Status should be updated to running since we received an event
+      expect(useAppStore.getState().ralphStatus).toBe("running")
+    })
+
+    it("updates status to running when ralph:output is received while stopped", () => {
+      renderHook(() => useRalphConnection())
+
+      act(() => {
+        getWs()?.simulateOpen()
+      })
+
+      // Ensure status is stopped initially
+      expect(useAppStore.getState().ralphStatus).toBe("stopped")
+
+      act(() => {
+        getWs()?.simulateMessage({
+          type: "ralph:output",
+          line: "Some output",
+          timestamp: 1234,
+        })
+      })
+
+      // Status should be updated to running since we received output
+      expect(useAppStore.getState().ralphStatus).toBe("running")
+    })
+
+    it("does not change status when ralph:event is received while already running", () => {
+      renderHook(() => useRalphConnection())
+
+      act(() => {
+        getWs()?.simulateOpen()
+        useAppStore.getState().setRalphStatus("running")
+      })
+
+      const event = { type: "tool_use", timestamp: 1234, tool: "read" }
+
+      act(() => {
+        getWs()?.simulateMessage({ type: "ralph:event", event })
+      })
+
+      // Status should remain running
+      expect(useAppStore.getState().ralphStatus).toBe("running")
+    })
+
+    it("does not change status when ralph:event is received while starting", () => {
+      renderHook(() => useRalphConnection())
+
+      act(() => {
+        getWs()?.simulateOpen()
+        useAppStore.getState().setRalphStatus("starting")
+      })
+
+      const event = { type: "tool_use", timestamp: 1234, tool: "read" }
+
+      act(() => {
+        getWs()?.simulateMessage({ type: "ralph:event", event })
+      })
+
+      // Status should remain starting (don't override transitional states)
+      expect(useAppStore.getState().ralphStatus).toBe("starting")
+    })
   })
 
   describe("connect and disconnect", () => {
