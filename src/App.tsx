@@ -12,6 +12,7 @@ import {
   selectRalphStatus,
   selectIsRalphRunning,
   selectIsConnected,
+  selectCurrentTask,
 } from "./store"
 import { useRalphConnection, useHotkeys, useTheme, useTasks, useTaskDialog } from "./hooks"
 
@@ -112,6 +113,9 @@ function AgentView({ chatInputRef }: AgentViewProps) {
 
   return (
     <div className="flex h-full flex-col">
+      {/* Status bar at top of main panel */}
+      <StatusBar />
+
       {/* Event stream */}
       <div className="min-h-0 flex-1">
         <EventStream />
@@ -138,10 +142,28 @@ function AgentView({ chatInputRef }: AgentViewProps) {
 function StatusBar() {
   const connectionStatus = useAppStore(selectConnectionStatus)
   const ralphStatus = useAppStore(selectRalphStatus)
+  const currentTask = useAppStore(selectCurrentTask)
 
   return (
-    <div className="flex items-center justify-between text-sm">
-      <div className="flex items-center gap-4">
+    <div
+      role="status"
+      aria-label="Status bar"
+      className="border-border bg-muted/50 flex items-center justify-between border-b px-4 py-2 text-sm"
+    >
+      {/* Left section: Current task */}
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        {currentTask ?
+          <>
+            <span className="text-muted-foreground shrink-0 font-mono text-xs">
+              {currentTask.id}
+            </span>
+            <span className="truncate">{currentTask.content}</span>
+          </>
+        : <span className="text-muted-foreground">No task in progress</span>}
+      </div>
+
+      {/* Right section: Status indicators */}
+      <div className="flex shrink-0 items-center gap-4">
         <span className="flex items-center gap-2">
           <span
             className={
@@ -262,7 +284,6 @@ export function App() {
           <TasksSidebarPanel quickInputRef={quickTaskInputRef} onTaskClick={handleTaskClick} />
         }
         main={<AgentView chatInputRef={chatInputRef} />}
-        statusBar={<StatusBar />}
       />
       <TaskDetailsDialog
         task={taskDialog.selectedTask}

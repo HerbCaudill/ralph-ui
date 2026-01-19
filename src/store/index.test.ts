@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest"
-import { useAppStore } from "./index"
+import { useAppStore, selectCurrentTask } from "./index"
 import type { RalphEvent, Task } from "./index"
 
 describe("useAppStore", () => {
@@ -132,6 +132,42 @@ describe("useAppStore", () => {
 
       useAppStore.getState().clearTasks()
       expect(useAppStore.getState().tasks).toEqual([])
+    })
+
+    describe("selectCurrentTask", () => {
+      it("returns task with in_progress status", () => {
+        useAppStore.getState().setTasks(sampleTasks)
+        const currentTask = selectCurrentTask(useAppStore.getState())
+        expect(currentTask).not.toBeNull()
+        expect(currentTask?.id).toBe("2")
+        expect(currentTask?.status).toBe("in_progress")
+      })
+
+      it("returns null when no task is in progress", () => {
+        const tasksWithoutInProgress: Task[] = [
+          { id: "1", content: "Task 1", status: "pending" },
+          { id: "2", content: "Task 2", status: "completed" },
+        ]
+        useAppStore.getState().setTasks(tasksWithoutInProgress)
+        const currentTask = selectCurrentTask(useAppStore.getState())
+        expect(currentTask).toBeNull()
+      })
+
+      it("returns null when tasks are empty", () => {
+        useAppStore.getState().setTasks([])
+        const currentTask = selectCurrentTask(useAppStore.getState())
+        expect(currentTask).toBeNull()
+      })
+
+      it("returns first in_progress task when multiple exist", () => {
+        const tasksWithMultipleInProgress: Task[] = [
+          { id: "1", content: "Task 1", status: "in_progress" },
+          { id: "2", content: "Task 2", status: "in_progress" },
+        ]
+        useAppStore.getState().setTasks(tasksWithMultipleInProgress)
+        const currentTask = selectCurrentTask(useAppStore.getState())
+        expect(currentTask?.id).toBe("1")
+      })
     })
   })
 

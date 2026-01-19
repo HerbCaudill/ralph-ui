@@ -214,3 +214,5 @@ export const selectAccentColor = (state: AppState) => state.accentColor
 export const selectSidebarOpen = (state: AppState) => state.sidebarOpen
 export const selectSidebarWidth = (state: AppState) => state.sidebarWidth
 export const selectTheme = (state: AppState) => state.theme
+export const selectCurrentTask = (state: AppState) =>
+  state.tasks.find(t => t.status === "in_progress") ?? null
