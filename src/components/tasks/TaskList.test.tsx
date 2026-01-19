@@ -173,6 +173,92 @@ describe("TaskList", () => {
       expect(taskTitles).toEqual(["High priority", "No priority"])
     })
 
+    it("uses created_at as secondary sort within same priority (oldest first)", () => {
+      const now = new Date()
+      const tasks: TaskCardTask[] = [
+        {
+          id: "task-newer",
+          title: "Task B created later",
+          status: "open",
+          priority: 2,
+          created_at: new Date(now.getTime() - 1 * 60 * 60 * 1000).toISOString(), // 1 hour ago
+        },
+        {
+          id: "task-older",
+          title: "Task A created earlier",
+          status: "open",
+          priority: 2,
+          created_at: new Date(now.getTime() - 3 * 60 * 60 * 1000).toISOString(), // 3 hours ago
+        },
+        {
+          id: "task-middle",
+          title: "Task C created middle",
+          status: "open",
+          priority: 2,
+          created_at: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+        },
+      ]
+      render(<TaskList tasks={tasks} />)
+
+      // Get task titles in order - they should be sorted by created_at (oldest first) within same priority
+      const taskTitles = screen.getAllByText(/Task [ABC] created/).map(el => el.textContent)
+      expect(taskTitles).toEqual([
+        "Task A created earlier",
+        "Task C created middle",
+        "Task B created later",
+      ])
+    })
+
+    it("prioritizes priority over created_at", () => {
+      const now = new Date()
+      const tasks: TaskCardTask[] = [
+        {
+          id: "task-low-old",
+          title: "Low priority old",
+          status: "open",
+          priority: 3,
+          created_at: new Date(now.getTime() - 3 * 60 * 60 * 1000).toISOString(), // 3 hours ago (older)
+        },
+        {
+          id: "task-high-new",
+          title: "High priority new",
+          status: "open",
+          priority: 1,
+          created_at: new Date(now.getTime() - 1 * 60 * 60 * 1000).toISOString(), // 1 hour ago (newer)
+        },
+      ]
+      render(<TaskList tasks={tasks} />)
+
+      // High priority should come first regardless of created_at
+      const taskTitles = screen.getAllByText(/priority/).map(el => el.textContent)
+      expect(taskTitles).toEqual(["High priority new", "Low priority old"])
+    })
+
+    it("treats undefined created_at as oldest for secondary sort", () => {
+      const now = new Date()
+      const tasks: TaskCardTask[] = [
+        {
+          id: "task-with-date",
+          title: "Has create date",
+          status: "open",
+          priority: 2,
+          created_at: new Date(now.getTime() - 1 * 60 * 60 * 1000).toISOString(),
+        },
+        {
+          id: "task-no-date",
+          title: "No create date",
+          status: "open",
+          priority: 2,
+          // no created_at
+        },
+      ]
+      render(<TaskList tasks={tasks} />)
+
+      // Task without created_at should be treated as oldest (epoch 0) and come first
+      const taskTitles = screen.getAllByText(/date/).map(el => el.textContent)
+      expect(taskTitles).toEqual(["No create date", "Has create date"])
+    })
+
     it("sorts closed tasks by closed_at (most recent first)", () => {
       // Use recent dates to ensure they pass the time filter
       const now = new Date()

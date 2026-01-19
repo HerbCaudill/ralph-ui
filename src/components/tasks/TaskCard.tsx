@@ -28,6 +28,8 @@ export interface TaskCardTask {
   issue_type?: string
   /** Parent issue ID */
   parent?: string
+  /** Timestamp when task was created */
+  created_at?: string
   /** Timestamp when task was closed */
   closed_at?: string
 }

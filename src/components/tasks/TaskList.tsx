@@ -468,7 +468,7 @@ export function TaskList({
     // Build status groups with epic sub-groups
     const result: StatusGroupData[] = []
 
-    // Sort function for tasks: closed tasks by closed_at (most recent first), others by priority
+    // Sort function for tasks: closed tasks by closed_at (most recent first), others by priority then created_at
     const sortTasks = (tasks: TaskCardTask[], groupKey: TaskGroup): TaskCardTask[] => {
       if (groupKey === "closed") {
         // Sort closed tasks by closed_at timestamp, most recently closed first
@@ -478,20 +478,33 @@ export function TaskList({
           return bTime - aTime // Descending order (most recent first)
         })
       }
-      // Sort other tasks by priority
-      return [...tasks].sort((a, b) => (a.priority ?? 4) - (b.priority ?? 4))
+      // Sort other tasks by priority, then by created_at (oldest first within same priority)
+      return [...tasks].sort((a, b) => {
+        const priorityDiff = (a.priority ?? 4) - (b.priority ?? 4)
+        if (priorityDiff !== 0) return priorityDiff
+        // Secondary sort by created_at (oldest first)
+        const aTime = a.created_at ? new Date(a.created_at).getTime() : 0
+        const bTime = b.created_at ? new Date(b.created_at).getTime() : 0
+        return aTime - bTime
+      })
     }
 
     for (const config of groupConfigs) {
       const epicTasksMap = statusToEpicTasks.get(config.key)!
       const epicSubGroups: EpicSubGroup[] = []
 
-      // Get all epics that have tasks in this status, sorted by epic priority
+      // Get all epics that have tasks in this status, sorted by epic priority then created_at
       const epicsInStatus = Array.from(epicTasksMap.keys())
         .filter((id): id is string => id !== null)
         .map(id => epicMap.get(id)!)
         .filter(Boolean)
-        .sort((a, b) => (a.priority ?? 4) - (b.priority ?? 4))
+        .sort((a, b) => {
+          const priorityDiff = (a.priority ?? 4) - (b.priority ?? 4)
+          if (priorityDiff !== 0) return priorityDiff
+          const aTime = a.created_at ? new Date(a.created_at).getTime() : 0
+          const bTime = b.created_at ? new Date(b.created_at).getTime() : 0
+          return aTime - bTime
+        })
 
       // Add epic sub-groups
       for (const epic of epicsInStatus) {
