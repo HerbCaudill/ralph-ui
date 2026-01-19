@@ -9,3 +9,6 @@ export type { UserMessageEvent } from "./UserMessage"
 
 export { ToolUseCard } from "./ToolUseCard"
 export type { ToolUseCardProps, ToolUseEvent, ToolName } from "./ToolUseCard"
+
+export { EventLogViewer } from "./EventLogViewer"
+export type { EventLogViewerProps } from "./EventLogViewer"

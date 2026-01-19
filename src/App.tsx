@@ -1,7 +1,7 @@
 import { useRef, useCallback, useState, useEffect } from "react"
 import { MainLayout, type MainLayoutHandle, StatusBar, HotkeysDialog } from "./components/layout"
 import { ChatInput, type ChatInputHandle } from "./components/chat/ChatInput"
-import { EventStream } from "./components/events"
+import { EventStream, EventLogViewer } from "./components/events"
 import { TaskSidebar } from "./components/tasks/TaskSidebar"
 import { TaskList } from "./components/tasks/TaskList"
 import { TaskDetailsDialog } from "./components/tasks/TaskDetailsDialog"
@@ -13,6 +13,7 @@ import {
   selectIsConnected,
   selectTaskChatOpen,
   selectTaskChatWidth,
+  selectViewingEventLogId,
 } from "./store"
 import { TaskChatPanel } from "./components/chat/TaskChatPanel"
 import {
@@ -183,6 +184,10 @@ export function App() {
   const taskChatWidth = useAppStore(selectTaskChatWidth)
   const setTaskChatWidth = useAppStore(state => state.setTaskChatWidth)
 
+  // Event log viewer state
+  const viewingEventLogId = useAppStore(selectViewingEventLogId)
+  const isViewingEventLog = viewingEventLogId !== null
+
   // Handle task chat panel width change
   const handleTaskChatWidthChange = useCallback(
     (width: number) => {
@@ -325,8 +330,10 @@ export function App() {
         }
         main={<AgentView chatInputRef={chatInputRef} />}
         statusBar={<StatusBar />}
-        rightPanel={<TaskChatPanel onClose={handleTaskChatClose} />}
-        rightPanelOpen={taskChatOpen}
+        rightPanel={
+          isViewingEventLog ? <EventLogViewer /> : <TaskChatPanel onClose={handleTaskChatClose} />
+        }
+        rightPanelOpen={isViewingEventLog || taskChatOpen}
         rightPanelWidth={taskChatWidth}
         onRightPanelWidthChange={handleTaskChatWidthChange}
       />
