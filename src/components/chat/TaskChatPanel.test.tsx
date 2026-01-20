@@ -172,7 +172,7 @@ describe("TaskChatPanel", () => {
   describe("sending messages", () => {
     it("sends message on submit", async () => {
       mockFetch.mockResolvedValueOnce({
-        json: () => Promise.resolve({ ok: true, response: "Response text" }),
+        json: () => Promise.resolve({ ok: true, status: "processing" }),
       })
 
       render(<TaskChatPanel />)
@@ -192,7 +192,7 @@ describe("TaskChatPanel", () => {
 
     it("adds user message to store immediately", async () => {
       mockFetch.mockResolvedValueOnce({
-        json: () => Promise.resolve({ ok: true, response: "Response" }),
+        json: () => Promise.resolve({ ok: true, status: "processing" }),
       })
 
       render(<TaskChatPanel />)
@@ -230,7 +230,7 @@ describe("TaskChatPanel", () => {
 
     it("clears input after sending", async () => {
       mockFetch.mockResolvedValueOnce({
-        json: () => Promise.resolve({ ok: true, response: "Response" }),
+        json: () => Promise.resolve({ ok: true, status: "processing" }),
       })
 
       render(<TaskChatPanel />)
@@ -251,7 +251,7 @@ describe("TaskChatPanel", () => {
 
     it("focuses input after loading completes", async () => {
       mockFetch.mockResolvedValueOnce({
-        json: () => Promise.resolve({ ok: true, response: "Response" }),
+        json: () => Promise.resolve({ ok: true, status: "processing" }),
       })
 
       render(<TaskChatPanel />)

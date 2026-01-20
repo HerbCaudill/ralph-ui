@@ -635,7 +635,7 @@ function createApp(config: ServerConfig): Express {
   })
 
   // Task chat endpoints
-  app.post("/api/task-chat/message", async (req: Request, res: Response) => {
+  app.post("/api/task-chat/message", (req: Request, res: Response) => {
     try {
       const { message } = req.body as { message?: string }
 
@@ -651,15 +651,21 @@ function createApp(config: ServerConfig): Express {
         return
       }
 
-      const response = await taskChatManager.sendMessage(message.trim())
-      res.status(200).json({
+      // Fire and forget - don't await the response
+      // The response will come via WebSocket events (task-chat:message, task-chat:chunk, etc.)
+      taskChatManager.sendMessage(message.trim()).catch(err => {
+        // Errors are already handled via WebSocket events (task-chat:error)
+        console.error("[task-chat] Error sending message:", err)
+      })
+
+      // Return immediately - the actual response will come via WebSocket
+      res.status(202).json({
         ok: true,
-        response,
-        messages: taskChatManager.messages,
+        status: "processing",
       })
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to send message"
-      res.status(500).json({ ok: false, error: message })
+      const msg = err instanceof Error ? err.message : "Failed to send message"
+      res.status(500).json({ ok: false, error: msg })
     }
   })
 
