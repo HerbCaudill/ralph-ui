@@ -58,10 +58,11 @@ function DialogDemo({
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 500))
 
-    // Update local state
+    // Update local state (convert null parent to undefined for TaskCardTask compatibility)
     setTask(prev => ({
       ...prev,
       ...updates,
+      parent: updates.parent === null ? undefined : (updates.parent ?? prev.parent),
     }))
 
     console.log("Saved task:", id, updates)

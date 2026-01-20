@@ -263,6 +263,139 @@ describe("TaskDetailsDialog", () => {
 
       expect(mockOnSave).toHaveBeenCalledWith(mockTask.id, { issue_type: "bug" })
     })
+
+    it("allows editing parent via selector", async () => {
+      // Set up tasks in store
+      useAppStore.setState({
+        tasks: [
+          { id: "test-123", title: "Test Task", status: "open", parent: "parent-456" },
+          { id: "parent-456", title: "Parent Task", status: "open" },
+          { id: "other-789", title: "Other Task", status: "open" },
+        ],
+      })
+
+      render(
+        <TaskDetailsDialog task={mockTask} open={true} onClose={mockOnClose} onSave={mockOnSave} />,
+      )
+
+      // Click on the parent selector
+      const parentSelect = screen.getByLabelText(/parent/i)
+      fireEvent.click(parentSelect)
+
+      // Select "Other Task" from the dropdown
+      await waitFor(() => {
+        expect(screen.getByRole("option", { name: /other-789/i })).toBeInTheDocument()
+      })
+      fireEvent.click(screen.getByRole("option", { name: /other-789/i }))
+
+      // Save button should now be enabled
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /save/i })).toBeEnabled()
+      })
+    })
+
+    it("saves parent when parent is changed", async () => {
+      // Set up tasks in store
+      useAppStore.setState({
+        tasks: [
+          { id: "test-123", title: "Test Task", status: "open", parent: "parent-456" },
+          { id: "parent-456", title: "Parent Task", status: "open" },
+          { id: "other-789", title: "Other Task", status: "open" },
+        ],
+      })
+
+      render(
+        <TaskDetailsDialog task={mockTask} open={true} onClose={mockOnClose} onSave={mockOnSave} />,
+      )
+
+      // Click on the parent selector
+      const parentSelect = screen.getByLabelText(/parent/i)
+      fireEvent.click(parentSelect)
+
+      // Select "Other Task" from the dropdown
+      await waitFor(() => {
+        expect(screen.getByRole("option", { name: /other-789/i })).toBeInTheDocument()
+      })
+      fireEvent.click(screen.getByRole("option", { name: /other-789/i }))
+
+      // Click save
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /save/i })).toBeEnabled()
+      })
+      const saveButton = screen.getByRole("button", { name: /save/i })
+      await act(async () => {
+        fireEvent.click(saveButton)
+      })
+
+      expect(mockOnSave).toHaveBeenCalledWith(mockTask.id, { parent: "other-789" })
+    })
+
+    it("allows clearing parent by selecting None", async () => {
+      // Set up tasks in store
+      useAppStore.setState({
+        tasks: [
+          { id: "test-123", title: "Test Task", status: "open", parent: "parent-456" },
+          { id: "parent-456", title: "Parent Task", status: "open" },
+        ],
+      })
+
+      render(
+        <TaskDetailsDialog task={mockTask} open={true} onClose={mockOnClose} onSave={mockOnSave} />,
+      )
+
+      // Click on the parent selector
+      const parentSelect = screen.getByLabelText(/parent/i)
+      fireEvent.click(parentSelect)
+
+      // Select "None" from the dropdown
+      await waitFor(() => {
+        expect(screen.getByRole("option", { name: /^None$/i })).toBeInTheDocument()
+      })
+      fireEvent.click(screen.getByRole("option", { name: /^None$/i }))
+
+      // Click save
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /save/i })).toBeEnabled()
+      })
+      const saveButton = screen.getByRole("button", { name: /save/i })
+      await act(async () => {
+        fireEvent.click(saveButton)
+      })
+
+      expect(mockOnSave).toHaveBeenCalledWith(mockTask.id, { parent: null })
+    })
+
+    it("excludes self and children from parent options", async () => {
+      // Set up tasks where test-123 has a child
+      useAppStore.setState({
+        tasks: [
+          { id: "test-123", title: "Test Task", status: "open" },
+          { id: "child-task", title: "Child Task", status: "open", parent: "test-123" },
+          { id: "valid-parent", title: "Valid Parent", status: "open" },
+        ],
+      })
+
+      render(
+        <TaskDetailsDialog task={mockTask} open={true} onClose={mockOnClose} onSave={mockOnSave} />,
+      )
+
+      // Click on the parent selector
+      const parentSelect = screen.getByLabelText(/parent/i)
+      fireEvent.click(parentSelect)
+
+      // Valid parent should be in the dropdown
+      await waitFor(() => {
+        expect(screen.getByRole("option", { name: /valid-parent/i })).toBeInTheDocument()
+      })
+
+      // Self should not be in the dropdown
+      expect(screen.queryByRole("option", { name: /test-123.*Test Task/i })).not.toBeInTheDocument()
+
+      // Child (which has test-123 as parent) should not be in the dropdown
+      expect(
+        screen.queryByRole("option", { name: /child-task.*Child Task/i }),
+      ).not.toBeInTheDocument()
+    })
   })
 
   describe("saving", () => {

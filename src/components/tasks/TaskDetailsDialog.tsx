@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn, stripTaskPrefix } from "@/lib/utils"
-import { useAppStore, selectIssuePrefix } from "@/store"
+import { useAppStore, selectIssuePrefix, selectTasks } from "@/store"
 import type { TaskCardTask, TaskStatus } from "./TaskCard"
 import { IconBug, IconSparkles, IconStack2, IconCheckbox } from "@tabler/icons-react"
 
@@ -52,6 +52,7 @@ export interface TaskUpdateData {
   status?: TaskStatus
   priority?: number
   issue_type?: string
+  parent?: string | null
 }
 
 // Issue Type Options
@@ -193,10 +194,11 @@ export function TaskDetailsDialog({
   onSave,
   readOnly = false,
 }: TaskDetailsDialogProps) {
-  // Get events, workspace, and issue prefix from store
+  // Get events, workspace, issue prefix, and tasks from store
   const events = useAppStore(state => state.events)
   const workspace = useAppStore(state => state.workspace)
   const issuePrefix = useAppStore(selectIssuePrefix)
+  const allTasks = useAppStore(selectTasks)
 
   // Local state for editable fields
   const [title, setTitle] = useState("")
@@ -204,6 +206,7 @@ export function TaskDetailsDialog({
   const [status, setStatus] = useState<TaskStatus>("open")
   const [priority, setPriority] = useState<number>(2)
   const [issueType, setIssueType] = useState<IssueType>("task")
+  const [parent, setParent] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
 
@@ -215,6 +218,7 @@ export function TaskDetailsDialog({
       setStatus(task.status)
       setPriority(task.priority ?? 2)
       setIssueType((task.issue_type as IssueType) ?? "task")
+      setParent(task.parent ?? null)
       setHasChanges(false)
     }
   }, [task])
@@ -227,9 +231,10 @@ export function TaskDetailsDialog({
       description !== (task.description ?? "") ||
       status !== task.status ||
       priority !== (task.priority ?? 2) ||
-      issueType !== ((task.issue_type as IssueType) ?? "task")
+      issueType !== ((task.issue_type as IssueType) ?? "task") ||
+      parent !== (task.parent ?? null)
     setHasChanges(changed)
-  }, [task, title, description, status, priority, issueType])
+  }, [task, title, description, status, priority, issueType, parent])
 
   const handleSave = useCallback(async () => {
     if (!task || !onSave || readOnly) return
@@ -240,6 +245,7 @@ export function TaskDetailsDialog({
     if (status !== task.status) updates.status = status
     if (priority !== (task.priority ?? 2)) updates.priority = priority
     if (issueType !== ((task.issue_type as IssueType) ?? "task")) updates.issue_type = issueType
+    if (parent !== (task.parent ?? null)) updates.parent = parent
 
     if (Object.keys(updates).length === 0) {
       onClose()
@@ -270,6 +276,7 @@ export function TaskDetailsDialog({
     status,
     priority,
     issueType,
+    parent,
     onClose,
     events,
     workspace,
@@ -443,16 +450,55 @@ export function TaskDetailsDialog({
               }
             </div>
 
-            {/* Parent (read-only) */}
+            {/* Parent */}
             <div className="grid gap-2">
-              <Label>Parent</Label>
-              <span className="text-muted-foreground text-sm">
-                {task.parent ?
-                  <span className="text-foreground font-mono">
-                    {stripTaskPrefix(task.parent, issuePrefix)}
-                  </span>
-                : <span>None</span>}
-              </span>
+              <Label htmlFor="task-parent">Parent</Label>
+              {readOnly ?
+                <span className="text-muted-foreground text-sm">
+                  {task.parent ?
+                    <span className="text-foreground font-mono">
+                      {stripTaskPrefix(task.parent, issuePrefix)}
+                    </span>
+                  : <span>None</span>}
+                </span>
+              : (() => {
+                  // Filter valid parent candidates (exclude self and direct children)
+                  const validParents = allTasks.filter(
+                    t => t.id !== task.id && t.parent !== task.id,
+                  )
+                  // Check if current parent is in the list of valid parents
+                  const currentParentInList = parent && validParents.some(t => t.id === parent)
+                  return (
+                    <Select
+                      value={parent ?? "__none__"}
+                      onValueChange={value => setParent(value === "__none__" ? null : value)}
+                    >
+                      <SelectTrigger id="task-parent">
+                        <SelectValue placeholder="None" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">None</SelectItem>
+                        {/* If current parent isn't in list, show it as an option */}
+                        {parent && !currentParentInList && (
+                          <SelectItem value={parent}>
+                            <span className="font-mono text-xs">
+                              {stripTaskPrefix(parent, issuePrefix)}
+                            </span>
+                          </SelectItem>
+                        )}
+                        {validParents.map(t => (
+                          <SelectItem key={t.id} value={t.id}>
+                            <span className="font-mono text-xs">
+                              {stripTaskPrefix(t.id, issuePrefix)}
+                            </span>
+                            <span className="ml-2 truncate">{t.title}</span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )
+                })()
+              }
             </div>
           </div>
         </div>
