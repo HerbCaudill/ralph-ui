@@ -8,3 +8,4 @@ export {
   type CreatedIssue,
 } from "./QuickTaskInput"
 export { TaskProgressBar, type TaskProgressBarProps } from "./TaskProgressBar"
+export { RelatedTasks, type RelatedTasksProps } from "./RelatedTasks"

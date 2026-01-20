@@ -34,6 +34,7 @@ import type { TaskCardTask, TaskStatus } from "./TaskCard"
 import { IconBug, IconSparkles, IconStack2, IconCheckbox } from "@tabler/icons-react"
 import { CommentsSection } from "./CommentsSection"
 import { MarkdownContent } from "@/components/ui/MarkdownContent"
+import { RelatedTasks } from "./RelatedTasks"
 
 // Types
 
@@ -726,6 +727,9 @@ export function TaskDetailsDialog({
               }
             </div>
           </div>
+
+          {/* Related Tasks (children and blockers) */}
+          <RelatedTasks taskId={task.id} />
 
           {/* Comments Section */}
           <CommentsSection taskId={task.id} readOnly={readOnly} />
