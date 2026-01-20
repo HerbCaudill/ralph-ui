@@ -6,6 +6,9 @@ import {
   IconCircleCheck,
   IconBan,
   IconClock,
+  IconBug,
+  IconSparkles,
+  IconStack2,
   type TablerIcon,
 } from "@tabler/icons-react"
 
@@ -90,6 +93,63 @@ const statusConfig: Record<TaskStatus, StatusConfig> = {
 // Available Statuses for Transition
 
 const availableStatuses: TaskStatus[] = ["open", "in_progress", "blocked", "deferred", "closed"]
+
+// Issue Type Configuration (only for non-task types)
+
+interface TypeConfig {
+  icon: TablerIcon
+  label: string
+  color: string
+}
+
+const typeConfig: Record<string, TypeConfig> = {
+  bug: {
+    icon: IconBug,
+    label: "Bug",
+    color: "text-red-500",
+  },
+  feature: {
+    icon: IconSparkles,
+    label: "Feature",
+    color: "text-purple-500",
+  },
+  epic: {
+    icon: IconStack2,
+    label: "Epic",
+    color: "text-indigo-500",
+  },
+}
+
+// Priority Configuration (only for non-P2 priorities)
+
+interface PriorityConfig {
+  label: string
+  color: string
+  bgColor: string
+}
+
+const priorityConfig: Record<number, PriorityConfig> = {
+  0: {
+    label: "P0",
+    color: "text-red-600",
+    bgColor: "bg-red-500/20",
+  },
+  1: {
+    label: "P1",
+    color: "text-orange-500",
+    bgColor: "bg-orange-500/15",
+  },
+  3: {
+    label: "P3",
+    color: "text-gray-500",
+    bgColor: "bg-gray-500/10",
+  },
+  4: {
+    label: "P4",
+    color: "text-gray-400",
+    bgColor: "bg-gray-400/10",
+  },
+}
 
 // TaskCard Component
 
@@ -221,6 +281,40 @@ export function TaskCard({ task, className, onStatusChange, onClick }: TaskCardP
           >
             {task.title}
           </span>
+
+          {/* Type and Priority indicators (right side) */}
+          <div className="flex shrink-0 items-center gap-1.5">
+            {/* Issue type icon (only for non-task types) */}
+            {task.issue_type && task.issue_type !== "task" && typeConfig[task.issue_type] && (
+              <span
+                className={cn("flex items-center", typeConfig[task.issue_type].color)}
+                title={typeConfig[task.issue_type].label}
+                aria-label={`Type: ${typeConfig[task.issue_type].label}`}
+              >
+                {(() => {
+                  const TypeIcon = typeConfig[task.issue_type].icon
+                  return <TypeIcon className="size-3.5" />
+                })()}
+              </span>
+            )}
+
+            {/* Priority badge (only for non-P2) */}
+            {task.priority !== undefined &&
+              task.priority !== 2 &&
+              priorityConfig[task.priority] && (
+                <span
+                  className={cn(
+                    "rounded px-1 py-0.5 text-[10px] leading-none font-medium",
+                    priorityConfig[task.priority].color,
+                    priorityConfig[task.priority].bgColor,
+                  )}
+                  title={`Priority: ${priorityConfig[task.priority].label}`}
+                  aria-label={`Priority: ${priorityConfig[task.priority].label}`}
+                >
+                  {priorityConfig[task.priority].label}
+                </span>
+              )}
+          </div>
         </div>
       </div>
     </div>

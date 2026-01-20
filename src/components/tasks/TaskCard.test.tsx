@@ -51,10 +51,45 @@ describe("TaskCard", () => {
       })
     })
 
-    it("does not render priority badge (priority not shown in sidebar)", () => {
+    it("does not render priority badge for P2 (default priority)", () => {
       render(<TaskCard task={{ ...baseTask, priority: 2 }} />)
-      // Priority badge should not be visible in the sidebar
-      expect(screen.queryByText(/^P\d$/)).not.toBeInTheDocument()
+      // P2 priority badge should not be visible since it's the default
+      expect(screen.queryByText("P2")).not.toBeInTheDocument()
+    })
+
+    it("renders priority badge for non-P2 priorities", () => {
+      const { rerender } = render(<TaskCard task={{ ...baseTask, priority: 0 }} />)
+      expect(screen.getByText("P0")).toBeInTheDocument()
+      expect(screen.getByLabelText("Priority: P0")).toBeInTheDocument()
+
+      rerender(<TaskCard task={{ ...baseTask, priority: 1 }} />)
+      expect(screen.getByText("P1")).toBeInTheDocument()
+
+      rerender(<TaskCard task={{ ...baseTask, priority: 3 }} />)
+      expect(screen.getByText("P3")).toBeInTheDocument()
+
+      rerender(<TaskCard task={{ ...baseTask, priority: 4 }} />)
+      expect(screen.getByText("P4")).toBeInTheDocument()
+    })
+
+    it("renders type icon for bug type", () => {
+      render(<TaskCard task={{ ...baseTask, issue_type: "bug" }} />)
+      expect(screen.getByLabelText("Type: Bug")).toBeInTheDocument()
+    })
+
+    it("renders type icon for feature type", () => {
+      render(<TaskCard task={{ ...baseTask, issue_type: "feature" }} />)
+      expect(screen.getByLabelText("Type: Feature")).toBeInTheDocument()
+    })
+
+    it("renders type icon for epic type", () => {
+      render(<TaskCard task={{ ...baseTask, issue_type: "epic" }} />)
+      expect(screen.getByLabelText("Type: Epic")).toBeInTheDocument()
+    })
+
+    it("does not render type icon for task type (default)", () => {
+      render(<TaskCard task={{ ...baseTask, issue_type: "task" }} />)
+      expect(screen.queryByLabelText(/Type:/)).not.toBeInTheDocument()
     })
 
     it("applies reduced opacity for closed tasks", () => {
@@ -202,14 +237,56 @@ describe("TaskCard", () => {
   })
 
   describe("priority", () => {
-    it("does not display priority badges in the sidebar", () => {
-      // Priority badges are not shown in the simplified sidebar view
-      const priorities = [0, 1, 2, 3, 4]
-      priorities.forEach(priority => {
+    it("displays priority badges for non-P2 priorities", () => {
+      // P0, P1, P3, P4 should show badges
+      ;[0, 1, 3, 4].forEach(priority => {
         const { unmount } = render(<TaskCard task={{ ...baseTask, priority }} />)
-        expect(screen.queryByText(`P${priority}`)).not.toBeInTheDocument()
+        expect(screen.getByText(`P${priority}`)).toBeInTheDocument()
         unmount()
       })
+    })
+
+    it("does not display priority badge for P2 (default)", () => {
+      render(<TaskCard task={{ ...baseTask, priority: 2 }} />)
+      expect(screen.queryByText("P2")).not.toBeInTheDocument()
+    })
+
+    it("does not display priority badge when priority is undefined", () => {
+      render(<TaskCard task={baseTask} />)
+      expect(screen.queryByText(/^P\d$/)).not.toBeInTheDocument()
+    })
+  })
+
+  describe("issue type", () => {
+    it("displays bug icon with correct color", () => {
+      render(<TaskCard task={{ ...baseTask, issue_type: "bug" }} />)
+      const typeIndicator = screen.getByLabelText("Type: Bug")
+      expect(typeIndicator).toBeInTheDocument()
+      expect(typeIndicator).toHaveClass("text-red-500")
+    })
+
+    it("displays feature icon with correct color", () => {
+      render(<TaskCard task={{ ...baseTask, issue_type: "feature" }} />)
+      const typeIndicator = screen.getByLabelText("Type: Feature")
+      expect(typeIndicator).toBeInTheDocument()
+      expect(typeIndicator).toHaveClass("text-purple-500")
+    })
+
+    it("displays epic icon with correct color", () => {
+      render(<TaskCard task={{ ...baseTask, issue_type: "epic" }} />)
+      const typeIndicator = screen.getByLabelText("Type: Epic")
+      expect(typeIndicator).toBeInTheDocument()
+      expect(typeIndicator).toHaveClass("text-indigo-500")
+    })
+
+    it("does not display type icon for task type", () => {
+      render(<TaskCard task={{ ...baseTask, issue_type: "task" }} />)
+      expect(screen.queryByLabelText(/Type:/)).not.toBeInTheDocument()
+    })
+
+    it("does not display type icon when issue_type is undefined", () => {
+      render(<TaskCard task={baseTask} />)
+      expect(screen.queryByLabelText(/Type:/)).not.toBeInTheDocument()
     })
   })
 
