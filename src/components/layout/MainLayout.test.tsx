@@ -3,6 +3,29 @@ import { describe, it, expect, beforeEach, vi, afterEach } from "vitest"
 import { MainLayout } from "./MainLayout"
 import { useAppStore } from "@/store"
 
+// Mock the useVSCodeTheme hook used by ThemePicker (via Header)
+vi.mock("@/hooks", async importOriginal => {
+  const actual = (await importOriginal()) as Record<string, unknown>
+  return {
+    ...actual,
+    useVSCodeTheme: () => ({
+      themes: [],
+      activeTheme: null,
+      activeThemeId: null,
+      currentVSCodeTheme: null,
+      variant: null,
+      isLoadingList: false,
+      isLoadingTheme: false,
+      error: null,
+      fetchThemes: vi.fn(),
+      applyTheme: vi.fn(),
+      previewTheme: vi.fn(),
+      clearPreview: vi.fn(),
+      resetToDefault: vi.fn(),
+    }),
+  }
+})
+
 // Mock fetch for WorkspacePicker
 const mockFetch = vi.fn()
 ;(globalThis as { fetch: typeof fetch }).fetch = mockFetch

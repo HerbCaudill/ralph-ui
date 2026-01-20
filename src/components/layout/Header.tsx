@@ -2,6 +2,7 @@ import { cn, getContrastingColor } from "@/lib/utils"
 import { useAppStore, selectAccentColor } from "@/store"
 import { useTheme } from "@/hooks"
 import { WorkspacePicker } from "./WorkspacePicker"
+import { ThemePicker } from "./ThemePicker"
 import { Button } from "@/components/ui/button"
 import { IconSun, IconMoon, IconDeviceDesktop } from "@tabler/icons-react"
 
@@ -105,7 +106,8 @@ export function Header({ className }: HeaderProps) {
         <WorkspacePicker variant="header" textColor={textColor} />
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
+        <ThemePicker variant="header" textColor={textColor} />
         <ThemeToggle textColor={textColor} />
       </div>
     </header>

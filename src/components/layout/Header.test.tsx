@@ -3,6 +3,29 @@ import { describe, it, expect, beforeEach, vi, afterEach } from "vitest"
 import { Header } from "./Header"
 import { useAppStore } from "@/store"
 
+// Mock the useVSCodeTheme hook used by ThemePicker
+vi.mock("@/hooks", async importOriginal => {
+  const actual = (await importOriginal()) as Record<string, unknown>
+  return {
+    ...actual,
+    useVSCodeTheme: () => ({
+      themes: [],
+      activeTheme: null,
+      activeThemeId: null,
+      currentVSCodeTheme: null,
+      variant: null,
+      isLoadingList: false,
+      isLoadingTheme: false,
+      error: null,
+      fetchThemes: vi.fn(),
+      applyTheme: vi.fn(),
+      previewTheme: vi.fn(),
+      clearPreview: vi.fn(),
+      resetToDefault: vi.fn(),
+    }),
+  }
+})
+
 // Mock fetch
 const mockFetch = vi.fn()
 ;(globalThis as { fetch: typeof fetch }).fetch = mockFetch
@@ -122,9 +145,9 @@ describe("Header", () => {
     // Dropdown should be closed initially
     expect(screen.queryByText("Workspaces")).not.toBeInTheDocument()
 
-    // Click the workspace picker button
-    const workspaceButton = screen.getByRole("button", { expanded: false })
-    fireEvent.click(workspaceButton)
+    // Click the workspace picker button (find by text "my-project")
+    const workspaceButton = screen.getByText("my-project").closest("button")
+    fireEvent.click(workspaceButton!)
 
     // Dropdown should be open
     await waitFor(() => {
@@ -139,9 +162,9 @@ describe("Header", () => {
       expect(screen.getByText("my-project")).toBeInTheDocument()
     })
 
-    // Open the dropdown
-    const workspaceButton = screen.getByRole("button", { expanded: false })
-    fireEvent.click(workspaceButton)
+    // Open the dropdown (find by text "my-project")
+    const workspaceButton = screen.getByText("my-project").closest("button")
+    fireEvent.click(workspaceButton!)
 
     // Dropdown should be open
     await waitFor(() => {

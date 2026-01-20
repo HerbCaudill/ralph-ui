@@ -7,6 +7,29 @@ import { useAppStore } from "./store"
 const mockFetch = vi.fn()
 ;(globalThis as { fetch: typeof fetch }).fetch = mockFetch
 
+// Mock the useVSCodeTheme hook used by ThemePicker (via Header)
+vi.mock("@/hooks", async importOriginal => {
+  const actual = (await importOriginal()) as Record<string, unknown>
+  return {
+    ...actual,
+    useVSCodeTheme: () => ({
+      themes: [],
+      activeTheme: null,
+      activeThemeId: null,
+      currentVSCodeTheme: null,
+      variant: null,
+      isLoadingList: false,
+      isLoadingTheme: false,
+      error: null,
+      fetchThemes: vi.fn(),
+      applyTheme: vi.fn(),
+      previewTheme: vi.fn(),
+      clearPreview: vi.fn(),
+      resetToDefault: vi.fn(),
+    }),
+  }
+})
+
 // Mock ralphConnection to prevent it from resetting connection status
 vi.mock("./lib/ralphConnection", () => ({
   ralphConnection: {

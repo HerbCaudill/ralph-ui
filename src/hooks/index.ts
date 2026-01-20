@@ -34,3 +34,10 @@ export {
   buildEventLogHash,
   type UseEventLogRouterReturn,
 } from "./useEventLogRouter"
+
+export {
+  useVSCodeTheme,
+  type ThemeListResponse,
+  type ThemeDetailResponse,
+  type UseVSCodeThemeReturn,
+} from "./useVSCodeTheme"
