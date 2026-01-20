@@ -84,6 +84,14 @@ export function CommentsSection({ taskId, readOnly = false, className }: Comment
       setIsLoading(true)
       setError(null)
       const response = await fetch(`/api/tasks/${taskId}/comments`)
+
+      // Check if response is OK and has JSON content type
+      const contentType = response.headers.get("content-type")
+      if (!response.ok || !contentType?.includes("application/json")) {
+        setError(`Server error: ${response.status} ${response.statusText}`)
+        return
+      }
+
       const data = (await response.json()) as { ok: boolean; comments?: Comment[]; error?: string }
 
       if (data.ok && data.comments) {
@@ -114,6 +122,13 @@ export function CommentsSection({ taskId, readOnly = false, className }: Comment
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ comment: newComment.trim() }),
       })
+
+      // Check if response is OK and has JSON content type
+      const contentType = response.headers.get("content-type")
+      if (!response.ok || !contentType?.includes("application/json")) {
+        setError(`Server error: ${response.status} ${response.statusText}`)
+        return
+      }
 
       const data = (await response.json()) as { ok: boolean; error?: string }
       if (data.ok) {

@@ -763,7 +763,13 @@ function createApp(config: ServerConfig): Express {
 
   // SPA fallback - serve index.html for non-API routes
   // Express 5 requires named parameter for wildcard routes
-  app.get("/{*splat}", (_req: Request, res: Response) => {
+  app.get("/{*splat}", (req: Request, res: Response) => {
+    // Never serve HTML for API routes - return 404 JSON instead
+    if (req.path.startsWith("/api/")) {
+      res.status(404).json({ ok: false, error: "Not found" })
+      return
+    }
+
     const indexPath = path.join(config.appDir, "index.html")
     res.sendFile(indexPath, err => {
       if (err) {

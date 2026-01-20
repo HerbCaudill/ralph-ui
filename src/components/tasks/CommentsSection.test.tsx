@@ -6,6 +6,19 @@ import { CommentsSection, type Comment } from "./CommentsSection"
 const mockFetch = vi.fn()
 global.fetch = mockFetch
 
+// Helper to create mock response with proper headers
+function createMockResponse(data: object, options?: { ok?: boolean; status?: number }) {
+  return {
+    ok: options?.ok ?? true,
+    status: options?.status ?? 200,
+    statusText: options?.ok === false ? "Error" : "OK",
+    headers: {
+      get: (name: string) => (name === "content-type" ? "application/json" : null),
+    },
+    json: () => Promise.resolve(data),
+  }
+}
+
 // Sample comments
 const sampleComments: Comment[] = [
   {
@@ -45,9 +58,7 @@ describe("CommentsSection", () => {
 
   describe("comments display", () => {
     it("displays comments after loading", async () => {
-      mockFetch.mockResolvedValueOnce({
-        json: () => Promise.resolve({ ok: true, comments: sampleComments }),
-      })
+      mockFetch.mockResolvedValueOnce(createMockResponse({ ok: true, comments: sampleComments }))
 
       render(<CommentsSection taskId="rui-123" />)
 
@@ -59,9 +70,7 @@ describe("CommentsSection", () => {
     })
 
     it("shows no comments message when empty", async () => {
-      mockFetch.mockResolvedValueOnce({
-        json: () => Promise.resolve({ ok: true, comments: [] }),
-      })
+      mockFetch.mockResolvedValueOnce(createMockResponse({ ok: true, comments: [] }))
 
       render(<CommentsSection taskId="rui-123" />)
 
@@ -71,9 +80,7 @@ describe("CommentsSection", () => {
     })
 
     it("renders markdown in comments", async () => {
-      mockFetch.mockResolvedValueOnce({
-        json: () => Promise.resolve({ ok: true, comments: sampleComments }),
-      })
+      mockFetch.mockResolvedValueOnce(createMockResponse({ ok: true, comments: sampleComments }))
 
       render(<CommentsSection taskId="rui-123" />)
 
@@ -86,9 +93,7 @@ describe("CommentsSection", () => {
     })
 
     it("shows Comments label", async () => {
-      mockFetch.mockResolvedValueOnce({
-        json: () => Promise.resolve({ ok: true, comments: [] }),
-      })
+      mockFetch.mockResolvedValueOnce(createMockResponse({ ok: true, comments: [] }))
 
       render(<CommentsSection taskId="rui-123" />)
 
@@ -98,9 +103,7 @@ describe("CommentsSection", () => {
 
   describe("error handling", () => {
     it("displays error message when fetch fails", async () => {
-      mockFetch.mockResolvedValueOnce({
-        json: () => Promise.resolve({ ok: false, error: "Failed to fetch" }),
-      })
+      mockFetch.mockResolvedValueOnce(createMockResponse({ ok: false, error: "Failed to fetch" }))
 
       render(<CommentsSection taskId="rui-123" />)
 
@@ -118,13 +121,28 @@ describe("CommentsSection", () => {
         expect(screen.getByText("Network error")).toBeInTheDocument()
       })
     })
+
+    it("displays error message when response is not JSON", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        statusText: "Not Found",
+        headers: {
+          get: () => "text/html", // Not JSON
+        },
+      })
+
+      render(<CommentsSection taskId="rui-123" />)
+
+      await waitFor(() => {
+        expect(screen.getByText("Server error: 404 Not Found")).toBeInTheDocument()
+      })
+    })
   })
 
   describe("read-only mode", () => {
     it("does not show add comment form in read-only mode", async () => {
-      mockFetch.mockResolvedValueOnce({
-        json: () => Promise.resolve({ ok: true, comments: sampleComments }),
-      })
+      mockFetch.mockResolvedValueOnce(createMockResponse({ ok: true, comments: sampleComments }))
 
       render(<CommentsSection taskId="rui-123" readOnly />)
 
@@ -139,9 +157,7 @@ describe("CommentsSection", () => {
 
   describe("adding comments", () => {
     it("shows add comment form when not read-only", async () => {
-      mockFetch.mockResolvedValueOnce({
-        json: () => Promise.resolve({ ok: true, comments: [] }),
-      })
+      mockFetch.mockResolvedValueOnce(createMockResponse({ ok: true, comments: [] }))
 
       render(<CommentsSection taskId="rui-123" />)
 
@@ -152,9 +168,7 @@ describe("CommentsSection", () => {
     })
 
     it("disables add button when comment is empty", async () => {
-      mockFetch.mockResolvedValueOnce({
-        json: () => Promise.resolve({ ok: true, comments: [] }),
-      })
+      mockFetch.mockResolvedValueOnce(createMockResponse({ ok: true, comments: [] }))
 
       render(<CommentsSection taskId="rui-123" />)
 
@@ -164,9 +178,7 @@ describe("CommentsSection", () => {
     })
 
     it("enables add button when comment has content", async () => {
-      mockFetch.mockResolvedValueOnce({
-        json: () => Promise.resolve({ ok: true, comments: [] }),
-      })
+      mockFetch.mockResolvedValueOnce(createMockResponse({ ok: true, comments: [] }))
 
       render(<CommentsSection taskId="rui-123" />)
 
@@ -183,9 +195,7 @@ describe("CommentsSection", () => {
 
     it("submits comment and refreshes list", async () => {
       // First fetch - initial load
-      mockFetch.mockResolvedValueOnce({
-        json: () => Promise.resolve({ ok: true, comments: [] }),
-      })
+      mockFetch.mockResolvedValueOnce(createMockResponse({ ok: true, comments: [] }))
 
       render(<CommentsSection taskId="rui-123" />)
 
@@ -194,24 +204,21 @@ describe("CommentsSection", () => {
       })
 
       // Setup mock for POST and subsequent GET
-      mockFetch.mockResolvedValueOnce({
-        json: () => Promise.resolve({ ok: true }),
-      })
-      mockFetch.mockResolvedValueOnce({
-        json: () =>
-          Promise.resolve({
-            ok: true,
-            comments: [
-              {
-                id: 3,
-                issue_id: "rui-123",
-                author: "Test User",
-                text: "New comment",
-                created_at: new Date().toISOString(),
-              },
-            ],
-          }),
-      })
+      mockFetch.mockResolvedValueOnce(createMockResponse({ ok: true }))
+      mockFetch.mockResolvedValueOnce(
+        createMockResponse({
+          ok: true,
+          comments: [
+            {
+              id: 3,
+              issue_id: "rui-123",
+              author: "Test User",
+              text: "New comment",
+              created_at: new Date().toISOString(),
+            },
+          ],
+        }),
+      )
 
       fireEvent.change(screen.getByPlaceholderText("Add a comment..."), {
         target: { value: "New comment" },
@@ -234,9 +241,7 @@ describe("CommentsSection", () => {
 
   describe("API calls", () => {
     it("fetches comments for the correct task ID", async () => {
-      mockFetch.mockResolvedValueOnce({
-        json: () => Promise.resolve({ ok: true, comments: [] }),
-      })
+      mockFetch.mockResolvedValueOnce(createMockResponse({ ok: true, comments: [] }))
 
       render(<CommentsSection taskId="rui-456" />)
 
@@ -246,9 +251,7 @@ describe("CommentsSection", () => {
     })
 
     it("refetches when taskId changes", async () => {
-      mockFetch.mockResolvedValue({
-        json: () => Promise.resolve({ ok: true, comments: [] }),
-      })
+      mockFetch.mockResolvedValue(createMockResponse({ ok: true, comments: [] }))
 
       const { rerender } = render(<CommentsSection taskId="rui-123" />)
 
