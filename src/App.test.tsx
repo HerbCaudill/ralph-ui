@@ -1,4 +1,4 @@
-import { render, screen, waitFor, fireEvent, act } from "@/test-utils"
+import { render, screen, waitFor, act } from "@/test-utils"
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest"
 import { App } from "./App"
 
@@ -110,11 +110,16 @@ describe("App", () => {
     expect(document.activeElement).toBe(taskInput)
 
     // Press Tab - should switch to chat input
-    fireEvent.keyDown(taskInput, { key: "Tab" })
+    // Fire keydown on window since useHotkeys listens on window with capture: true
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true }))
+    })
     expect(document.activeElement).toBe(chatInput)
 
     // Press Tab again - should switch back to task input
-    fireEvent.keyDown(chatInput, { key: "Tab" })
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true }))
+    })
     expect(document.activeElement).toBe(taskInput)
   })
 })
