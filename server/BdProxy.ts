@@ -96,6 +96,12 @@ export interface BdInfo {
   config?: Record<string, string>
 }
 
+export interface BdLabelResult {
+  issue_id: string
+  label: string
+  status: "added" | "removed" | "already_exists" | "not_found"
+}
+
 // BdProxy
 
 /**
@@ -285,6 +291,57 @@ export class BdProxy {
     const args = ["info", "--json"]
     const result = await this.exec(args)
     return JSON.parse(result) as BdInfo
+  }
+
+  /**
+   * Get labels for an issue.
+   *
+   * @param id - Issue ID to get labels for
+   * @returns Array of label strings
+   */
+  async getLabels(id: string): Promise<string[]> {
+    const args = ["label", "list", id, "--json"]
+    const result = await this.exec(args)
+    return JSON.parse(result) as string[]
+  }
+
+  /**
+   * Add a label to an issue.
+   *
+   * @param id - Issue ID to add label to
+   * @param label - Label to add
+   * @returns Result of the operation
+   */
+  async addLabel(id: string, label: string): Promise<BdLabelResult> {
+    const args = ["label", "add", id, label, "--json"]
+    const result = await this.exec(args)
+    const results = JSON.parse(result) as BdLabelResult[]
+    return results[0]
+  }
+
+  /**
+   * Remove a label from an issue.
+   *
+   * @param id - Issue ID to remove label from
+   * @param label - Label to remove
+   * @returns Result of the operation
+   */
+  async removeLabel(id: string, label: string): Promise<BdLabelResult> {
+    const args = ["label", "remove", id, label, "--json"]
+    const result = await this.exec(args)
+    const results = JSON.parse(result) as BdLabelResult[]
+    return results[0]
+  }
+
+  /**
+   * List all unique labels in the database.
+   *
+   * @returns Array of all unique label strings
+   */
+  async listAllLabels(): Promise<string[]> {
+    const args = ["label", "list-all", "--json"]
+    const result = await this.exec(args)
+    return JSON.parse(result) as string[]
   }
 
   /**

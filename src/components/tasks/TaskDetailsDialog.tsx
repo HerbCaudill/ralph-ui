@@ -1,10 +1,12 @@
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import {
   IconCircle,
   IconCircleDot,
   IconCircleCheck,
   IconBan,
   IconClock,
+  IconX,
+  IconPlus,
   type TablerIcon,
 } from "@tabler/icons-react"
 import {
@@ -210,6 +212,30 @@ export function TaskDetailsDialog({
   const [isSaving, setIsSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
 
+  // Labels state
+  const [labels, setLabels] = useState<string[]>([])
+  const [newLabel, setNewLabel] = useState("")
+  const [isAddingLabel, setIsAddingLabel] = useState(false)
+  const [showLabelInput, setShowLabelInput] = useState(false)
+  const labelInputRef = useRef<HTMLInputElement>(null)
+
+  // Fetch labels when task changes
+  useEffect(() => {
+    if (task && open) {
+      // Fetch labels from API
+      fetch(`/api/tasks/${task.id}/labels`)
+        .then(res => res.json())
+        .then((data: { ok: boolean; labels?: string[] }) => {
+          if (data.ok && data.labels) {
+            setLabels(data.labels)
+          }
+        })
+        .catch(err => {
+          console.error("Failed to fetch labels:", err)
+        })
+    }
+  }, [task, open])
+
   // Reset local state when task changes
   useEffect(() => {
     if (task) {
@@ -219,6 +245,9 @@ export function TaskDetailsDialog({
       setPriority(task.priority ?? 2)
       setIssueType((task.issue_type as IssueType) ?? "task")
       setParent(task.parent ?? null)
+      setLabels(task.labels ?? [])
+      setNewLabel("")
+      setShowLabelInput(false)
       setHasChanges(false)
     }
   }, [task])
@@ -285,6 +314,80 @@ export function TaskDetailsDialog({
   const handleClose = useCallback(() => {
     onClose()
   }, [onClose])
+
+  // Label handlers
+  const handleAddLabel = useCallback(async () => {
+    if (!task || !newLabel.trim() || readOnly) return
+
+    const labelToAdd = newLabel.trim()
+    setIsAddingLabel(true)
+
+    try {
+      const response = await fetch(`/api/tasks/${task.id}/labels`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ label: labelToAdd }),
+      })
+
+      const data = (await response.json()) as { ok: boolean }
+      if (data.ok) {
+        setLabels(prev => (prev.includes(labelToAdd) ? prev : [...prev, labelToAdd]))
+        setNewLabel("")
+        setShowLabelInput(false)
+      }
+    } catch (err) {
+      console.error("Failed to add label:", err)
+    } finally {
+      setIsAddingLabel(false)
+    }
+  }, [task, newLabel, readOnly])
+
+  const handleRemoveLabel = useCallback(
+    async (labelToRemove: string) => {
+      if (!task || readOnly) return
+
+      // Optimistically remove the label
+      setLabels(prev => prev.filter(l => l !== labelToRemove))
+
+      try {
+        const response = await fetch(
+          `/api/tasks/${task.id}/labels/${encodeURIComponent(labelToRemove)}`,
+          { method: "DELETE" },
+        )
+
+        const data = (await response.json()) as { ok: boolean }
+        if (!data.ok) {
+          // Revert on failure
+          setLabels(prev => [...prev, labelToRemove])
+        }
+      } catch (err) {
+        console.error("Failed to remove label:", err)
+        // Revert on error
+        setLabels(prev => [...prev, labelToRemove])
+      }
+    },
+    [task, readOnly],
+  )
+
+  const handleLabelInputKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        e.preventDefault()
+        handleAddLabel()
+      } else if (e.key === "Escape") {
+        setShowLabelInput(false)
+        setNewLabel("")
+      }
+    },
+    [handleAddLabel],
+  )
+
+  // Focus label input when shown
+  useEffect(() => {
+    if (showLabelInput && labelInputRef.current) {
+      labelInputRef.current.focus()
+    }
+  }, [showLabelInput])
 
   // Handle Cmd+Enter / Ctrl+Enter to save
   useEffect(() => {
@@ -408,6 +511,72 @@ export function TaskDetailsDialog({
                   </SelectContent>
                 </Select>
               }
+            </div>
+          </div>
+
+          {/* Labels */}
+          <div className="grid gap-2">
+            <Label>Labels</Label>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {labels.map(label => (
+                <span
+                  key={label}
+                  className="bg-muted text-muted-foreground inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium"
+                >
+                  {label}
+                  {!readOnly && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveLabel(label)}
+                      className="hover:text-foreground -mr-0.5 ml-0.5 rounded-full p-0.5 transition-colors"
+                      aria-label={`Remove ${label} label`}
+                    >
+                      <IconX className="h-3 w-3" />
+                    </button>
+                  )}
+                </span>
+              ))}
+              {labels.length === 0 && readOnly && (
+                <span className="text-muted-foreground text-sm">No labels</span>
+              )}
+              {!readOnly && !showLabelInput && (
+                <button
+                  type="button"
+                  onClick={() => setShowLabelInput(true)}
+                  className="text-muted-foreground hover:text-foreground hover:bg-muted inline-flex items-center gap-1 rounded-full border border-dashed px-2 py-0.5 text-xs transition-colors"
+                >
+                  <IconPlus className="h-3 w-3" />
+                  Add label
+                </button>
+              )}
+              {!readOnly && showLabelInput && (
+                <div className="flex items-center gap-1">
+                  <Input
+                    ref={labelInputRef}
+                    value={newLabel}
+                    onChange={e => setNewLabel(e.target.value)}
+                    onKeyDown={handleLabelInputKeyDown}
+                    onBlur={() => {
+                      if (!newLabel.trim()) {
+                        setShowLabelInput(false)
+                      }
+                    }}
+                    placeholder="Label name"
+                    className="h-6 w-24 px-2 text-xs"
+                    disabled={isAddingLabel}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2"
+                    onClick={handleAddLabel}
+                    disabled={!newLabel.trim() || isAddingLabel}
+                  >
+                    Add
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 

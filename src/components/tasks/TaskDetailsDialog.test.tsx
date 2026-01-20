@@ -13,6 +13,57 @@ function typeInInput(input: HTMLElement, value: string) {
 // Mock fetch for event log tests
 const originalFetch = globalThis.fetch
 
+// Default mock fetch that handles labels API calls
+function createMockFetch(overrides: Record<string, unknown> = {}) {
+  return vi.fn().mockImplementation((url: string, options?: RequestInit) => {
+    // Handle labels fetch
+    if (typeof url === "string" && url.includes("/api/tasks/") && url.includes("/labels")) {
+      // DELETE request - remove label
+      if (options?.method === "DELETE") {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ ok: true, result: { status: "removed" } }),
+        })
+      }
+      // POST request - add label
+      if (options?.method === "POST") {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ ok: true, result: { status: "added" } }),
+        })
+      }
+      // GET request - fetch labels
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ ok: true, labels: [] }),
+      })
+    }
+    // Handle event log fetch
+    if (typeof url === "string" && url.includes("/api/eventlogs")) {
+      return Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            ok: true,
+            eventlog: { id: overrides.eventLogId ?? "mock-event-log-123" },
+          }),
+      })
+    }
+    // Handle comments fetch
+    if (typeof url === "string" && url.includes("/comments")) {
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ ok: true }),
+      })
+    }
+    // Default response
+    return Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve({ ok: true }),
+    })
+  })
+}
+
 describe("TaskDetailsDialog", () => {
   const mockTask: TaskCardTask = {
     id: "test-123",
@@ -30,6 +81,8 @@ describe("TaskDetailsDialog", () => {
   beforeEach(() => {
     mockOnClose.mockClear()
     mockOnSave.mockClear()
+    // Set up default mock fetch
+    globalThis.fetch = createMockFetch()
   })
 
   afterEach(() => {
@@ -692,9 +745,168 @@ describe("TaskDetailsDialog", () => {
     })
   })
 
+  describe("labels", () => {
+    it("shows labels section with 'No labels' when task has no labels", async () => {
+      render(
+        <TaskDetailsDialog
+          task={mockTask}
+          open={true}
+          onClose={mockOnClose}
+          onSave={mockOnSave}
+          readOnly={true}
+        />,
+      )
+
+      // Wait for labels to be fetched
+      await waitFor(() => {
+        expect(screen.getByText("No labels")).toBeInTheDocument()
+      })
+    })
+
+    it("displays labels when task has labels", async () => {
+      // Mock fetch to return labels
+      globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+        if (typeof url === "string" && url.includes("/labels")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ ok: true, labels: ["urgent", "frontend"] }),
+          })
+        }
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ ok: true }),
+        })
+      })
+
+      const taskWithLabels: TaskCardTask = {
+        ...mockTask,
+        labels: ["urgent", "frontend"],
+      }
+
+      render(
+        <TaskDetailsDialog
+          task={taskWithLabels}
+          open={true}
+          onClose={mockOnClose}
+          onSave={mockOnSave}
+        />,
+      )
+
+      // Wait for labels to be displayed
+      await waitFor(() => {
+        expect(screen.getByText("urgent")).toBeInTheDocument()
+        expect(screen.getByText("frontend")).toBeInTheDocument()
+      })
+    })
+
+    it("shows Add label button when not in read-only mode", () => {
+      render(
+        <TaskDetailsDialog task={mockTask} open={true} onClose={mockOnClose} onSave={mockOnSave} />,
+      )
+
+      expect(screen.getByText("Add label")).toBeInTheDocument()
+    })
+
+    it("does not show Add label button in read-only mode", async () => {
+      render(
+        <TaskDetailsDialog
+          task={mockTask}
+          open={true}
+          onClose={mockOnClose}
+          onSave={mockOnSave}
+          readOnly={true}
+        />,
+      )
+
+      // Wait for labels to be fetched
+      await waitFor(() => {
+        expect(screen.getByText("No labels")).toBeInTheDocument()
+      })
+
+      expect(screen.queryByText("Add label")).not.toBeInTheDocument()
+    })
+
+    it("shows label input when Add label is clicked", async () => {
+      render(
+        <TaskDetailsDialog task={mockTask} open={true} onClose={mockOnClose} onSave={mockOnSave} />,
+      )
+
+      const addButton = screen.getByText("Add label")
+      fireEvent.click(addButton)
+
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText("Label name")).toBeInTheDocument()
+      })
+    })
+
+    it("shows remove button on labels when not in read-only mode", async () => {
+      globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+        if (typeof url === "string" && url.includes("/labels")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ ok: true, labels: ["urgent"] }),
+          })
+        }
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ ok: true }),
+        })
+      })
+
+      const taskWithLabel: TaskCardTask = {
+        ...mockTask,
+        labels: ["urgent"],
+      }
+
+      render(
+        <TaskDetailsDialog
+          task={taskWithLabel}
+          open={true}
+          onClose={mockOnClose}
+          onSave={mockOnSave}
+        />,
+      )
+
+      await waitFor(() => {
+        expect(screen.getByText("urgent")).toBeInTheDocument()
+      })
+
+      // Check for remove button
+      expect(screen.getByRole("button", { name: /remove urgent label/i })).toBeInTheDocument()
+    })
+  })
+
   describe("event log capture on close", () => {
     it("does not save event log when task is already closed", async () => {
-      const mockFetch = vi.fn()
+      // Track calls to eventlogs endpoint
+      let eventLogsCalled = false
+      const mockFetch = vi.fn().mockImplementation((url: string, options?: RequestInit) => {
+        // Handle labels fetch
+        if (typeof url === "string" && url.includes("/api/tasks/") && url.includes("/labels")) {
+          if (options?.method === "DELETE" || options?.method === "POST") {
+            return Promise.resolve({
+              ok: true,
+              json: () => Promise.resolve({ ok: true }),
+            })
+          }
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ ok: true, labels: [] }),
+          })
+        }
+        // Handle event log fetch
+        if (typeof url === "string" && url.includes("/api/eventlogs")) {
+          eventLogsCalled = true
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ ok: true, eventlog: { id: "mock-event-log-123" } }),
+          })
+        }
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ ok: true }),
+        })
+      })
       globalThis.fetch = mockFetch
 
       const closedTask: TaskCardTask = {
@@ -730,7 +942,7 @@ describe("TaskDetailsDialog", () => {
       await waitFor(() => {
         expect(mockOnSave).toHaveBeenCalledWith("task-001", { title: "Updated title" })
       })
-      expect(mockFetch).not.toHaveBeenCalledWith("/api/eventlogs", expect.anything())
+      expect(eventLogsCalled).toBe(false)
     })
   })
 })

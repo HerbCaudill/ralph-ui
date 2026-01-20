@@ -584,6 +584,103 @@ describe("BdProxy", () => {
     })
   })
 
+  describe("getLabels", () => {
+    it("calls bd label list with issue id", async () => {
+      const getLabelsPromise = proxy.getLabels("rui-123")
+
+      mockProcess.stdout.emit("data", Buffer.from(JSON.stringify(["urgent", "frontend"])))
+      mockProcess.emit("close", 0)
+
+      const result = await getLabelsPromise
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        "bd",
+        ["label", "list", "rui-123", "--json"],
+        expect.anything(),
+      )
+      expect(result).toEqual(["urgent", "frontend"])
+    })
+
+    it("returns empty array when no labels", async () => {
+      const getLabelsPromise = proxy.getLabels("rui-123")
+
+      mockProcess.stdout.emit("data", Buffer.from("[]"))
+      mockProcess.emit("close", 0)
+
+      const result = await getLabelsPromise
+      expect(result).toEqual([])
+    })
+  })
+
+  describe("addLabel", () => {
+    it("adds a label to an issue", async () => {
+      const addLabelPromise = proxy.addLabel("rui-123", "urgent")
+
+      const labelResult = { issue_id: "rui-123", label: "urgent", status: "added" }
+      mockProcess.stdout.emit("data", Buffer.from(JSON.stringify([labelResult])))
+      mockProcess.emit("close", 0)
+
+      const result = await addLabelPromise
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        "bd",
+        ["label", "add", "rui-123", "urgent", "--json"],
+        expect.anything(),
+      )
+      expect(result).toEqual(labelResult)
+    })
+  })
+
+  describe("removeLabel", () => {
+    it("removes a label from an issue", async () => {
+      const removeLabelPromise = proxy.removeLabel("rui-123", "urgent")
+
+      const labelResult = { issue_id: "rui-123", label: "urgent", status: "removed" }
+      mockProcess.stdout.emit("data", Buffer.from(JSON.stringify([labelResult])))
+      mockProcess.emit("close", 0)
+
+      const result = await removeLabelPromise
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        "bd",
+        ["label", "remove", "rui-123", "urgent", "--json"],
+        expect.anything(),
+      )
+      expect(result).toEqual(labelResult)
+    })
+  })
+
+  describe("listAllLabels", () => {
+    it("lists all unique labels in the database", async () => {
+      const listAllPromise = proxy.listAllLabels()
+
+      mockProcess.stdout.emit(
+        "data",
+        Buffer.from(JSON.stringify(["urgent", "frontend", "backend"])),
+      )
+      mockProcess.emit("close", 0)
+
+      const result = await listAllPromise
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        "bd",
+        ["label", "list-all", "--json"],
+        expect.anything(),
+      )
+      expect(result).toEqual(["urgent", "frontend", "backend"])
+    })
+
+    it("returns empty array when no labels exist", async () => {
+      const listAllPromise = proxy.listAllLabels()
+
+      mockProcess.stdout.emit("data", Buffer.from("[]"))
+      mockProcess.emit("close", 0)
+
+      const result = await listAllPromise
+      expect(result).toEqual([])
+    })
+  })
+
   describe("timeout", () => {
     it("uses default timeout", () => {
       const defaultProxy = new BdProxy({ spawn: mockSpawn as unknown as SpawnFn })

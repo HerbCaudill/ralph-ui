@@ -35,6 +35,8 @@ export interface TaskCardTask {
   created_at?: string
   /** Timestamp when task was closed */
   closed_at?: string
+  /** Labels attached to this task */
+  labels?: string[]
 }
 
 export interface TaskCardProps {

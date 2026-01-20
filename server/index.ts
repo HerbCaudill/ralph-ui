@@ -456,6 +456,76 @@ function createApp(config: ServerConfig): Express {
     }
   })
 
+  // Get labels for a task
+  app.get("/api/tasks/:id/labels", async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id as string
+
+      const bdProxy = getBdProxy()
+      const labels = await bdProxy.getLabels(id)
+
+      res.status(200).json({ ok: true, labels })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to get labels"
+      res.status(500).json({ ok: false, error: message })
+    }
+  })
+
+  // Add a label to a task
+  app.post("/api/tasks/:id/labels", async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id as string
+      const { label } = req.body as { label?: string }
+
+      if (!label?.trim()) {
+        res.status(400).json({ ok: false, error: "Label is required" })
+        return
+      }
+
+      const bdProxy = getBdProxy()
+      const result = await bdProxy.addLabel(id, label.trim())
+
+      res.status(201).json({ ok: true, result })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to add label"
+      res.status(500).json({ ok: false, error: message })
+    }
+  })
+
+  // Remove a label from a task
+  app.delete("/api/tasks/:id/labels/:label", async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id as string
+      const label = req.params.label as string
+
+      if (!label?.trim()) {
+        res.status(400).json({ ok: false, error: "Label is required" })
+        return
+      }
+
+      const bdProxy = getBdProxy()
+      const result = await bdProxy.removeLabel(id, label.trim())
+
+      res.status(200).json({ ok: true, result })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to remove label"
+      res.status(500).json({ ok: false, error: message })
+    }
+  })
+
+  // List all unique labels in the database
+  app.get("/api/labels", async (_req: Request, res: Response) => {
+    try {
+      const bdProxy = getBdProxy()
+      const labels = await bdProxy.listAllLabels()
+
+      res.status(200).json({ ok: true, labels })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to list labels"
+      res.status(500).json({ ok: false, error: message })
+    }
+  })
+
   // Add a comment to a task
   app.post("/api/tasks/:id/comments", async (req: Request, res: Response) => {
     try {
