@@ -69,27 +69,27 @@ function StatusIndicator() {
 
   const statusConfig = {
     stopped: {
-      color: "bg-gray-500",
+      color: "bg-status-neutral",
       label: "Stopped",
     },
     starting: {
-      color: "bg-yellow-500 animate-pulse",
+      color: "bg-status-warning animate-pulse",
       label: "Starting",
     },
     running: {
-      color: "bg-green-500",
+      color: "bg-status-success",
       label: "Running",
     },
     paused: {
-      color: "bg-orange-500",
+      color: "bg-status-warning",
       label: "Paused",
     },
     stopping: {
-      color: "bg-yellow-500 animate-pulse",
+      color: "bg-status-warning animate-pulse",
       label: "Stopping",
     },
     stopping_after_current: {
-      color: "bg-yellow-500",
+      color: "bg-status-warning",
       label: "Stopping after task",
     },
   }
@@ -166,8 +166,8 @@ function ContextWindowProgress() {
 
   // Color coding based on usage: green < 50%, yellow 50-80%, red > 80%
   const getProgressColor = () => {
-    if (progress >= 80) return "bg-red-500"
-    if (progress >= 50) return "bg-yellow-500"
+    if (progress >= 80) return "bg-status-error"
+    if (progress >= 50) return "bg-status-warning"
     return "bg-primary"
   }
 

@@ -151,25 +151,25 @@ describe("ToolUseCard", () => {
   })
 
   describe("status indicator", () => {
-    it("shows amber indicator for pending status", () => {
+    it("shows warning indicator for pending status", () => {
       render(<ToolUseCard event={createToolEvent("Read", { status: "pending" })} />)
-      expect(screen.getByLabelText("pending")).toHaveClass("bg-amber-500")
+      expect(screen.getByLabelText("pending")).toHaveClass("bg-status-warning")
     })
 
-    it("shows blue indicator for running status", () => {
+    it("shows info indicator for running status", () => {
       render(<ToolUseCard event={createToolEvent("Read", { status: "running" })} />)
       const indicator = screen.getByLabelText("running")
-      expect(indicator).toHaveClass("bg-blue-500")
+      expect(indicator).toHaveClass("bg-status-info")
     })
 
-    it("shows green indicator for success status", () => {
+    it("shows success indicator for success status", () => {
       render(<ToolUseCard event={createToolEvent("Read", { status: "success" })} />)
-      expect(screen.getByLabelText("success")).toHaveClass("bg-green-500")
+      expect(screen.getByLabelText("success")).toHaveClass("bg-status-success")
     })
 
-    it("shows red indicator for error status", () => {
+    it("shows error indicator for error status", () => {
       render(<ToolUseCard event={createToolEvent("Read", { status: "error" })} />)
-      expect(screen.getByLabelText("error")).toHaveClass("bg-red-500")
+      expect(screen.getByLabelText("error")).toHaveClass("bg-status-error")
     })
   })
 

@@ -210,13 +210,15 @@ export function WorkspacePicker({
           "text-sm font-medium",
           isLoading && "opacity-70",
           isHeaderVariant ?
-            cn("hover:bg-white/20", isServerDown && "bg-red-500/30 hover:bg-red-500/40")
+            cn("hover:bg-white/20", isServerDown && "bg-status-error/30 hover:bg-status-error/40")
           : cn(
               "bg-secondary hover:bg-secondary/80",
-              isServerDown && "bg-red-500/10 text-red-500 hover:bg-red-500/20",
+              isServerDown && "bg-status-error/10 text-status-error hover:bg-status-error/20",
             ),
         )}
-        style={isHeaderVariant ? { color: isServerDown ? "#ff6b6b" : textColor } : undefined}
+        style={
+          isHeaderVariant ? { color: isServerDown ? "var(--status-error)" : textColor } : undefined
+        }
         aria-expanded={isOpen}
         aria-haspopup="true"
         disabled={isLoading}
@@ -224,7 +226,7 @@ export function WorkspacePicker({
         <IconFolderFilled
           className={cn(
             "size-4",
-            isServerDown && "text-red-500",
+            isServerDown && "text-status-error",
             !isHeaderVariant && !accentColor && "text-muted-foreground",
           )}
           style={{
@@ -257,11 +259,11 @@ export function WorkspacePicker({
           {/* Error state */}
           {error && (
             <div className="p-3">
-              <div className="flex items-center gap-2 text-sm text-red-500">
+              <div className="text-status-error flex items-center gap-2 text-sm">
                 <span>{error}</span>
                 <button
                   onClick={fetchWorkspaceInfo}
-                  className="text-red-400 hover:text-red-300"
+                  className="text-status-error/80 hover:text-status-error/60"
                   title="Retry"
                 >
                   <IconRefresh className="size-3.5" />

@@ -258,25 +258,25 @@ describe("TaskCard", () => {
   })
 
   describe("issue type", () => {
-    it("displays bug icon with correct color", () => {
+    it("displays bug icon with error color", () => {
       render(<TaskCard task={{ ...baseTask, issue_type: "bug" }} />)
       const typeIndicator = screen.getByLabelText("Type: Bug")
       expect(typeIndicator).toBeInTheDocument()
-      expect(typeIndicator).toHaveClass("text-red-500")
+      expect(typeIndicator).toHaveClass("text-status-error")
     })
 
-    it("displays feature icon with correct color", () => {
+    it("displays feature icon with primary color", () => {
       render(<TaskCard task={{ ...baseTask, issue_type: "feature" }} />)
       const typeIndicator = screen.getByLabelText("Type: Feature")
       expect(typeIndicator).toBeInTheDocument()
-      expect(typeIndicator).toHaveClass("text-purple-500")
+      expect(typeIndicator).toHaveClass("text-primary")
     })
 
-    it("displays epic icon with correct color", () => {
+    it("displays epic icon with primary color", () => {
       render(<TaskCard task={{ ...baseTask, issue_type: "epic" }} />)
       const typeIndicator = screen.getByLabelText("Type: Epic")
       expect(typeIndicator).toBeInTheDocument()
-      expect(typeIndicator).toHaveClass("text-indigo-500")
+      expect(typeIndicator).toHaveClass("text-primary")
     })
 
     it("does not display type icon for task type", () => {

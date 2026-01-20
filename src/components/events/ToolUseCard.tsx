@@ -33,14 +33,14 @@ export interface ToolUseEvent {
 function getStatusColor(status?: string): string {
   switch (status) {
     case "running":
-      return "bg-blue-500"
+      return "bg-status-info"
     case "success":
-      return "bg-green-500"
+      return "bg-status-success"
     case "error":
-      return "bg-red-500"
+      return "bg-status-error"
     case "pending":
     default:
-      return "bg-amber-500"
+      return "bg-status-warning"
   }
 }
 
@@ -190,8 +190,8 @@ function DiffView({
           key={i}
           className={cn(
             "flex",
-            line.type === "added" && "bg-green-500/20",
-            line.type === "removed" && "bg-red-500/20",
+            line.type === "added" && "bg-status-success/20",
+            line.type === "removed" && "bg-status-error/20",
           )}
         >
           <span className="text-muted-foreground w-8 shrink-0 border-r px-1 text-right select-none">
@@ -202,9 +202,9 @@ function DiffView({
           </span>
           <span className="w-4 shrink-0 text-center select-none">
             {line.type === "added" ?
-              <span className="text-green-500">+</span>
+              <span className="text-status-success">+</span>
             : line.type === "removed" ?
-              <span className="text-red-500">-</span>
+              <span className="text-status-error">-</span>
             : ""}
           </span>
           <span className="flex-1 px-2 whitespace-pre">{line.content}</span>
@@ -231,8 +231,10 @@ function TodoList({
           <span
             className={cn(
               "mt-0.5 flex size-3 shrink-0 items-center justify-center rounded-xs border text-[10px]",
-              todo.status === "completed" && "border-green-500 bg-green-500/20 text-green-500",
-              todo.status === "in_progress" && "border-blue-500 bg-blue-500/20 text-blue-500",
+              todo.status === "completed" &&
+                "border-status-success bg-status-success/20 text-status-success",
+              todo.status === "in_progress" &&
+                "border-status-info bg-status-info/20 text-status-info",
               todo.status === "pending" && "border-muted-foreground",
             )}
           >
@@ -407,7 +409,9 @@ export function ToolUseCard({ event, className, defaultExpanded = false }: ToolU
                 })()}
 
               {/* Error - show first line only */}
-              {event.error && <div className="my-1 text-red-500">{event.error.split("\n")[0]}</div>}
+              {event.error && (
+                <div className="text-status-error my-1">{event.error.split("\n")[0]}</div>
+              )}
             </div>
           </div>
         </div>

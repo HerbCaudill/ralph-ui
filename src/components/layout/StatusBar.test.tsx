@@ -110,21 +110,23 @@ describe("StatusBar", () => {
       expect(progressBar).toBeInTheDocument()
     })
 
-    it("uses yellow color when usage is between 50% and 80%", () => {
+    it("uses warning color when usage is between 50% and 80%", () => {
       // 120k of 200k = 60%
       useAppStore.getState().updateContextWindowUsed(120000)
       render(<StatusBar />)
       const progressBar = screen
         .getByTestId("context-window-progress")
-        .querySelector(".bg-yellow-500")
+        .querySelector(".bg-status-warning")
       expect(progressBar).toBeInTheDocument()
     })
 
-    it("uses red color when usage is over 80%", () => {
+    it("uses error color when usage is over 80%", () => {
       // 180k of 200k = 90%
       useAppStore.getState().updateContextWindowUsed(180000)
       render(<StatusBar />)
-      const progressBar = screen.getByTestId("context-window-progress").querySelector(".bg-red-500")
+      const progressBar = screen
+        .getByTestId("context-window-progress")
+        .querySelector(".bg-status-error")
       expect(progressBar).toBeInTheDocument()
     })
 

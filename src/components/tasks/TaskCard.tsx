@@ -63,32 +63,32 @@ const statusConfig: Record<TaskStatus, StatusConfig> = {
   open: {
     icon: IconCircle,
     label: "Open",
-    color: "text-gray-500",
-    bgColor: "bg-gray-500/10",
+    color: "text-status-neutral",
+    bgColor: "bg-status-neutral/10",
   },
   in_progress: {
     icon: IconCircleDot,
     label: "In Progress",
-    color: "text-blue-500",
-    bgColor: "bg-blue-500/10",
+    color: "text-status-info",
+    bgColor: "bg-status-info/10",
   },
   blocked: {
     icon: IconBan,
     label: "Blocked",
-    color: "text-red-500",
-    bgColor: "bg-red-500/10",
+    color: "text-status-error",
+    bgColor: "bg-status-error/10",
   },
   deferred: {
     icon: IconClock,
     label: "Deferred",
-    color: "text-amber-500",
-    bgColor: "bg-amber-500/10",
+    color: "text-status-warning",
+    bgColor: "bg-status-warning/10",
   },
   closed: {
     icon: IconCircleCheck,
     label: "Closed",
-    color: "text-green-500",
-    bgColor: "bg-green-500/10",
+    color: "text-status-success",
+    bgColor: "bg-status-success/10",
   },
 }
 
@@ -108,17 +108,17 @@ export const typeConfig: Record<string, TypeConfig> = {
   bug: {
     icon: IconBug,
     label: "Bug",
-    color: "text-red-500",
+    color: "text-status-error",
   },
   feature: {
     icon: IconSparkles,
     label: "Feature",
-    color: "text-purple-500",
+    color: "text-primary",
   },
   epic: {
     icon: IconStack2,
     label: "Epic",
-    color: "text-indigo-500",
+    color: "text-primary",
   },
 }
 
@@ -133,23 +133,23 @@ interface PriorityConfig {
 const priorityConfig: Record<number, PriorityConfig> = {
   0: {
     label: "P0",
-    color: "text-red-600",
-    bgColor: "bg-red-500/20",
+    color: "text-status-error",
+    bgColor: "bg-status-error/20",
   },
   1: {
     label: "P1",
-    color: "text-orange-500",
-    bgColor: "bg-orange-500/15",
+    color: "text-status-warning",
+    bgColor: "bg-status-warning/15",
   },
   3: {
     label: "P3",
-    color: "text-gray-500",
-    bgColor: "bg-gray-500/10",
+    color: "text-status-neutral",
+    bgColor: "bg-status-neutral/10",
   },
   4: {
     label: "P4",
-    color: "text-gray-400",
-    bgColor: "bg-gray-400/10",
+    color: "text-muted-foreground",
+    bgColor: "bg-muted/50",
   },
 }
 
