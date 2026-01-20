@@ -143,8 +143,10 @@ export class TaskChatManager extends EventEmitter {
     return new Promise((resolve, reject) => {
       try {
         // Spawn Claude CLI in print mode with streaming JSON output
+        // Note: --verbose is required for stream-json output to work with --print
         const args = [
           "--print",
+          "--verbose",
           "--output-format",
           "stream-json",
           "--model",

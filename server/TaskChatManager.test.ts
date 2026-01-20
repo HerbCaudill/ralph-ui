@@ -100,6 +100,7 @@ describe("TaskChatManager", () => {
         "claude",
         expect.arrayContaining([
           "--print",
+          "--verbose",
           "--output-format",
           "stream-json",
           "--model",
