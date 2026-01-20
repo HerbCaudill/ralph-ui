@@ -459,6 +459,21 @@ function createApp(config: ServerConfig): Express {
     }
   })
 
+  // Delete a task
+  app.delete("/api/tasks/:id", async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params
+
+      const bdProxy = getBdProxy()
+      await bdProxy.delete(id)
+
+      res.status(200).json({ ok: true })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to delete task"
+      res.status(500).json({ ok: false, error: message })
+    }
+  })
+
   // Get labels for a task
   app.get("/api/tasks/:id/labels", async (req: Request, res: Response) => {
     try {

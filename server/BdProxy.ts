@@ -276,6 +276,18 @@ export class BdProxy {
   }
 
   /**
+   * Delete one or more issues.
+   *
+   * @param ids - Issue ID(s) to delete
+   */
+  async delete(ids: string | string[]): Promise<void> {
+    const idList = Array.isArray(ids) ? ids : [ids]
+    const args = ["delete", "--yes", ...idList]
+
+    await this.exec(args)
+  }
+
+  /**
    * Add a comment to an issue.
    *
    * @param id - Issue ID to add comment to

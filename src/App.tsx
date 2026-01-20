@@ -386,6 +386,7 @@ export function App() {
         open={taskDialog.isOpen}
         onClose={taskDialog.closeDialog}
         onSave={taskDialog.saveTask}
+        onDelete={taskDialog.deleteTask}
       />
       <HotkeysDialog open={hotkeysDialogOpen} onClose={handleCloseHotkeysDialog} />
       <CommandPalette

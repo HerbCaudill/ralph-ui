@@ -7,6 +7,8 @@ import type { TaskUpdateData } from "@/components/tasks/TaskDetailsDialog"
 export interface UseTaskDialogOptions {
   /** Callback after a task is successfully updated */
   onTaskUpdated?: () => void | Promise<void>
+  /** Callback after a task is successfully deleted */
+  onTaskDeleted?: () => void | Promise<void>
 }
 
 export interface UseTaskDialogResult {
@@ -28,6 +30,8 @@ export interface UseTaskDialogResult {
   closeDialog: () => void
   /** Save task updates */
   saveTask: (id: string, updates: TaskUpdateData) => Promise<void>
+  /** Delete a task */
+  deleteTask: (id: string) => Promise<void>
 }
 
 // API Functions
@@ -60,13 +64,29 @@ async function updateTask(id: string, updates: TaskUpdateData): Promise<TaskResp
   }
 }
 
+interface DeleteResponse {
+  ok: boolean
+  error?: string
+}
+
+async function deleteTaskApi(id: string): Promise<DeleteResponse> {
+  try {
+    const response = await fetch(`/api/tasks/${id}`, {
+      method: "DELETE",
+    })
+    return (await response.json()) as DeleteResponse
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Failed to delete task" }
+  }
+}
+
 // Hook
 
 /**
  * Hook to manage task details dialog state and API updates.
  */
 export function useTaskDialog(options: UseTaskDialogOptions = {}): UseTaskDialogResult {
-  const { onTaskUpdated } = options
+  const { onTaskUpdated, onTaskDeleted } = options
 
   const [selectedTask, setSelectedTask] = useState<TaskCardTask | null>(null)
   const [isOpen, setIsOpen] = useState(false)
@@ -138,6 +158,31 @@ export function useTaskDialog(options: UseTaskDialogOptions = {}): UseTaskDialog
     [onTaskUpdated],
   )
 
+  const deleteTask = useCallback(
+    async (id: string) => {
+      setIsUpdating(true)
+      setError(null)
+
+      try {
+        const result = await deleteTaskApi(id)
+
+        if (result.ok) {
+          // Notify parent that task was deleted
+          await onTaskDeleted?.()
+        } else {
+          throw new Error(result.error ?? "Failed to delete task")
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Failed to delete task"
+        setError(message)
+        throw err
+      } finally {
+        setIsUpdating(false)
+      }
+    },
+    [onTaskDeleted],
+  )
+
   return {
     selectedTask,
     isOpen,
@@ -148,5 +193,6 @@ export function useTaskDialog(options: UseTaskDialogOptions = {}): UseTaskDialog
     openDialogById,
     closeDialog,
     saveTask,
+    deleteTask,
   }
 }

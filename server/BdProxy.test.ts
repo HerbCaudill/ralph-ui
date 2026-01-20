@@ -543,6 +543,47 @@ describe("BdProxy", () => {
     })
   })
 
+  describe("delete", () => {
+    it("deletes single issue", async () => {
+      const deletePromise = proxy.delete("rui-123")
+
+      mockProcess.stdout.emit("data", Buffer.from(""))
+      mockProcess.emit("close", 0)
+
+      await deletePromise
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        "bd",
+        ["delete", "--yes", "rui-123"],
+        expect.anything(),
+      )
+    })
+
+    it("deletes multiple issues", async () => {
+      const deletePromise = proxy.delete(["rui-1", "rui-2"])
+
+      mockProcess.stdout.emit("data", Buffer.from(""))
+      mockProcess.emit("close", 0)
+
+      await deletePromise
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        "bd",
+        ["delete", "--yes", "rui-1", "rui-2"],
+        expect.anything(),
+      )
+    })
+
+    it("rejects on command failure", async () => {
+      const deletePromise = proxy.delete("rui-invalid")
+
+      mockProcess.stderr.emit("data", Buffer.from("Issue not found"))
+      mockProcess.emit("close", 1)
+
+      await expect(deletePromise).rejects.toThrow("bd exited with code 1: Issue not found")
+    })
+  })
+
   describe("addComment", () => {
     it("adds a comment to an issue", async () => {
       const commentPromise = proxy.addComment("rui-123", "This is a comment")

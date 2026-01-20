@@ -7,6 +7,7 @@ import {
   IconClock,
   IconX,
   IconPlus,
+  IconTrash,
   type TablerIcon,
 } from "@tabler/icons-react"
 import {
@@ -47,6 +48,8 @@ export interface TaskDetailsDialogProps {
   onClose: () => void
   /** Callback when the task is saved */
   onSave?: (id: string, updates: TaskUpdateData) => void | Promise<void>
+  /** Callback when the task is deleted */
+  onDelete?: (id: string) => void | Promise<void>
   /** Whether the dialog is in read-only mode (default: false) */
   readOnly?: boolean
 }
@@ -197,6 +200,7 @@ export function TaskDetailsDialog({
   open,
   onClose,
   onSave,
+  onDelete,
   readOnly = false,
 }: TaskDetailsDialogProps) {
   // Get events, workspace, issue prefix, and tasks from store
@@ -214,6 +218,10 @@ export function TaskDetailsDialog({
   const [parent, setParent] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
+
+  // Delete state
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Labels state
   const [labels, setLabels] = useState<string[]>([])
@@ -257,6 +265,8 @@ export function TaskDetailsDialog({
       setShowLabelInput(false)
       setIsEditingDescription(false)
       setHasChanges(false)
+      setIsConfirmingDelete(false)
+      setIsDeleting(false)
     }
   }, [task])
 
@@ -320,8 +330,24 @@ export function TaskDetailsDialog({
   ])
 
   const handleClose = useCallback(() => {
+    setIsConfirmingDelete(false)
     onClose()
   }, [onClose])
+
+  const handleDelete = useCallback(async () => {
+    if (!task || !onDelete || readOnly) return
+
+    setIsDeleting(true)
+    try {
+      await onDelete(task.id)
+      onClose()
+    } catch (error) {
+      console.error("Failed to delete task:", error)
+    } finally {
+      setIsDeleting(false)
+      setIsConfirmingDelete(false)
+    }
+  }, [task, onDelete, readOnly, onClose])
 
   // Label handlers
   const handleAddLabel = useCallback(async () => {
@@ -736,13 +762,53 @@ export function TaskDetailsDialog({
         </div>
 
         {!readOnly && (
-          <DialogFooter>
-            <Button variant="outline" onClick={handleClose} disabled={isSaving}>
-              Cancel
-            </Button>
-            <Button onClick={handleSave} disabled={isSaving || !hasChanges}>
-              {isSaving ? "Saving..." : "Save changes"}
-            </Button>
+          <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between">
+            {/* Delete section - left side */}
+            {onDelete && (
+              <div className="flex items-center gap-2">
+                {isConfirmingDelete ?
+                  <>
+                    <span className="text-destructive text-sm">Delete this task?</span>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleDelete}
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? "Deleting..." : "Yes, delete"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsConfirmingDelete(false)}
+                      disabled={isDeleting}
+                    >
+                      Cancel
+                    </Button>
+                  </>
+                : <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsConfirmingDelete(true)}
+                    disabled={isSaving}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <IconTrash className="mr-1 h-4 w-4" />
+                    Delete
+                  </Button>
+                }
+              </div>
+            )}
+
+            {/* Save/Cancel section - right side */}
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleClose} disabled={isSaving || isDeleting}>
+                Cancel
+              </Button>
+              <Button onClick={handleSave} disabled={isSaving || isDeleting || !hasChanges}>
+                {isSaving ? "Saving..." : "Save changes"}
+              </Button>
+            </div>
           </DialogFooter>
         )}
       </DialogContent>
