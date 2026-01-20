@@ -1,7 +1,15 @@
 import { cn } from "@/lib/utils"
-import { useAppStore, selectEvents, selectRalphStatus, type RalphEvent } from "@/store"
-import { useCallback, useEffect, useRef, useState } from "react"
-import { IconChevronDown } from "@tabler/icons-react"
+import {
+  useAppStore,
+  selectEvents,
+  selectRalphStatus,
+  selectViewingIterationIndex,
+  getEventsForIteration,
+  countIterations,
+  type RalphEvent,
+} from "@/store"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { IconChevronDown, IconChevronLeft, IconChevronRight } from "@tabler/icons-react"
 import { TopologySpinner } from "@/components/ui/TopologySpinner"
 import { UserMessage, type UserMessageEvent } from "./UserMessage"
 import { AssistantText, type AssistantTextEvent } from "./AssistantText"
@@ -223,12 +231,27 @@ function EventItem({ event, toolResults }: EventItemProps) {
  * Auto-scrolls to bottom, pauses on user interaction.
  */
 export function EventStream({ className, maxEvents = 1000 }: EventStreamProps) {
-  const events = useAppStore(selectEvents)
+  const allEvents = useAppStore(selectEvents)
+  const viewingIterationIndex = useAppStore(selectViewingIterationIndex)
+  const goToPreviousIteration = useAppStore(state => state.goToPreviousIteration)
+  const goToNextIteration = useAppStore(state => state.goToNextIteration)
+  const goToLatestIteration = useAppStore(state => state.goToLatestIteration)
   const ralphStatus = useAppStore(selectRalphStatus)
   const isRunning = ralphStatus === "running" || ralphStatus === "starting"
   const containerRef = useRef<HTMLDivElement>(null)
   const [autoScroll, setAutoScroll] = useState(true)
   const [isAtBottom, setIsAtBottom] = useState(true)
+
+  // Compute iteration-related values with useMemo to avoid infinite loops
+  const iterationCount = useMemo(() => countIterations(allEvents), [allEvents])
+  const iterationEvents = useMemo(
+    () => getEventsForIteration(allEvents, viewingIterationIndex),
+    [allEvents, viewingIterationIndex],
+  )
+  const isViewingLatest = viewingIterationIndex === null
+
+  // Use iteration-filtered events
+  const events = iterationEvents
 
   // Process streaming events
   const { completedEvents, streamingMessage } = useStreamingState(events)
@@ -289,12 +312,19 @@ export function EventStream({ className, maxEvents = 1000 }: EventStreamProps) {
     }
   }, [checkIsAtBottom])
 
-  // Auto-scroll to bottom when new events arrive
+  // Auto-scroll to bottom when new events arrive (only when viewing latest)
   useEffect(() => {
-    if (autoScroll && containerRef.current) {
+    if (autoScroll && isViewingLatest && containerRef.current) {
       containerRef.current.scrollTop = containerRef.current.scrollHeight
     }
-  }, [events, autoScroll])
+  }, [events, autoScroll, isViewingLatest])
+
+  // Scroll to top when navigating to a different iteration
+  useEffect(() => {
+    if (!isViewingLatest && containerRef.current) {
+      containerRef.current.scrollTop = 0
+    }
+  }, [viewingIterationIndex, isViewingLatest])
 
   // Scroll to bottom button handler
   const scrollToBottom = useCallback(() => {
@@ -305,8 +335,52 @@ export function EventStream({ className, maxEvents = 1000 }: EventStreamProps) {
     }
   }, [])
 
+  // Calculate displayed iteration number (1-based for UI)
+  const displayedIteration =
+    viewingIterationIndex !== null ? viewingIterationIndex + 1 : iterationCount
+  const showIterationNav = iterationCount > 1
+
   return (
     <div className={cn("relative flex h-full flex-col", className)}>
+      {/* Iteration navigation header */}
+      {showIterationNav && (
+        <div className="bg-muted/50 border-border flex items-center justify-between border-b px-3 py-1.5">
+          <button
+            onClick={goToPreviousIteration}
+            disabled={viewingIterationIndex === 0}
+            className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs disabled:cursor-not-allowed disabled:opacity-30"
+            aria-label="Previous iteration"
+          >
+            <IconChevronLeft className="size-4" />
+            <span className="hidden sm:inline">Previous</span>
+          </button>
+
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground text-xs">
+              Iteration {displayedIteration} of {iterationCount}
+            </span>
+            {!isViewingLatest && (
+              <button
+                onClick={goToLatestIteration}
+                className="bg-primary text-primary-foreground rounded px-2 py-0.5 text-xs font-medium hover:opacity-90"
+              >
+                Latest
+              </button>
+            )}
+          </div>
+
+          <button
+            onClick={goToNextIteration}
+            disabled={isViewingLatest}
+            className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs disabled:cursor-not-allowed disabled:opacity-30"
+            aria-label="Next iteration"
+          >
+            <span className="hidden sm:inline">Next</span>
+            <IconChevronRight className="size-4" />
+          </button>
+        </div>
+      )}
+
       {/* Events container */}
       <div
         ref={containerRef}
@@ -318,7 +392,7 @@ export function EventStream({ className, maxEvents = 1000 }: EventStreamProps) {
         aria-label="Event stream"
         aria-live="polite"
       >
-        {events.length === 0 ?
+        {allEvents.length === 0 ?
           <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
             No events yet
           </div>

@@ -26,6 +26,9 @@ export type HotkeyAction =
   | "toggleTaskChat"
   | "focusTaskChatInput"
   | "showCommandPalette"
+  | "previousIteration"
+  | "nextIteration"
+  | "latestIteration"
 
 export type HotkeysConfig = Record<HotkeyAction, HotkeyConfig>
 

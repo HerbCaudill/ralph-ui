@@ -179,6 +179,9 @@ export function useHotkeys({ handlers, enabled = true }: UseHotkeysOptions): Use
               "toggleTaskChat",
               "focusTaskChatInput",
               "showCommandPalette",
+              "previousIteration",
+              "nextIteration",
+              "latestIteration",
             ]
 
             if (isInput && !allowedInInput.includes(action)) {

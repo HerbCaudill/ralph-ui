@@ -163,6 +163,9 @@ export interface AppState {
   // Git branch name
   branch: string | null
 
+  // Issue prefix for this workspace (e.g., "rui")
+  issuePrefix: string | null
+
   // Token usage
   tokenUsage: TokenUsage
 
@@ -197,6 +200,9 @@ export interface AppState {
   taskChatMessages: TaskChatMessage[]
   taskChatLoading: boolean
   taskChatStreamingText: string
+
+  // Iteration view state (null = show current/latest iteration)
+  viewingIterationIndex: number | null
 }
 
 // Store Actions
@@ -222,6 +228,9 @@ export interface AppActions {
 
   // Branch
   setBranch: (branch: string | null) => void
+
+  // Issue prefix
+  setIssuePrefix: (prefix: string | null) => void
 
   // Token usage
   setTokenUsage: (usage: TokenUsage) => void
@@ -262,8 +271,71 @@ export interface AppActions {
   setTaskChatStreamingText: (text: string) => void
   appendTaskChatStreamingText: (text: string) => void
 
+  // Iteration view
+  setViewingIterationIndex: (index: number | null) => void
+  goToPreviousIteration: () => void
+  goToNextIteration: () => void
+  goToLatestIteration: () => void
+
   // Reset
   reset: () => void
+}
+
+// Iteration boundary helpers
+
+/**
+ * Checks if an event is an iteration boundary (system init event).
+ */
+export function isIterationBoundary(event: RalphEvent): boolean {
+  return event.type === "system" && (event as any).subtype === "init"
+}
+
+/**
+ * Gets the indices of iteration boundaries in the events array.
+ * Returns an array of indices where each iteration starts.
+ */
+export function getIterationBoundaries(events: RalphEvent[]): number[] {
+  const boundaries: number[] = []
+  events.forEach((event, index) => {
+    if (isIterationBoundary(event)) {
+      boundaries.push(index)
+    }
+  })
+  return boundaries
+}
+
+/**
+ * Counts the total number of iterations in the events array.
+ */
+export function countIterations(events: RalphEvent[]): number {
+  return getIterationBoundaries(events).length
+}
+
+/**
+ * Gets events for a specific iteration.
+ * Returns events from the iteration boundary up to (but not including) the next boundary.
+ * If iterationIndex is null or out of bounds, returns all events.
+ */
+export function getEventsForIteration(
+  events: RalphEvent[],
+  iterationIndex: number | null,
+): RalphEvent[] {
+  if (iterationIndex === null) {
+    // Return all events from the latest iteration
+    const boundaries = getIterationBoundaries(events)
+    if (boundaries.length === 0) return events
+    const lastBoundary = boundaries[boundaries.length - 1]
+    return events.slice(lastBoundary)
+  }
+
+  const boundaries = getIterationBoundaries(events)
+  if (boundaries.length === 0 || iterationIndex < 0 || iterationIndex >= boundaries.length) {
+    return events
+  }
+
+  const startIndex = boundaries[iterationIndex]
+  const endIndex = boundaries[iterationIndex + 1] ?? events.length
+  return events.slice(startIndex, endIndex)
 }
 
 // Initial State
@@ -278,6 +350,7 @@ const initialState: AppState = {
   tasks: [],
   workspace: null,
   branch: null,
+  issuePrefix: null,
   tokenUsage: { input: 0, output: 0 },
   contextWindow: { used: 0, max: DEFAULT_CONTEXT_WINDOW_MAX },
   iteration: { current: 0, total: 0 },
@@ -295,6 +368,7 @@ const initialState: AppState = {
   taskChatMessages: [],
   taskChatLoading: false,
   taskChatStreamingText: "",
+  viewingIterationIndex: null,
 }
 
 // Create the store with localStorage initialization
@@ -346,6 +420,9 @@ export const useAppStore = create<AppState & AppActions>(set => ({
 
   // Branch
   setBranch: branch => set({ branch }),
+
+  // Issue prefix
+  setIssuePrefix: prefix => set({ issuePrefix: prefix }),
 
   // Token usage
   setTokenUsage: usage => set({ tokenUsage: usage }),
@@ -411,6 +488,41 @@ export const useAppStore = create<AppState & AppActions>(set => ({
   appendTaskChatStreamingText: text =>
     set(state => ({ taskChatStreamingText: state.taskChatStreamingText + text })),
 
+  // Iteration view
+  setViewingIterationIndex: index => set({ viewingIterationIndex: index }),
+  goToPreviousIteration: () =>
+    set(state => {
+      const totalIterations = countIterations(state.events)
+      if (totalIterations === 0) return state
+
+      // If viewing latest (null), go to second-to-last iteration
+      if (state.viewingIterationIndex === null) {
+        const newIndex = totalIterations > 1 ? totalIterations - 2 : 0
+        return { viewingIterationIndex: newIndex }
+      }
+
+      // If already at first iteration, stay there
+      if (state.viewingIterationIndex <= 0) return state
+
+      return { viewingIterationIndex: state.viewingIterationIndex - 1 }
+    }),
+  goToNextIteration: () =>
+    set(state => {
+      const totalIterations = countIterations(state.events)
+      if (totalIterations === 0) return state
+
+      // If already viewing latest, stay there
+      if (state.viewingIterationIndex === null) return state
+
+      // If at last iteration, switch to latest (null)
+      if (state.viewingIterationIndex >= totalIterations - 1) {
+        return { viewingIterationIndex: null }
+      }
+
+      return { viewingIterationIndex: state.viewingIterationIndex + 1 }
+    }),
+  goToLatestIteration: () => set({ viewingIterationIndex: null }),
+
   // Reset
   reset: () => set(initialState),
 }))
@@ -423,6 +535,7 @@ export const selectEvents = (state: AppState) => state.events
 export const selectTasks = (state: AppState) => state.tasks
 export const selectWorkspace = (state: AppState) => state.workspace
 export const selectBranch = (state: AppState) => state.branch
+export const selectIssuePrefix = (state: AppState) => state.issuePrefix
 export const selectTokenUsage = (state: AppState) => state.tokenUsage
 export const selectContextWindow = (state: AppState) => state.contextWindow
 export const selectIteration = (state: AppState) => state.iteration
@@ -444,3 +557,9 @@ export const selectTaskChatWidth = (state: AppState) => state.taskChatWidth
 export const selectTaskChatMessages = (state: AppState) => state.taskChatMessages
 export const selectTaskChatLoading = (state: AppState) => state.taskChatLoading
 export const selectTaskChatStreamingText = (state: AppState) => state.taskChatStreamingText
+export const selectViewingIterationIndex = (state: AppState) => state.viewingIterationIndex
+export const selectIterationCount = (state: AppState) => countIterations(state.events)
+export const selectCurrentIterationEvents = (state: AppState) =>
+  getEventsForIteration(state.events, state.viewingIterationIndex)
+export const selectIsViewingLatestIteration = (state: AppState) =>
+  state.viewingIterationIndex === null

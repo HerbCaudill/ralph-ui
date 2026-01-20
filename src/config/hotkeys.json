@@ -75,6 +75,21 @@
       "key": ";",
       "modifiers": ["cmd"],
       "description": "Open command palette"
+    },
+    "previousIteration": {
+      "key": "[",
+      "modifiers": ["cmd"],
+      "description": "Go to previous iteration"
+    },
+    "nextIteration": {
+      "key": "]",
+      "modifiers": ["cmd"],
+      "description": "Go to next iteration"
+    },
+    "latestIteration": {
+      "key": "\\",
+      "modifiers": ["cmd"],
+      "description": "Go to latest iteration"
     }
   }
 }

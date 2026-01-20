@@ -4,6 +4,14 @@ import {
   selectCurrentTask,
   SIDEBAR_WIDTH_STORAGE_KEY,
   TASK_CHAT_WIDTH_STORAGE_KEY,
+  isIterationBoundary,
+  getIterationBoundaries,
+  countIterations,
+  getEventsForIteration,
+  selectIterationCount,
+  selectCurrentIterationEvents,
+  selectViewingIterationIndex,
+  selectIsViewingLatestIteration,
 } from "./index"
 import type { RalphEvent, Task, TaskChatMessage } from "./index"
 
@@ -33,6 +41,7 @@ describe("useAppStore", () => {
       expect(state.taskChatMessages).toEqual([])
       expect(state.taskChatLoading).toBe(false)
       expect(state.taskChatStreamingText).toBe("")
+      expect(state.viewingIterationIndex).toBeNull()
     })
   })
 
@@ -273,6 +282,205 @@ describe("useAppStore", () => {
       useAppStore.getState().setIteration({ current: 1, total: 5 })
       useAppStore.getState().setIteration({ current: 2, total: 5 })
       expect(useAppStore.getState().iteration).toEqual({ current: 2, total: 5 })
+    })
+  })
+
+  describe("iteration view", () => {
+    // Helper to create events with iteration boundaries
+    const createEventsWithIterations = (): RalphEvent[] => [
+      { type: "system", subtype: "init", timestamp: 1000 } as RalphEvent,
+      { type: "assistant", timestamp: 1001 } as RalphEvent,
+      { type: "user_message", timestamp: 1002 } as RalphEvent,
+      { type: "system", subtype: "init", timestamp: 2000 } as RalphEvent,
+      { type: "assistant", timestamp: 2001 } as RalphEvent,
+      { type: "system", subtype: "init", timestamp: 3000 } as RalphEvent,
+      { type: "user_message", timestamp: 3001 } as RalphEvent,
+      { type: "assistant", timestamp: 3002 } as RalphEvent,
+    ]
+
+    describe("isIterationBoundary", () => {
+      it("returns true for system init events", () => {
+        const event = { type: "system", subtype: "init", timestamp: 1000 } as RalphEvent
+        expect(isIterationBoundary(event)).toBe(true)
+      })
+
+      it("returns false for other events", () => {
+        expect(isIterationBoundary({ type: "assistant", timestamp: 1000 } as RalphEvent)).toBe(
+          false,
+        )
+        expect(isIterationBoundary({ type: "user_message", timestamp: 1000 } as RalphEvent)).toBe(
+          false,
+        )
+        expect(
+          isIterationBoundary({ type: "system", subtype: "other", timestamp: 1000 } as RalphEvent),
+        ).toBe(false)
+      })
+    })
+
+    describe("getIterationBoundaries", () => {
+      it("returns empty array for no events", () => {
+        expect(getIterationBoundaries([])).toEqual([])
+      })
+
+      it("returns indices of all iteration boundaries", () => {
+        const events = createEventsWithIterations()
+        expect(getIterationBoundaries(events)).toEqual([0, 3, 5])
+      })
+
+      it("returns empty array when no boundaries exist", () => {
+        const events = [
+          { type: "assistant", timestamp: 1000 },
+          { type: "user_message", timestamp: 1001 },
+        ] as RalphEvent[]
+        expect(getIterationBoundaries(events)).toEqual([])
+      })
+    })
+
+    describe("countIterations", () => {
+      it("returns 0 for no events", () => {
+        expect(countIterations([])).toBe(0)
+      })
+
+      it("counts iteration boundaries", () => {
+        const events = createEventsWithIterations()
+        expect(countIterations(events)).toBe(3)
+      })
+    })
+
+    describe("getEventsForIteration", () => {
+      it("returns all events when index is null and no boundaries", () => {
+        const events = [
+          { type: "assistant", timestamp: 1000 },
+          { type: "user_message", timestamp: 1001 },
+        ] as RalphEvent[]
+        expect(getEventsForIteration(events, null)).toEqual(events)
+      })
+
+      it("returns events from latest iteration when index is null", () => {
+        const events = createEventsWithIterations()
+        const result = getEventsForIteration(events, null)
+        expect(result).toHaveLength(3) // 3rd iteration has 3 events
+        expect(result[0].timestamp).toBe(3000)
+      })
+
+      it("returns events for specific iteration index", () => {
+        const events = createEventsWithIterations()
+
+        // First iteration (index 0): 3 events
+        const first = getEventsForIteration(events, 0)
+        expect(first).toHaveLength(3)
+        expect(first[0].timestamp).toBe(1000)
+        expect(first[2].timestamp).toBe(1002)
+
+        // Second iteration (index 1): 2 events
+        const second = getEventsForIteration(events, 1)
+        expect(second).toHaveLength(2)
+        expect(second[0].timestamp).toBe(2000)
+
+        // Third iteration (index 2): 3 events
+        const third = getEventsForIteration(events, 2)
+        expect(third).toHaveLength(3)
+        expect(third[0].timestamp).toBe(3000)
+      })
+
+      it("returns all events for out-of-bounds index", () => {
+        const events = createEventsWithIterations()
+        expect(getEventsForIteration(events, -1)).toEqual(events)
+        expect(getEventsForIteration(events, 10)).toEqual(events)
+      })
+    })
+
+    describe("iteration navigation actions", () => {
+      beforeEach(() => {
+        const events = createEventsWithIterations()
+        events.forEach(e => useAppStore.getState().addEvent(e))
+      })
+
+      it("has null viewingIterationIndex initially (latest)", () => {
+        expect(useAppStore.getState().viewingIterationIndex).toBeNull()
+      })
+
+      it("goToPreviousIteration goes to second-to-last when viewing latest", () => {
+        useAppStore.getState().goToPreviousIteration()
+        expect(useAppStore.getState().viewingIterationIndex).toBe(1) // Index 1 = iteration 2
+      })
+
+      it("goToPreviousIteration decrements index", () => {
+        useAppStore.getState().setViewingIterationIndex(2)
+        useAppStore.getState().goToPreviousIteration()
+        expect(useAppStore.getState().viewingIterationIndex).toBe(1)
+
+        useAppStore.getState().goToPreviousIteration()
+        expect(useAppStore.getState().viewingIterationIndex).toBe(0)
+      })
+
+      it("goToPreviousIteration stays at 0 when at first iteration", () => {
+        useAppStore.getState().setViewingIterationIndex(0)
+        useAppStore.getState().goToPreviousIteration()
+        expect(useAppStore.getState().viewingIterationIndex).toBe(0)
+      })
+
+      it("goToNextIteration increments index", () => {
+        useAppStore.getState().setViewingIterationIndex(0)
+        useAppStore.getState().goToNextIteration()
+        expect(useAppStore.getState().viewingIterationIndex).toBe(1)
+      })
+
+      it("goToNextIteration switches to null when reaching last iteration", () => {
+        useAppStore.getState().setViewingIterationIndex(2) // Last iteration index
+        useAppStore.getState().goToNextIteration()
+        expect(useAppStore.getState().viewingIterationIndex).toBeNull()
+      })
+
+      it("goToNextIteration does nothing when already viewing latest", () => {
+        useAppStore.getState().goToNextIteration()
+        expect(useAppStore.getState().viewingIterationIndex).toBeNull()
+      })
+
+      it("goToLatestIteration sets index to null", () => {
+        useAppStore.getState().setViewingIterationIndex(1)
+        useAppStore.getState().goToLatestIteration()
+        expect(useAppStore.getState().viewingIterationIndex).toBeNull()
+      })
+    })
+
+    describe("iteration selectors", () => {
+      beforeEach(() => {
+        const events = createEventsWithIterations()
+        events.forEach(e => useAppStore.getState().addEvent(e))
+      })
+
+      it("selectIterationCount returns correct count", () => {
+        const state = useAppStore.getState()
+        expect(selectIterationCount(state)).toBe(3)
+      })
+
+      it("selectViewingIterationIndex returns current index", () => {
+        expect(selectViewingIterationIndex(useAppStore.getState())).toBeNull()
+
+        useAppStore.getState().setViewingIterationIndex(1)
+        expect(selectViewingIterationIndex(useAppStore.getState())).toBe(1)
+      })
+
+      it("selectIsViewingLatestIteration returns correct value", () => {
+        expect(selectIsViewingLatestIteration(useAppStore.getState())).toBe(true)
+
+        useAppStore.getState().setViewingIterationIndex(1)
+        expect(selectIsViewingLatestIteration(useAppStore.getState())).toBe(false)
+      })
+
+      it("selectCurrentIterationEvents returns correct events", () => {
+        // Latest iteration
+        let events = selectCurrentIterationEvents(useAppStore.getState())
+        expect(events).toHaveLength(3)
+        expect(events[0].timestamp).toBe(3000)
+
+        // First iteration
+        useAppStore.getState().setViewingIterationIndex(0)
+        events = selectCurrentIterationEvents(useAppStore.getState())
+        expect(events).toHaveLength(3)
+        expect(events[0].timestamp).toBe(1000)
+      })
     })
   })
 
@@ -617,6 +825,7 @@ describe("useAppStore", () => {
       expect(state.taskChatMessages).toEqual([])
       expect(state.taskChatLoading).toBe(false)
       expect(state.taskChatStreamingText).toBe("")
+      expect(state.viewingIterationIndex).toBeNull()
     })
   })
 })

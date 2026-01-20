@@ -63,15 +63,18 @@ bd sync               # Sync with git
 
 Hotkeys are configured in `src/config/hotkeys.json`. The `useHotkeys` hook handles global keyboard events.
 
-| Hotkey      | Action                 |
-| ----------- | ---------------------- |
-| `Cmd+Enter` | Start Ralph            |
-| `Cmd+.`     | Stop Ralph             |
-| `Cmd+B`     | Toggle sidebar         |
-| `Cmd+1`     | Focus sidebar          |
-| `Cmd+2`     | Focus main content     |
-| `Cmd+K`     | Focus quick task input |
-| `Cmd+L`     | Focus chat input       |
+| Hotkey      | Action                   |
+| ----------- | ------------------------ |
+| `Cmd+Enter` | Start Ralph              |
+| `Cmd+.`     | Stop Ralph               |
+| `Cmd+B`     | Toggle sidebar           |
+| `Cmd+1`     | Focus sidebar            |
+| `Cmd+2`     | Focus main content       |
+| `Cmd+K`     | Focus quick task input   |
+| `Cmd+L`     | Focus chat input         |
+| `Cmd+[`     | Go to previous iteration |
+| `Cmd+]`     | Go to next iteration     |
+| `Cmd+\`     | Go to latest iteration   |
 
 On Windows/Linux, use `Ctrl` instead of `Cmd`.
 

@@ -188,6 +188,11 @@ export function App() {
   const toggleSidebar = useAppStore(state => state.toggleSidebar)
   const toggleTaskChat = useAppStore(state => state.toggleTaskChat)
 
+  // Iteration navigation
+  const goToPreviousIteration = useAppStore(state => state.goToPreviousIteration)
+  const goToNextIteration = useAppStore(state => state.goToNextIteration)
+  const goToLatestIteration = useAppStore(state => state.goToLatestIteration)
+
   // Task chat panel state
   const taskChatOpen = useAppStore(selectTaskChatOpen)
   const taskChatWidth = useAppStore(selectTaskChatWidth)
@@ -327,6 +332,9 @@ export function App() {
       toggleTaskChat: handleToggleTaskChat,
       focusTaskChatInput: handleFocusTaskChatInput,
       showCommandPalette: handleShowCommandPalette,
+      previousIteration: goToPreviousIteration,
+      nextIteration: goToNextIteration,
+      latestIteration: goToLatestIteration,
     },
   })
 
