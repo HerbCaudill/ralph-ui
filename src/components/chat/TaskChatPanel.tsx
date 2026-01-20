@@ -227,12 +227,27 @@ export function TaskChatPanel({ className, onClose }: TaskChatPanelProps) {
 
   // Track previous loading state to detect when loading completes
   const wasLoadingRef = useRef(false)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Clear timeout when component unmounts
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+    }
+  }, [])
 
   // Focus input when loading completes (user can type again)
+  // Also clear the timeout since we got a response
   useEffect(() => {
     if (wasLoadingRef.current && !isLoading) {
-      // Loading just finished, focus the input
+      // Loading just finished, focus the input and clear timeout
       chatInputRef.current?.focus()
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
     }
     wasLoadingRef.current = isLoading
   }, [isLoading])
@@ -240,6 +255,12 @@ export function TaskChatPanel({ className, onClose }: TaskChatPanelProps) {
   // Handle sending a message
   const handleSendMessage = useCallback(
     async (message: string) => {
+      // Clear any existing timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
+
       // Add user message to local state immediately
       const userMessage: TaskChatMessage = {
         id: `user-${Date.now()}`,
@@ -251,12 +272,35 @@ export function TaskChatPanel({ className, onClose }: TaskChatPanelProps) {
       setLoading(true)
       setStreamingText("")
 
+      // Set a safety timeout to prevent hanging indefinitely
+      // 90 seconds should be enough for most AI responses
+      timeoutRef.current = setTimeout(() => {
+        // Only timeout if still loading (no response received)
+        if (useAppStore.getState().taskChatLoading) {
+          setLoading(false)
+          setStreamingText("")
+          const timeoutMessage: TaskChatMessage = {
+            id: `timeout-${Date.now()}`,
+            role: "assistant",
+            content:
+              "The request timed out. The server may be busy or the connection was lost. Please try again.",
+            timestamp: Date.now(),
+          }
+          addMessage(timeoutMessage)
+        }
+      }, 90000)
+
       // Send to server - loading state and response handled via WebSocket events
       const result = await sendTaskChatMessage(message)
 
       if (!result.ok) {
         // API request itself failed (network error, etc.)
         // Server errors come via WebSocket task-chat:error event
+        // Clear timeout since we're handling the error now
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current)
+          timeoutRef.current = null
+        }
         setLoading(false)
         const errorMessage: TaskChatMessage = {
           id: `error-${Date.now()}`,
@@ -269,6 +313,7 @@ export function TaskChatPanel({ className, onClose }: TaskChatPanelProps) {
       // Note: The assistant message is added via WebSocket event (task-chat:message)
       // Loading state is cleared via WebSocket event (task-chat:status or task-chat:message)
       // Input will be focused via useEffect when loading completes
+      // Timeout will be cleared in the useEffect when isLoading becomes false
     },
     [addMessage, setLoading, setStreamingText],
   )

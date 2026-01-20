@@ -279,6 +279,88 @@ describe("TaskChatPanel", () => {
       expect(input).not.toBeDisabled()
       expect(input).toHaveFocus()
     })
+
+    it("shows timeout message when response takes too long", async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+
+      try {
+        mockFetch.mockResolvedValueOnce({
+          json: () => Promise.resolve({ ok: true, status: "processing" }),
+        })
+
+        render(<TaskChatPanel />)
+        const input = screen.getByRole("textbox")
+
+        await act(async () => {
+          fireEvent.change(input, { target: { value: "Hello" } })
+          fireEvent.submit(input.closest("form")!)
+        })
+
+        // Wait for fetch to be called
+        await vi.waitFor(() => {
+          expect(mockFetch).toHaveBeenCalled()
+        })
+
+        // Should be loading
+        expect(useAppStore.getState().taskChatLoading).toBe(true)
+
+        // Advance time by 90 seconds (the timeout duration)
+        await act(async () => {
+          vi.advanceTimersByTime(90000)
+        })
+
+        // Should show timeout message
+        expect(screen.getByText(/request timed out/i)).toBeInTheDocument()
+
+        // Loading should be cleared
+        expect(useAppStore.getState().taskChatLoading).toBe(false)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it("clears timeout when response arrives", async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+
+      try {
+        mockFetch.mockResolvedValueOnce({
+          json: () => Promise.resolve({ ok: true, status: "processing" }),
+        })
+
+        render(<TaskChatPanel />)
+        const input = screen.getByRole("textbox")
+
+        await act(async () => {
+          fireEvent.change(input, { target: { value: "Hello" } })
+          fireEvent.submit(input.closest("form")!)
+        })
+
+        // Wait for fetch to be called
+        await vi.waitFor(() => {
+          expect(mockFetch).toHaveBeenCalled()
+        })
+
+        // Advance time partially (not enough to timeout)
+        await act(async () => {
+          vi.advanceTimersByTime(30000)
+        })
+
+        // Simulate response arriving via WebSocket
+        await act(async () => {
+          useAppStore.getState().setTaskChatLoading(false)
+        })
+
+        // Advance time beyond the original timeout
+        await act(async () => {
+          vi.advanceTimersByTime(70000)
+        })
+
+        // Should NOT show timeout message since response arrived
+        expect(screen.queryByText(/request timed out/i)).not.toBeInTheDocument()
+      } finally {
+        vi.useRealTimers()
+      }
+    })
   })
 
   describe("clear history", () => {
