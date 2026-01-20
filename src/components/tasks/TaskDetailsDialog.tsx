@@ -221,6 +221,7 @@ export function TaskDetailsDialog({
   // Delete state
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   // Labels state
   const [labels, setLabels] = useState<string[]>([])
@@ -266,6 +267,7 @@ export function TaskDetailsDialog({
       setHasChanges(false)
       setIsConfirmingDelete(false)
       setIsDeleting(false)
+      setDeleteError(null)
     }
   }, [task])
 
@@ -337,14 +339,17 @@ export function TaskDetailsDialog({
     if (!task || !onDelete || readOnly) return
 
     setIsDeleting(true)
+    setDeleteError(null)
     try {
       await onDelete(task.id)
       onClose()
     } catch (error) {
       console.error("Failed to delete task:", error)
+      const message = error instanceof Error ? error.message : "Failed to delete task"
+      setDeleteError(message)
+      setIsConfirmingDelete(false)
     } finally {
       setIsDeleting(false)
-      setIsConfirmingDelete(false)
     }
   }, [task, onDelete, readOnly, onClose])
 
@@ -769,38 +774,44 @@ export function TaskDetailsDialog({
           <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between">
             {/* Delete section - left side */}
             {onDelete && (
-              <div className="flex items-center gap-2">
-                {isConfirmingDelete ?
-                  <>
-                    <span className="text-destructive text-sm">Delete this task?</span>
-                    <Button
-                      variant="destructive"
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  {isConfirmingDelete ?
+                    <>
+                      <span className="text-destructive text-sm">Delete this task?</span>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleDelete}
+                        disabled={isDeleting}
+                      >
+                        {isDeleting ? "Deleting..." : "Yes, delete"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsConfirmingDelete(false)}
+                        disabled={isDeleting}
+                      >
+                        Cancel
+                      </Button>
+                    </>
+                  : <Button
+                      variant="ghost"
                       size="sm"
-                      onClick={handleDelete}
-                      disabled={isDeleting}
+                      onClick={() => {
+                        setDeleteError(null)
+                        setIsConfirmingDelete(true)
+                      }}
+                      disabled={isSaving}
+                      className="text-muted-foreground hover:text-destructive"
                     >
-                      {isDeleting ? "Deleting..." : "Yes, delete"}
+                      <IconTrash className="mr-1 h-4 w-4" />
+                      Delete
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setIsConfirmingDelete(false)}
-                      disabled={isDeleting}
-                    >
-                      Cancel
-                    </Button>
-                  </>
-                : <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsConfirmingDelete(true)}
-                    disabled={isSaving}
-                    className="text-muted-foreground hover:text-destructive"
-                  >
-                    <IconTrash className="mr-1 h-4 w-4" />
-                    Delete
-                  </Button>
-                }
+                  }
+                </div>
+                {deleteError && <span className="text-destructive text-xs">{deleteError}</span>}
               </div>
             )}
 

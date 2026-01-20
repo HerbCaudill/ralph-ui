@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react"
 import type { TaskCardTask } from "@/components/tasks/TaskCard"
 import type { TaskUpdateData } from "@/components/tasks/TaskDetailsDialog"
+import { useAppStore } from "@/store"
 
 // Types
 
@@ -94,6 +95,10 @@ export function useTaskDialog(options: UseTaskDialogOptions = {}): UseTaskDialog
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Get store actions for task management
+  const refreshTasks = useAppStore(state => state.refreshTasks)
+  const removeTask = useAppStore(state => state.removeTask)
+
   const openDialog = useCallback((task: TaskCardTask) => {
     setSelectedTask(task)
     setIsOpen(true)
@@ -167,6 +172,10 @@ export function useTaskDialog(options: UseTaskDialogOptions = {}): UseTaskDialog
         const result = await deleteTaskApi(id)
 
         if (result.ok) {
+          // Optimistically remove from store immediately
+          removeTask(id)
+          // Also refresh from server to ensure consistency
+          await refreshTasks()
           // Notify parent that task was deleted
           await onTaskDeleted?.()
         } else {
@@ -180,7 +189,7 @@ export function useTaskDialog(options: UseTaskDialogOptions = {}): UseTaskDialog
         setIsUpdating(false)
       }
     },
-    [onTaskDeleted],
+    [onTaskDeleted, removeTask, refreshTasks],
   )
 
   return {

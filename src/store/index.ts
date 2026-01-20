@@ -272,7 +272,9 @@ export interface AppActions {
   // Tasks
   setTasks: (tasks: Task[]) => void
   updateTask: (id: string, updates: Partial<Task>) => void
+  removeTask: (id: string) => void
   clearTasks: () => void
+  refreshTasks: () => Promise<void>
 
   // Workspace
   setWorkspace: (workspace: string | null) => void
@@ -480,7 +482,24 @@ export const useAppStore = create<AppState & AppActions>(set => ({
       tasks: state.tasks.map(task => (task.id === id ? { ...task, ...updates } : task)),
     })),
 
+  removeTask: id =>
+    set(state => ({
+      tasks: state.tasks.filter(task => task.id !== id),
+    })),
+
   clearTasks: () => set({ tasks: [] }),
+
+  refreshTasks: async () => {
+    try {
+      const response = await fetch("/api/tasks?all=true")
+      const data = (await response.json()) as { ok: boolean; issues?: Task[] }
+      if (data.ok && data.issues) {
+        set({ tasks: data.issues })
+      }
+    } catch (err) {
+      console.error("Failed to refresh tasks:", err)
+    }
+  },
 
   // Workspace
   setWorkspace: workspace => set({ workspace }),

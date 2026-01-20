@@ -554,7 +554,7 @@ describe("BdProxy", () => {
 
       expect(mockSpawn).toHaveBeenCalledWith(
         "bd",
-        ["delete", "--yes", "rui-123"],
+        ["delete", "--force", "rui-123"],
         expect.anything(),
       )
     })
@@ -569,7 +569,7 @@ describe("BdProxy", () => {
 
       expect(mockSpawn).toHaveBeenCalledWith(
         "bd",
-        ["delete", "--yes", "rui-1", "rui-2"],
+        ["delete", "--force", "rui-1", "rui-2"],
         expect.anything(),
       )
     })

@@ -282,7 +282,7 @@ export class BdProxy {
    */
   async delete(ids: string | string[]): Promise<void> {
     const idList = Array.isArray(ids) ? ids : [ids]
-    const args = ["delete", "--yes", ...idList]
+    const args = ["delete", "--force", ...idList]
 
     await this.exec(args)
   }
