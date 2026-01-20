@@ -151,6 +151,9 @@ export interface AppState {
   // Timestamp when Ralph started running (null if not running)
   runStartedAt: number | null
 
+  // Initial task count when Ralph started (for progress tracking)
+  initialTaskCount: number | null
+
   // Event stream from ralph
   events: RalphEvent[]
 
@@ -346,6 +349,7 @@ const defaultTaskChatWidth = 400
 const initialState: AppState = {
   ralphStatus: "stopped",
   runStartedAt: null,
+  initialTaskCount: null,
   events: [],
   tasks: [],
   workspace: null,
@@ -392,6 +396,11 @@ export const useAppStore = create<AppState & AppActions>(set => ({
         status === "running" && state.ralphStatus !== "running" ? Date.now()
         : status === "stopped" ? null
         : state.runStartedAt,
+      // Set initialTaskCount when transitioning to running, clear when stopped
+      initialTaskCount:
+        status === "running" && state.ralphStatus !== "running" ? state.tasks.length
+        : status === "stopped" ? null
+        : state.initialTaskCount,
     })),
 
   // Events
@@ -531,6 +540,7 @@ export const useAppStore = create<AppState & AppActions>(set => ({
 
 export const selectRalphStatus = (state: AppState) => state.ralphStatus
 export const selectRunStartedAt = (state: AppState) => state.runStartedAt
+export const selectInitialTaskCount = (state: AppState) => state.initialTaskCount
 export const selectEvents = (state: AppState) => state.events
 export const selectTasks = (state: AppState) => state.tasks
 export const selectWorkspace = (state: AppState) => state.workspace

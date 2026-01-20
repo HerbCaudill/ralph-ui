@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
+import { TaskProgressBar } from "./TaskProgressBar"
 
 // Types
 
@@ -37,13 +38,16 @@ export function TaskSidebar({ quickInput, taskList, className }: TaskSidebarProp
       {quickInput && <div className="border-border shrink-0 border-b px-4 py-3">{quickInput}</div>}
 
       {/* Task List Area */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         {taskList ?? (
           <div className="text-muted-foreground flex h-full items-center justify-center p-4 text-center text-sm">
             No tasks yet
           </div>
         )}
       </div>
+
+      {/* Task Progress Bar */}
+      <TaskProgressBar />
     </div>
   )
 }

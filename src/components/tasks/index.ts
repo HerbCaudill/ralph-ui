@@ -7,3 +7,4 @@ export {
   type QuickTaskInputHandle,
   type CreatedIssue,
 } from "./QuickTaskInput"
+export { TaskProgressBar, type TaskProgressBarProps } from "./TaskProgressBar"

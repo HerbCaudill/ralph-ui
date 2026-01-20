@@ -66,6 +66,74 @@ describe("useAppStore", () => {
       setRalphStatus("stopped")
       expect(useAppStore.getState().ralphStatus).toBe("stopped")
     })
+
+    it("sets initialTaskCount when transitioning to running", () => {
+      // Set up some tasks before running
+      useAppStore.getState().setTasks([
+        { id: "1", title: "Task 1", status: "open" },
+        { id: "2", title: "Task 2", status: "closed" },
+        { id: "3", title: "Task 3", status: "in_progress" },
+      ])
+
+      // Initially null
+      expect(useAppStore.getState().initialTaskCount).toBeNull()
+
+      // Transition to running
+      useAppStore.getState().setRalphStatus("running")
+
+      // Should capture initial task count
+      expect(useAppStore.getState().initialTaskCount).toBe(3)
+    })
+
+    it("clears initialTaskCount when transitioning to stopped", () => {
+      // Set up and start
+      useAppStore.getState().setTasks([{ id: "1", title: "Task 1", status: "open" }])
+      useAppStore.getState().setRalphStatus("running")
+      expect(useAppStore.getState().initialTaskCount).toBe(1)
+
+      // Stop
+      useAppStore.getState().setRalphStatus("stopped")
+      expect(useAppStore.getState().initialTaskCount).toBeNull()
+    })
+
+    it("preserves initialTaskCount during paused/stopping_after_current states", () => {
+      // Set up and start
+      useAppStore.getState().setTasks([
+        { id: "1", title: "Task 1", status: "open" },
+        { id: "2", title: "Task 2", status: "open" },
+      ])
+      useAppStore.getState().setRalphStatus("running")
+      expect(useAppStore.getState().initialTaskCount).toBe(2)
+
+      // Pause - should preserve
+      useAppStore.getState().setRalphStatus("paused")
+      expect(useAppStore.getState().initialTaskCount).toBe(2)
+
+      // Stop after current - should preserve
+      useAppStore.getState().setRalphStatus("stopping_after_current")
+      expect(useAppStore.getState().initialTaskCount).toBe(2)
+    })
+
+    it("does not update initialTaskCount when already running", () => {
+      // Start with 2 tasks
+      useAppStore.getState().setTasks([
+        { id: "1", title: "Task 1", status: "open" },
+        { id: "2", title: "Task 2", status: "open" },
+      ])
+      useAppStore.getState().setRalphStatus("running")
+      expect(useAppStore.getState().initialTaskCount).toBe(2)
+
+      // Add more tasks
+      useAppStore.getState().setTasks([
+        { id: "1", title: "Task 1", status: "open" },
+        { id: "2", title: "Task 2", status: "open" },
+        { id: "3", title: "Task 3", status: "open" },
+      ])
+
+      // Set running again (shouldn't change initial count)
+      useAppStore.getState().setRalphStatus("running")
+      expect(useAppStore.getState().initialTaskCount).toBe(2)
+    })
   })
 
   describe("events", () => {
