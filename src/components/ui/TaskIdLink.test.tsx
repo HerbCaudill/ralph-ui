@@ -76,6 +76,38 @@ describe("TaskIdLink", () => {
       expect(screen.getByRole("button", { name: "View task bar-xyz" })).toBeInTheDocument()
     })
 
+    it("handles task IDs with decimal suffixes", () => {
+      const openTaskById = vi.fn()
+      renderWithContext(<TaskIdLink>See rui-4vp.5 for the subtask</TaskIdLink>, openTaskById)
+
+      const link = screen.getByRole("button", { name: "View task rui-4vp.5" })
+      expect(link).toBeInTheDocument()
+      expect(link).toHaveTextContent("rui-4vp.5")
+
+      fireEvent.click(link)
+      expect(openTaskById).toHaveBeenCalledWith("rui-4vp.5")
+    })
+
+    it("handles multiple decimal suffix task IDs", () => {
+      const openTaskById = vi.fn()
+      renderWithContext(
+        <TaskIdLink>Tasks rui-abc.1, rui-abc.2, and rui-xyz.10</TaskIdLink>,
+        openTaskById,
+      )
+
+      expect(screen.getByRole("button", { name: "View task rui-abc.1" })).toBeInTheDocument()
+      expect(screen.getByRole("button", { name: "View task rui-abc.2" })).toBeInTheDocument()
+      expect(screen.getByRole("button", { name: "View task rui-xyz.10" })).toBeInTheDocument()
+    })
+
+    it("handles mix of task IDs with and without decimal suffixes", () => {
+      const openTaskById = vi.fn()
+      renderWithContext(<TaskIdLink>Parent rui-abc and child rui-abc.1</TaskIdLink>, openTaskById)
+
+      expect(screen.getByRole("button", { name: "View task rui-abc" })).toBeInTheDocument()
+      expect(screen.getByRole("button", { name: "View task rui-abc.1" })).toBeInTheDocument()
+    })
+
     it("preserves text before, between, and after task IDs", () => {
       const { container } = renderWithContext(<TaskIdLink>Start rui-1 middle rui-2 end</TaskIdLink>)
 
@@ -126,6 +158,12 @@ describe("containsTaskId", () => {
   it("returns true for text containing a task ID", () => {
     expect(containsTaskId("Check rui-48s")).toBe(true)
     expect(containsTaskId("proj-abc123")).toBe(true)
+  })
+
+  it("returns true for task IDs with decimal suffixes", () => {
+    expect(containsTaskId("Check rui-48s.5")).toBe(true)
+    expect(containsTaskId("proj-abc.1")).toBe(true)
+    expect(containsTaskId("rui-xyz.10")).toBe(true)
   })
 
   it("returns false for text without task IDs", () => {

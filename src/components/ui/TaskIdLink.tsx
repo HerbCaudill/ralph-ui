@@ -1,9 +1,10 @@
 import { useTaskDialogContext } from "@/contexts"
 import type { ReactNode, MouseEvent } from "react"
 
-// Task ID pattern: prefix-alphanumeric (e.g., rui-48s, proj-abc123)
+// Task ID pattern: prefix-alphanumeric with optional decimal suffix (e.g., rui-48s, proj-abc123, rui-4vp.5)
 // The prefix is typically lowercase letters, the suffix is lowercase alphanumeric
-const TASK_ID_PATTERN = /\b([a-z]+-[a-z0-9]+)\b/g
+// Optionally followed by a decimal point and digits for sub-task notation
+const TASK_ID_PATTERN = /\b([a-z]+-[a-z0-9]+(?:\.\d+)?)\b/g
 
 // Types
 
