@@ -93,6 +93,8 @@ export const QuickTaskInput = forwardRef<QuickTaskInputHandle, QuickTaskInputPro
     })
     const [isSubmitting, setIsSubmitting] = useState(false)
     const textareaRef = useRef<HTMLTextAreaElement>(null)
+    // Track if we just completed a successful submission to refocus
+    const shouldRefocusRef = useRef(false)
 
     // Persist to localStorage as user types
     useEffect(() => {
@@ -110,6 +112,21 @@ export const QuickTaskInput = forwardRef<QuickTaskInputHandle, QuickTaskInputPro
         textareaRef.current?.focus()
       },
     }))
+
+    // Refocus textarea after successful submission
+    // This runs after React has finished rendering, ensuring focus is restored
+    // even after parent components have updated (e.g., task list refresh)
+    useEffect(() => {
+      if (!isSubmitting && shouldRefocusRef.current) {
+        shouldRefocusRef.current = false
+        // Use setTimeout to ensure focus happens after all React updates and
+        // parent component re-renders have completed
+        const timer = setTimeout(() => {
+          textareaRef.current?.focus()
+        }, 0)
+        return () => clearTimeout(timer)
+      }
+    }, [isSubmitting])
 
     const handleSubmit = useCallback(
       async (e?: FormEvent) => {
@@ -134,12 +151,8 @@ export const QuickTaskInput = forwardRef<QuickTaskInputHandle, QuickTaskInputPro
           }
 
           setTitle("")
+          shouldRefocusRef.current = true
           await onTaskCreated?.(data.issue)
-          // Keep textarea focused after submission and any parent callbacks
-          // Use requestAnimationFrame to ensure focus happens after React re-renders
-          requestAnimationFrame(() => {
-            textareaRef.current?.focus()
-          })
         } catch (err) {
           const message = err instanceof Error ? err.message : "Failed to create task"
           onError?.(message)
