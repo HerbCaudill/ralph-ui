@@ -1,10 +1,23 @@
 import { render, screen, waitFor, act } from "@/test-utils"
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest"
 import { App } from "./App"
+import { useAppStore } from "./store"
 
 // Mock fetch for WorkspacePicker
 const mockFetch = vi.fn()
 ;(globalThis as { fetch: typeof fetch }).fetch = mockFetch
+
+// Mock ralphConnection to prevent it from resetting connection status
+vi.mock("./lib/ralphConnection", () => ({
+  ralphConnection: {
+    status: "disconnected",
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+    send: vi.fn(),
+    reset: vi.fn(),
+  },
+  initRalphConnection: vi.fn(),
+}))
 
 // Mock matchMedia for theme detection
 const mockMatchMedia = vi.fn().mockImplementation((query: string) => ({
@@ -93,6 +106,11 @@ describe("App", () => {
   })
 
   it("Tab key toggles focus between task input and chat input", async () => {
+    // Set up connected state so chat input is enabled
+    // (ChatInput is disabled when not connected or not running)
+    useAppStore.getState().setConnectionStatus("connected")
+    useAppStore.getState().setRalphStatus("running")
+
     render(<App />)
 
     // Wait for async operations
