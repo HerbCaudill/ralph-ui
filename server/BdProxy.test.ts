@@ -650,6 +650,52 @@ describe("BdProxy", () => {
     })
   })
 
+  describe("getComments", () => {
+    it("calls bd comments with issue id and --json flag", async () => {
+      const getCommentsPromise = proxy.getComments("rui-123")
+
+      const sampleComments = [
+        {
+          id: 1,
+          issue_id: "rui-123",
+          author: "Test User",
+          text: "This is a comment",
+          created_at: "2026-01-18T12:00:00Z",
+        },
+      ]
+      mockProcess.stdout.emit("data", Buffer.from(JSON.stringify(sampleComments)))
+      mockProcess.emit("close", 0)
+
+      const result = await getCommentsPromise
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        "bd",
+        ["comments", "rui-123", "--json"],
+        expect.anything(),
+      )
+      expect(result).toEqual(sampleComments)
+    })
+
+    it("returns empty array when no comments", async () => {
+      const getCommentsPromise = proxy.getComments("rui-123")
+
+      mockProcess.stdout.emit("data", Buffer.from("[]"))
+      mockProcess.emit("close", 0)
+
+      const result = await getCommentsPromise
+      expect(result).toEqual([])
+    })
+
+    it("rejects on command failure", async () => {
+      const getCommentsPromise = proxy.getComments("rui-invalid")
+
+      mockProcess.stderr.emit("data", Buffer.from("Issue not found"))
+      mockProcess.emit("close", 1)
+
+      await expect(getCommentsPromise).rejects.toThrow("bd exited with code 1: Issue not found")
+    })
+  })
+
   describe("listAllLabels", () => {
     it("lists all unique labels in the database", async () => {
       const listAllPromise = proxy.listAllLabels()

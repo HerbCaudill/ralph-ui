@@ -32,6 +32,7 @@ import { cn, stripTaskPrefix } from "@/lib/utils"
 import { useAppStore, selectIssuePrefix, selectTasks } from "@/store"
 import type { TaskCardTask, TaskStatus } from "./TaskCard"
 import { IconBug, IconSparkles, IconStack2, IconCheckbox } from "@tabler/icons-react"
+import { CommentsSection } from "./CommentsSection"
 
 // Types
 
@@ -670,6 +671,9 @@ export function TaskDetailsDialog({
               }
             </div>
           </div>
+
+          {/* Comments Section */}
+          <CommentsSection taskId={task.id} readOnly={readOnly} />
         </div>
 
         {!readOnly && (

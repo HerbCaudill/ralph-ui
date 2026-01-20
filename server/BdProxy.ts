@@ -102,6 +102,14 @@ export interface BdLabelResult {
   status: "added" | "removed" | "already_exists" | "not_found"
 }
 
+export interface BdComment {
+  id: number
+  issue_id: string
+  author: string
+  text: string
+  created_at: string
+}
+
 // BdProxy
 
 /**
@@ -280,6 +288,18 @@ export class BdProxy {
       args.push("--author", author)
     }
     await this.exec(args)
+  }
+
+  /**
+   * Get comments for an issue.
+   *
+   * @param id - Issue ID to get comments for
+   * @returns Array of comments
+   */
+  async getComments(id: string): Promise<BdComment[]> {
+    const args = ["comments", id, "--json"]
+    const result = await this.exec(args)
+    return JSON.parse(result) as BdComment[]
   }
 
   /**

@@ -526,6 +526,21 @@ function createApp(config: ServerConfig): Express {
     }
   })
 
+  // Get comments for a task
+  app.get("/api/tasks/:id/comments", async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id as string
+
+      const bdProxy = getBdProxy()
+      const comments = await bdProxy.getComments(id)
+
+      res.status(200).json({ ok: true, comments })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to get comments"
+      res.status(500).json({ ok: false, error: message })
+    }
+  })
+
   // Add a comment to a task
   app.post("/api/tasks/:id/comments", async (req: Request, res: Response) => {
     try {
