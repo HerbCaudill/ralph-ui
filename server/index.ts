@@ -10,6 +10,9 @@ import { BdProxy, type BdCreateOptions } from "./BdProxy.js"
 import { getAliveWorkspaces } from "./registry.js"
 import { getEventLogStore, type EventLogMetadata } from "./EventLogStore.js"
 import { TaskChatManager, type TaskChatMessage, type TaskChatStatus } from "./TaskChatManager.js"
+import { getThemeDiscovery } from "./ThemeDiscovery.js"
+import { parseThemeObject } from "../src/lib/theme/parser.js"
+import { mapThemeToCSSVariables, createAppTheme } from "../src/lib/theme/mapper.js"
 
 const execFileAsync = promisify(execFile)
 
@@ -691,6 +694,66 @@ function createApp(config: ServerConfig): Express {
       })
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to get status"
+      res.status(500).json({ ok: false, error: message })
+    }
+  })
+
+  // Theme API endpoints
+  app.get("/api/themes", async (_req: Request, res: Response) => {
+    try {
+      const themeDiscovery = await getThemeDiscovery()
+      const themes = await themeDiscovery.discoverThemes()
+      const currentTheme = await themeDiscovery.getCurrentTheme()
+
+      res.status(200).json({
+        ok: true,
+        themes,
+        currentTheme,
+        variant: themeDiscovery.getVariantName(),
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to list themes"
+      res.status(500).json({ ok: false, error: message })
+    }
+  })
+
+  app.get("/api/themes/:id", async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params as { id: string }
+      const decodedId = decodeURIComponent(id)
+
+      const themeDiscovery = await getThemeDiscovery()
+      const themeMeta = await themeDiscovery.findThemeById(decodedId)
+
+      if (!themeMeta) {
+        res.status(404).json({ ok: false, error: "Theme not found" })
+        return
+      }
+
+      // Read and parse the theme file
+      const themeData = await themeDiscovery.readThemeFile(themeMeta.path)
+      if (!themeData) {
+        res.status(500).json({ ok: false, error: "Failed to read theme file" })
+        return
+      }
+
+      const parseResult = parseThemeObject(themeData)
+      if (!parseResult.success) {
+        res.status(500).json({ ok: false, error: `Failed to parse theme: ${parseResult.error}` })
+        return
+      }
+
+      // Map to CSS variables and create app theme
+      const cssVariables = mapThemeToCSSVariables(parseResult.theme)
+      const appTheme = createAppTheme(parseResult.theme, themeMeta)
+
+      res.status(200).json({
+        ok: true,
+        theme: appTheme,
+        cssVariables,
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to get theme"
       res.status(500).json({ ok: false, error: message })
     }
   })
