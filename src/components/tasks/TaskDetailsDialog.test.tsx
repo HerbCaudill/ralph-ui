@@ -101,7 +101,8 @@ describe("TaskDetailsDialog", () => {
 
       expect(screen.getByText("test-123")).toBeInTheDocument()
       expect(screen.getByDisplayValue("Test Task")).toBeInTheDocument()
-      expect(screen.getByDisplayValue("This is a test description")).toBeInTheDocument()
+      // Description is rendered as markdown in click-to-edit mode
+      expect(screen.getByText("This is a test description")).toBeInTheDocument()
     })
 
     it("does not render when task is null", () => {
@@ -223,12 +224,17 @@ describe("TaskDetailsDialog", () => {
       expect(titleInput).toHaveValue("Updated Title")
     })
 
-    it("allows editing description", async () => {
+    it("allows editing description via click-to-edit", async () => {
       render(
         <TaskDetailsDialog task={mockTask} open={true} onClose={mockOnClose} onSave={mockOnSave} />,
       )
 
-      const descInput = screen.getByLabelText(/description/i)
+      // Description is initially shown as text, click to edit
+      const descriptionText = screen.getByText("This is a test description")
+      fireEvent.click(descriptionText)
+
+      // Now the textarea should appear
+      const descInput = await screen.findByRole("textbox", { name: /description/i })
       typeInInput(descInput, "Updated description")
 
       expect(descInput).toHaveValue("Updated description")
@@ -603,12 +609,23 @@ describe("TaskDetailsDialog", () => {
       )
 
       expect(screen.getByDisplayValue("New Task")).toBeInTheDocument()
-      expect(screen.getByDisplayValue("New description")).toBeInTheDocument()
+      // Description is rendered as markdown in click-to-edit mode
+      expect(screen.getByText("New description")).toBeInTheDocument()
     })
   })
 
-  describe("empty description", () => {
-    it("handles task without description", () => {
+  describe("click-to-edit description", () => {
+    it("shows description as markdown text by default", () => {
+      render(
+        <TaskDetailsDialog task={mockTask} open={true} onClose={mockOnClose} onSave={mockOnSave} />,
+      )
+
+      // Description should be rendered as text, not as a textarea
+      expect(screen.getByText("This is a test description")).toBeInTheDocument()
+      expect(screen.queryByRole("textbox", { name: /description/i })).not.toBeInTheDocument()
+    })
+
+    it("shows placeholder text when description is empty", () => {
       const taskWithoutDescription: TaskCardTask = {
         id: "test-123",
         title: "Test Task",
@@ -624,8 +641,88 @@ describe("TaskDetailsDialog", () => {
         />,
       )
 
-      const descInput = screen.getByLabelText(/description/i)
-      expect(descInput).toHaveValue("")
+      expect(screen.getByText("Click to add description...")).toBeInTheDocument()
+    })
+
+    it("switches to edit mode when description is clicked", async () => {
+      render(
+        <TaskDetailsDialog task={mockTask} open={true} onClose={mockOnClose} onSave={mockOnSave} />,
+      )
+
+      // Click on the description
+      fireEvent.click(screen.getByText("This is a test description"))
+
+      // Now the textarea should appear
+      const descInput = await screen.findByRole("textbox", { name: /description/i })
+      expect(descInput).toBeInTheDocument()
+      expect(descInput).toHaveValue("This is a test description")
+    })
+
+    it("exits edit mode on blur", async () => {
+      render(
+        <TaskDetailsDialog task={mockTask} open={true} onClose={mockOnClose} onSave={mockOnSave} />,
+      )
+
+      // Click on the description to enter edit mode
+      fireEvent.click(screen.getByText("This is a test description"))
+
+      const descInput = await screen.findByRole("textbox", { name: /description/i })
+      expect(descInput).toBeInTheDocument()
+
+      // Blur the textarea
+      fireEvent.blur(descInput)
+
+      // Should exit edit mode and show text again
+      await waitFor(() => {
+        expect(screen.queryByRole("textbox", { name: /description/i })).not.toBeInTheDocument()
+      })
+      expect(screen.getByText("This is a test description")).toBeInTheDocument()
+    })
+
+    it("reverts changes on Escape key", async () => {
+      render(
+        <TaskDetailsDialog task={mockTask} open={true} onClose={mockOnClose} onSave={mockOnSave} />,
+      )
+
+      // Click on the description to enter edit mode
+      fireEvent.click(screen.getByText("This is a test description"))
+
+      const descInput = await screen.findByRole("textbox", { name: /description/i })
+      typeInInput(descInput, "Changed description")
+      expect(descInput).toHaveValue("Changed description")
+
+      // Press Escape
+      fireEvent.keyDown(descInput, { key: "Escape" })
+
+      // Should exit edit mode and show original text
+      await waitFor(() => {
+        expect(screen.queryByRole("textbox", { name: /description/i })).not.toBeInTheDocument()
+      })
+      expect(screen.getByText("This is a test description")).toBeInTheDocument()
+    })
+
+    it("preserves changes on blur", async () => {
+      render(
+        <TaskDetailsDialog task={mockTask} open={true} onClose={mockOnClose} onSave={mockOnSave} />,
+      )
+
+      // Click on the description to enter edit mode
+      fireEvent.click(screen.getByText("This is a test description"))
+
+      const descInput = await screen.findByRole("textbox", { name: /description/i })
+      typeInInput(descInput, "Updated description")
+
+      // Blur the textarea
+      fireEvent.blur(descInput)
+
+      // Should exit edit mode and show updated text
+      await waitFor(() => {
+        expect(screen.queryByRole("textbox", { name: /description/i })).not.toBeInTheDocument()
+      })
+      expect(screen.getByText("Updated description")).toBeInTheDocument()
+
+      // Save button should be enabled
+      expect(screen.getByRole("button", { name: /save/i })).toBeEnabled()
     })
 
     it("shows 'No description' in read-only mode when description is empty", () => {

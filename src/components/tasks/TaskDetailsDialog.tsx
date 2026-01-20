@@ -221,6 +221,10 @@ export function TaskDetailsDialog({
   const [showLabelInput, setShowLabelInput] = useState(false)
   const labelInputRef = useRef<HTMLInputElement>(null)
 
+  // Description edit mode state
+  const [isEditingDescription, setIsEditingDescription] = useState(false)
+  const descriptionTextareaRef = useRef<HTMLTextAreaElement>(null)
+
   // Fetch labels when task changes
   useEffect(() => {
     if (task && open) {
@@ -250,6 +254,7 @@ export function TaskDetailsDialog({
       setLabels(task.labels ?? [])
       setNewLabel("")
       setShowLabelInput(false)
+      setIsEditingDescription(false)
       setHasChanges(false)
     }
   }, [task])
@@ -391,6 +396,32 @@ export function TaskDetailsDialog({
     }
   }, [showLabelInput])
 
+  // Focus description textarea when entering edit mode
+  useEffect(() => {
+    if (isEditingDescription && descriptionTextareaRef.current) {
+      descriptionTextareaRef.current.focus()
+      // Move cursor to end
+      const len = descriptionTextareaRef.current.value.length
+      descriptionTextareaRef.current.setSelectionRange(len, len)
+    }
+  }, [isEditingDescription])
+
+  // Handle description edit completion (blur or escape)
+  const handleDescriptionBlur = useCallback(() => {
+    setIsEditingDescription(false)
+  }, [])
+
+  const handleDescriptionKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === "Escape") {
+        // Reset to original value and exit edit mode
+        setDescription(task?.description ?? "")
+        setIsEditingDescription(false)
+      }
+    },
+    [task],
+  )
+
   // Handle Cmd+Enter / Ctrl+Enter to save
   useEffect(() => {
     if (!open || readOnly) return
@@ -448,13 +479,36 @@ export function TaskDetailsDialog({
               description ?
                 <MarkdownContent className="text-muted-foreground">{description}</MarkdownContent>
               : <p className="text-muted-foreground text-sm">No description</p>
-            : <Textarea
+            : isEditingDescription ?
+              <Textarea
+                ref={descriptionTextareaRef}
                 id="task-description"
                 value={description}
                 onChange={e => setDescription(e.target.value)}
+                onBlur={handleDescriptionBlur}
+                onKeyDown={handleDescriptionKeyDown}
                 placeholder="Task description (optional)"
                 rows={4}
               />
+            : <div
+                onClick={() => setIsEditingDescription(true)}
+                onKeyDown={e => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault()
+                    setIsEditingDescription(true)
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                className={cn(
+                  "border-input hover:border-ring focus-visible:ring-ring min-h-[100px] cursor-text rounded-md border px-3 py-2 text-sm transition-colors focus-visible:ring-1 focus-visible:outline-none",
+                  !description && "text-muted-foreground",
+                )}
+              >
+                {description ?
+                  <MarkdownContent>{description}</MarkdownContent>
+                : "Click to add description..."}
+              </div>
             }
           </div>
 
