@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils"
+import { cn, stripTaskPrefix } from "@/lib/utils"
 import {
   IconCircle,
   IconCircleDot,
@@ -10,6 +10,7 @@ import {
 } from "@tabler/icons-react"
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card"
 import { Button } from "@/components/ui/button"
+import { useAppStore, selectIssuePrefix } from "@/store"
 import type { TaskCardTask, TaskStatus } from "./TaskCard"
 
 // Types
@@ -85,6 +86,7 @@ export function TaskHoverCard({
 }: TaskHoverCardProps) {
   const config = statusConfig[task.status]
   const StatusIcon = config.icon
+  const issuePrefix = useAppStore(selectIssuePrefix)
 
   if (disabled) {
     return <>{children}</>
@@ -97,7 +99,9 @@ export function TaskHoverCard({
         <div className="flex flex-col">
           {/* Metadata row - above the title */}
           <div className="border-border flex items-center gap-2 border-b px-3 py-2">
-            <span className="text-muted-foreground font-mono text-xs">{task.id}</span>
+            <span className="text-muted-foreground font-mono text-xs">
+              {stripTaskPrefix(task.id, issuePrefix)}
+            </span>
             {task.priority !== undefined && (
               <span
                 className={cn(
@@ -143,7 +147,8 @@ export function TaskHoverCard({
           {task.parent && (
             <div className="border-border border-t px-3 py-2">
               <span className="text-muted-foreground text-xs">
-                Parent: <span className="font-mono">{task.parent}</span>
+                Parent:{" "}
+                <span className="font-mono">{stripTaskPrefix(task.parent, issuePrefix)}</span>
               </span>
             </div>
           )}

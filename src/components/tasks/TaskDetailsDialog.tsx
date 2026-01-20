@@ -26,8 +26,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { cn } from "@/lib/utils"
-import { useAppStore } from "@/store"
+import { cn, stripTaskPrefix } from "@/lib/utils"
+import { useAppStore, selectIssuePrefix } from "@/store"
 import type { TaskCardTask, TaskStatus } from "./TaskCard"
 
 // Types
@@ -176,9 +176,10 @@ export function TaskDetailsDialog({
   onSave,
   readOnly = false,
 }: TaskDetailsDialogProps) {
-  // Get events and workspace from store for event log capture
+  // Get events, workspace, and issue prefix from store
   const events = useAppStore(state => state.events)
   const workspace = useAppStore(state => state.workspace)
+  const issuePrefix = useAppStore(selectIssuePrefix)
 
   // Local state for editable fields
   const [title, setTitle] = useState("")
@@ -273,7 +274,9 @@ export function TaskDetailsDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <StatusIcon className={cn("h-5 w-5", statusConfig[status].color)} />
-            <span className="text-muted-foreground font-mono text-sm">{task.id}</span>
+            <span className="text-muted-foreground font-mono text-sm">
+              {stripTaskPrefix(task.id, issuePrefix)}
+            </span>
           </DialogTitle>
           <DialogDescription className="sr-only">Edit task details</DialogDescription>
         </DialogHeader>
@@ -379,7 +382,10 @@ export function TaskDetailsDialog({
                 )}
                 {task.parent && (
                   <span>
-                    Parent: <span className="text-foreground font-mono">{task.parent}</span>
+                    Parent:{" "}
+                    <span className="text-foreground font-mono">
+                      {stripTaskPrefix(task.parent, issuePrefix)}
+                    </span>
                   </span>
                 )}
               </div>

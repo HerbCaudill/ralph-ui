@@ -35,13 +35,14 @@ describe("TaskIdLink", () => {
       expect(screen.getByText("Hello world")).toBeInTheDocument()
     })
 
-    it("converts task ID to clickable link", () => {
+    it("converts task ID to clickable link with stripped prefix", () => {
       const openTaskById = vi.fn()
       renderWithContext(<TaskIdLink>Check out rui-48s for details</TaskIdLink>, openTaskById)
 
       const link = screen.getByRole("button", { name: "View task rui-48s" })
       expect(link).toBeInTheDocument()
-      expect(link).toHaveTextContent("rui-48s")
+      // Display shows stripped prefix
+      expect(link).toHaveTextContent("48s")
     })
 
     it("calls openTaskById when task link is clicked", () => {
@@ -117,7 +118,8 @@ describe("TaskIdLink", () => {
 
       const link = screen.getByRole("button", { name: "View task rui-4vp.5" })
       expect(link).toBeInTheDocument()
-      expect(link).toHaveTextContent("rui-4vp.5")
+      // Display shows stripped prefix
+      expect(link).toHaveTextContent("4vp.5")
 
       fireEvent.click(link)
       expect(openTaskById).toHaveBeenCalledWith("rui-4vp.5")
@@ -146,10 +148,10 @@ describe("TaskIdLink", () => {
     it("preserves text before, between, and after task IDs", () => {
       const { container } = renderWithContext(<TaskIdLink>Start rui-1 middle rui-2 end</TaskIdLink>)
 
-      // Check the full text content
-      expect(container.textContent).toBe("Start rui-1 middle rui-2 end")
+      // Check the full text content - task IDs are displayed without prefix
+      expect(container.textContent).toBe("Start 1 middle 2 end")
 
-      // Verify both task IDs are clickable
+      // Verify both task IDs are clickable (aria-label uses full ID)
       expect(screen.getByRole("button", { name: "View task rui-1" })).toBeInTheDocument()
       expect(screen.getByRole("button", { name: "View task rui-2" })).toBeInTheDocument()
     })

@@ -1,5 +1,6 @@
 import { useTaskDialogContext } from "@/contexts"
 import { useAppStore, selectIssuePrefix } from "@/store"
+import { stripTaskPrefix } from "@/lib/utils"
 import type { ReactNode, MouseEvent } from "react"
 
 /**
@@ -74,6 +75,9 @@ export function TaskIdLink({ children, className }: TaskIdLinkProps) {
       openTaskById(taskId)
     }
 
+    // Display the task ID without the prefix for cleaner UI
+    const displayId = stripTaskPrefix(taskId, issuePrefix)
+
     parts.push(
       <button
         key={`${taskId}-${startIndex}`}
@@ -85,7 +89,7 @@ export function TaskIdLink({ children, className }: TaskIdLinkProps) {
         type="button"
         aria-label={`View task ${taskId}`}
       >
-        {taskId}
+        {displayId}
       </button>,
     )
 
