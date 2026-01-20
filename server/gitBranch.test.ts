@@ -22,7 +22,7 @@ describe("getGitBranch", () => {
     execSync("git init", { cwd: testDir })
     execSync("git config user.email 'test@test.com'", { cwd: testDir })
     execSync("git config user.name 'Test'", { cwd: testDir })
-    execSync("touch test.txt && git add . && git commit -m 'initial'", {
+    execSync("touch test.txt && git add . && git commit --no-verify -m 'initial'", {
       cwd: testDir,
       shell: "/bin/bash",
     })
@@ -37,7 +37,7 @@ describe("getGitBranch", () => {
     execSync("git init --initial-branch=main", { cwd: testDir })
     execSync("git config user.email 'test@test.com'", { cwd: testDir })
     execSync("git config user.name 'Test'", { cwd: testDir })
-    execSync("touch test.txt && git add . && git commit -m 'initial'", {
+    execSync("touch test.txt && git add . && git commit --no-verify -m 'initial'", {
       cwd: testDir,
       shell: "/bin/bash",
     })
