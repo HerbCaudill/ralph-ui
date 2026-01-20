@@ -36,7 +36,7 @@ describe("useAppStore", () => {
       expect(state.accentColor).toBeNull()
       expect(state.sidebarOpen).toBe(true)
       expect(state.sidebarWidth).toBe(320)
-      expect(state.taskChatOpen).toBe(false)
+      expect(state.taskChatOpen).toBe(true)
       expect(state.taskChatWidth).toBe(400)
       expect(state.taskChatMessages).toEqual([])
       expect(state.taskChatLoading).toBe(false)
@@ -616,14 +616,14 @@ describe("useAppStore", () => {
     })
 
     it("toggles task chat state", () => {
-      // Initial state is false
-      expect(useAppStore.getState().taskChatOpen).toBe(false)
-
-      useAppStore.getState().toggleTaskChat()
+      // Initial state is true
       expect(useAppStore.getState().taskChatOpen).toBe(true)
 
       useAppStore.getState().toggleTaskChat()
       expect(useAppStore.getState().taskChatOpen).toBe(false)
+
+      useAppStore.getState().toggleTaskChat()
+      expect(useAppStore.getState().taskChatOpen).toBe(true)
     })
 
     it("sets task chat width", () => {
@@ -888,7 +888,7 @@ describe("useAppStore", () => {
       expect(state.connectionStatus).toBe("disconnected")
       expect(state.sidebarOpen).toBe(true)
       expect(state.sidebarWidth).toBe(320)
-      expect(state.taskChatOpen).toBe(false)
+      expect(state.taskChatOpen).toBe(true)
       expect(state.taskChatWidth).toBe(400)
       expect(state.taskChatMessages).toEqual([])
       expect(state.taskChatLoading).toBe(false)
