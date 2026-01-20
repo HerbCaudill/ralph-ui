@@ -276,6 +276,74 @@ describe("ToolUseCard", () => {
       expect(screen.getByText("const x = 1")).toBeInTheDocument()
       expect(screen.getByText("const x = 2")).toBeInTheDocument()
     })
+
+    it("shows truncated diff and expands on click for long diffs", () => {
+      // Create a diff with more than 5 lines
+      const oldString = "line 1\nline 2\nline 3\nline 4\nline 5"
+      const newString =
+        "new line 1\nnew line 2\nnew line 3\nnew line 4\nnew line 5\nnew line 6\nnew line 7"
+      render(
+        <ToolUseCard
+          event={createToolEvent("Edit", {
+            input: {
+              file_path: "/test.ts",
+              old_string: oldString,
+              new_string: newString,
+            },
+          })}
+        />,
+      )
+
+      // Expand indicator should be present (the diff has many lines)
+      expect(screen.getByText(/\.\.\. \+\d+ lines/)).toBeInTheDocument()
+
+      // Click to expand
+      fireEvent.click(screen.getByText(/\.\.\. \+\d+ lines/))
+
+      // Expand indicator should no longer be present
+      expect(screen.queryByText(/\.\.\. \+\d+ lines/)).not.toBeInTheDocument()
+    })
+
+    it("shows full diff without truncation when defaultExpanded is true", () => {
+      // Create a diff with more than 5 lines
+      const oldString = "line 1\nline 2\nline 3\nline 4\nline 5"
+      const newString =
+        "new line 1\nnew line 2\nnew line 3\nnew line 4\nnew line 5\nnew line 6\nnew line 7"
+      render(
+        <ToolUseCard
+          event={createToolEvent("Edit", {
+            input: {
+              file_path: "/test.ts",
+              old_string: oldString,
+              new_string: newString,
+            },
+          })}
+          defaultExpanded
+        />,
+      )
+
+      // Expand indicator should NOT be present
+      expect(screen.queryByText(/\.\.\. \+\d+ lines/)).not.toBeInTheDocument()
+    })
+
+    it("shows short diff without truncation", () => {
+      render(
+        <ToolUseCard
+          event={createToolEvent("Edit", {
+            input: {
+              file_path: "/test.ts",
+              old_string: "const x = 1",
+              new_string: "const x = 2",
+            },
+          })}
+        />,
+      )
+
+      // Both lines should be visible and no expand indicator
+      expect(screen.getByText("const x = 1")).toBeInTheDocument()
+      expect(screen.getByText("const x = 2")).toBeInTheDocument()
+      expect(screen.queryByText(/\.\.\. \+\d+ lines/)).not.toBeInTheDocument()
+    })
   })
 
   describe("Glob tool output display", () => {

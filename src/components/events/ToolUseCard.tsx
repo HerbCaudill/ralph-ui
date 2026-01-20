@@ -161,12 +161,31 @@ interface DiffLine {
   content: string
 }
 
-function DiffView({ oldString, newString }: { oldString: string; newString: string }) {
+function DiffView({
+  oldString,
+  newString,
+  isExpanded,
+  onExpand,
+}: {
+  oldString: string
+  newString: string
+  isExpanded: boolean
+  onExpand?: () => void
+}) {
   const lines = parseDiff(oldString, newString)
+  const shouldTruncate = !isExpanded && lines.length > PREVIEW_LINES
+  const displayLines = shouldTruncate ? lines.slice(0, PREVIEW_LINES) : lines
+  const remainingLines = lines.length - PREVIEW_LINES
 
   return (
-    <div className="bg-muted/30 overflow-x-auto rounded border font-mono text-xs">
-      {lines.map((line, i) => (
+    <div
+      className={cn(
+        "bg-muted/30 overflow-x-auto rounded border font-mono text-xs",
+        shouldTruncate && "cursor-pointer",
+      )}
+      onClick={shouldTruncate ? onExpand : undefined}
+    >
+      {displayLines.map((line, i) => (
         <div
           key={i}
           className={cn(
@@ -191,6 +210,9 @@ function DiffView({ oldString, newString }: { oldString: string; newString: stri
           <span className="flex-1 px-2 whitespace-pre">{line.content}</span>
         </div>
       ))}
+      {shouldTruncate && (
+        <div className="text-muted-foreground border-t px-2 py-1">... +{remainingLines} lines</div>
+      )}
     </div>
   )
 }
@@ -318,7 +340,12 @@ export function ToolUseCard({ event, className, defaultExpanded = false }: ToolU
               {event.tool === "Edit" &&
                 typeof event.input?.old_string === "string" &&
                 typeof event.input?.new_string === "string" && (
-                  <DiffView oldString={event.input.old_string} newString={event.input.new_string} />
+                  <DiffView
+                    oldString={event.input.old_string}
+                    newString={event.input.new_string}
+                    isExpanded={isExpanded}
+                    onExpand={() => setIsExpanded(true)}
+                  />
                 )}
 
               {/* Output summary for Read */}
