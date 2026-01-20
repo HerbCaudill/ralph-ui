@@ -1,5 +1,14 @@
 import { cn } from "@/lib/utils"
-import { useAppStore, selectTasks, selectInitialTaskCount, selectRalphStatus } from "@/store"
+import {
+  useAppStore,
+  selectTasks,
+  selectInitialTaskCount,
+  selectRalphStatus,
+  selectAccentColor,
+} from "@/store"
+
+/** Default accent color (neutral dark) when peacock color is not set */
+const DEFAULT_ACCENT_COLOR = "#374151"
 
 // Types
 
@@ -22,6 +31,8 @@ export function TaskProgressBar({ className }: TaskProgressBarProps) {
   const tasks = useAppStore(selectTasks)
   const initialTaskCount = useAppStore(selectInitialTaskCount)
   const ralphStatus = useAppStore(selectRalphStatus)
+  const accentColor = useAppStore(selectAccentColor)
+  const progressColor = accentColor ?? DEFAULT_ACCENT_COLOR
 
   // Only show when Ralph is running (or transitioning) and we have initial count
   const isRunning =
@@ -55,8 +66,8 @@ export function TaskProgressBar({ className }: TaskProgressBarProps) {
         {/* Progress bar */}
         <div className="bg-muted h-1.5 flex-1 overflow-hidden rounded-full">
           <div
-            className="bg-primary h-full transition-all duration-300"
-            style={{ width: `${Math.min(progress, 100)}%` }}
+            className="h-full transition-all duration-300"
+            style={{ width: `${Math.min(progress, 100)}%`, backgroundColor: progressColor }}
           />
         </div>
         {/* Count */}

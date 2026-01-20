@@ -18,12 +18,14 @@ function setupMock(config: {
   tasks: Task[]
   initialTaskCount: number | null
   ralphStatus: RalphStatus
+  accentColor?: string | null
 }) {
   mockUseAppStore.mockImplementation(selector => {
     const state = {
       tasks: config.tasks,
       initialTaskCount: config.initialTaskCount,
       ralphStatus: config.ralphStatus,
+      accentColor: config.accentColor ?? null,
     }
     return selector(state as any)
   })
@@ -227,6 +229,34 @@ describe("TaskProgressBar", () => {
 
       render(<TaskProgressBar />)
       expect(screen.getByTestId("task-progress-bar")).toHaveClass("border-t")
+    })
+
+    it("uses accent color for progress bar fill when set", () => {
+      setupMock({
+        tasks: [createTask({ status: "closed" })],
+        initialTaskCount: 1,
+        ralphStatus: "running",
+        accentColor: "#ff0000",
+      })
+
+      render(<TaskProgressBar />)
+      const progressBar = screen.getByTestId("task-progress-bar")
+      const fillElement = progressBar.querySelector(".h-full")
+      expect(fillElement).toHaveStyle({ backgroundColor: "#ff0000" })
+    })
+
+    it("uses default accent color when peacock color is not set", () => {
+      setupMock({
+        tasks: [createTask({ status: "closed" })],
+        initialTaskCount: 1,
+        ralphStatus: "running",
+        accentColor: null,
+      })
+
+      render(<TaskProgressBar />)
+      const progressBar = screen.getByTestId("task-progress-bar")
+      const fillElement = progressBar.querySelector(".h-full")
+      expect(fillElement).toHaveStyle({ backgroundColor: "#374151" })
     })
   })
 })
