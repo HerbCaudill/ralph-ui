@@ -200,25 +200,6 @@ describe("EventStream", () => {
     })
   })
 
-  describe("auto-scroll behavior", () => {
-    it("shows auto-scroll indicator when enabled and events exist", () => {
-      useAppStore.getState().addEvent({
-        type: "user_message",
-        timestamp: 1705600000000,
-        message: "Test message",
-      })
-      const { container } = render(<EventStream />)
-      // Check for the pulsing indicator dot
-      expect(container.querySelector(".animate-pulse")).toBeInTheDocument()
-    })
-
-    it("does not show auto-scroll indicator when no events", () => {
-      const { container } = render(<EventStream />)
-      // No indicator when no events
-      expect(container.querySelector(".animate-pulse")).not.toBeInTheDocument()
-    })
-  })
-
   describe("scroll to bottom button", () => {
     it("does not show scroll to bottom button initially", () => {
       useAppStore.getState().addEvent({

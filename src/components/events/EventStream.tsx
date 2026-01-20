@@ -433,13 +433,6 @@ export function EventStream({ className, maxEvents = 1000 }: EventStreamProps) {
           <span className="pr-1 text-xs font-medium">Latest</span>
         </button>
       )}
-
-      {/* Auto-scroll indicator */}
-      {autoScroll && events.length > 0 && (
-        <div className="absolute top-2 right-4 flex items-center gap-1 opacity-60">
-          <span className="bg-primary size-2 animate-pulse rounded-full" />
-        </div>
-      )}
     </div>
   )
 }
