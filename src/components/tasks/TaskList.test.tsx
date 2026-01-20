@@ -305,7 +305,7 @@ describe("TaskList", () => {
 
     it("treats undefined closed_at as oldest for closed tasks", () => {
       // Need to set all_time filter to see task without closed_at
-      localStorage.setItem(CLOSED_FILTER_STORAGE_KEY, "all_time")
+      useAppStore.getState().setClosedTimeFilter("all_time")
 
       const tasks: TaskCardTask[] = [
         {
@@ -329,7 +329,8 @@ describe("TaskList", () => {
         .map(el => el.textContent)
       expect(taskTitles).toEqual(["Has close date", "No close date"])
 
-      localStorage.clear()
+      // Reset to default
+      useAppStore.getState().setClosedTimeFilter("past_day")
     })
   })
 
@@ -679,10 +680,14 @@ describe("TaskList", () => {
   describe("closed tasks time filter", () => {
     beforeEach(() => {
       localStorage.clear()
+      // Reset to default filter before each test
+      useAppStore.getState().setClosedTimeFilter("past_day")
     })
 
     afterEach(() => {
       localStorage.clear()
+      // Reset to default filter after each test
+      useAppStore.getState().setClosedTimeFilter("past_day")
     })
 
     it("shows time filter dropdown in closed group header", () => {
@@ -762,7 +767,7 @@ describe("TaskList", () => {
       expect(screen.getByText("Very old task")).toBeInTheDocument()
     })
 
-    it("persists time filter selection to localStorage", () => {
+    it("persists time filter selection to localStorage via store", () => {
       const tasks: TaskCardTask[] = [
         { id: "task-1", title: "Closed task", status: "closed", closed_at: getRecentDate() },
       ]
@@ -771,11 +776,14 @@ describe("TaskList", () => {
       const filterDropdown = screen.getByRole("combobox", { name: "Filter closed tasks by time" })
       fireEvent.change(filterDropdown, { target: { value: "past_week" } })
 
+      // Store persists to localStorage automatically
       expect(localStorage.getItem(CLOSED_FILTER_STORAGE_KEY)).toBe("past_week")
+      expect(useAppStore.getState().closedTimeFilter).toBe("past_week")
     })
 
-    it("restores time filter from localStorage", () => {
-      localStorage.setItem(CLOSED_FILTER_STORAGE_KEY, "all_time")
+    it("uses store value for time filter", () => {
+      // Set the store value directly
+      useAppStore.getState().setClosedTimeFilter("all_time")
 
       const tasks: TaskCardTask[] = [
         { id: "task-1", title: "Closed task", status: "closed", closed_at: getRecentDate() },
@@ -786,7 +794,8 @@ describe("TaskList", () => {
       expect(filterDropdown).toHaveValue("all_time")
     })
 
-    it("does not persist time filter when persistCollapsedState is false", () => {
+    it("time filter is global state (always persisted)", () => {
+      // Note: persistCollapsedState no longer affects time filter since it's global state
       const tasks: TaskCardTask[] = [
         { id: "task-1", title: "Closed task", status: "closed", closed_at: getRecentDate() },
       ]
@@ -795,7 +804,8 @@ describe("TaskList", () => {
       const filterDropdown = screen.getByRole("combobox", { name: "Filter closed tasks by time" })
       fireEvent.change(filterDropdown, { target: { value: "past_week" } })
 
-      expect(localStorage.getItem(CLOSED_FILTER_STORAGE_KEY)).toBeNull()
+      // Time filter is stored via the global store, which always persists
+      expect(localStorage.getItem(CLOSED_FILTER_STORAGE_KEY)).toBe("past_week")
     })
 
     it("updates task count when filter changes", () => {

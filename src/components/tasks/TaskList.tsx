@@ -3,16 +3,18 @@ import { useState, useCallback, useMemo, useEffect } from "react"
 import { IconChevronDown, IconStack2 } from "@tabler/icons-react"
 import { TaskCard, type TaskCardTask, type TaskStatus } from "./TaskCard"
 import { TaskHoverCard } from "./TaskHoverCard"
-import { useAppStore, selectTaskSearchQuery } from "@/store"
+import {
+  useAppStore,
+  selectTaskSearchQuery,
+  selectClosedTimeFilter,
+  getTimeFilterCutoff,
+  type ClosedTasksTimeFilter,
+} from "@/store"
 
 // Constants
 
 const STATUS_STORAGE_KEY = "ralph-ui-task-list-collapsed-state"
 const EPIC_STORAGE_KEY = "ralph-ui-task-list-epic-collapsed-state"
-const CLOSED_FILTER_STORAGE_KEY = "ralph-ui-task-list-closed-filter"
-
-/** Time filter options for closed tasks */
-export type ClosedTasksTimeFilter = "past_hour" | "past_day" | "past_week" | "all_time"
 
 /** Human-readable labels for time filter options */
 const closedTimeFilterLabels: Record<ClosedTasksTimeFilter, string> = {
@@ -20,44 +22,6 @@ const closedTimeFilterLabels: Record<ClosedTasksTimeFilter, string> = {
   past_day: "Past day",
   past_week: "Past week",
   all_time: "All time",
-}
-
-/** Get the cutoff timestamp for a time filter */
-function getTimeFilterCutoff(filter: ClosedTasksTimeFilter): Date | null {
-  if (filter === "all_time") return null
-  const now = new Date()
-  switch (filter) {
-    case "past_hour":
-      return new Date(now.getTime() - 60 * 60 * 1000)
-    case "past_day":
-      return new Date(now.getTime() - 24 * 60 * 60 * 1000)
-    case "past_week":
-      return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-  }
-}
-
-/** Load closed filter from localStorage */
-function loadClosedFilter(): ClosedTasksTimeFilter | null {
-  if (typeof window === "undefined") return null
-  try {
-    const stored = localStorage.getItem(CLOSED_FILTER_STORAGE_KEY)
-    if (stored && stored in closedTimeFilterLabels) {
-      return stored as ClosedTasksTimeFilter
-    }
-  } catch {
-    // Ignore parse errors
-  }
-  return null
-}
-
-/** Save closed filter to localStorage */
-function saveClosedFilter(filter: ClosedTasksTimeFilter): void {
-  if (typeof window === "undefined") return
-  try {
-    localStorage.setItem(CLOSED_FILTER_STORAGE_KEY, filter)
-  } catch {
-    // Ignore storage errors
-  }
 }
 
 // Types
@@ -375,8 +339,11 @@ export function TaskList({
   showEmptyGroups = false,
   persistCollapsedState = true,
 }: TaskListProps) {
-  // Get search query from store
+  // Get search query and closed time filter from store
   const searchQuery = useAppStore(selectTaskSearchQuery)
+  const closedTimeFilter = useAppStore(selectClosedTimeFilter)
+  const setClosedTimeFilter = useAppStore(state => state.setClosedTimeFilter)
+
   // Initialize status collapsed state: props override -> localStorage -> defaults
   const [statusCollapsedState, setStatusCollapsedState] = useState<Record<TaskGroup, boolean>>(
     () => {
@@ -396,11 +363,6 @@ export function TaskList({
     return persistCollapsedState ? (loadEpicCollapsedState() ?? {}) : {}
   })
 
-  // Initialize closed tasks time filter from localStorage
-  const [closedTimeFilter, setClosedTimeFilter] = useState<ClosedTasksTimeFilter>(() => {
-    return persistCollapsedState ? (loadClosedFilter() ?? "past_day") : "past_day"
-  })
-
   // Persist status collapsed state to localStorage when it changes
   useEffect(() => {
     if (persistCollapsedState) {
@@ -414,13 +376,6 @@ export function TaskList({
       saveEpicCollapsedState(epicCollapsedState)
     }
   }, [epicCollapsedState, persistCollapsedState])
-
-  // Persist closed time filter to localStorage when it changes
-  useEffect(() => {
-    if (persistCollapsedState) {
-      saveClosedFilter(closedTimeFilter)
-    }
-  }, [closedTimeFilter, persistCollapsedState])
 
   const toggleStatusGroup = useCallback((group: TaskGroup) => {
     setStatusCollapsedState(prev => ({

@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react"
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { TaskProgressBar } from "./TaskProgressBar"
-import { useAppStore, type Task, type RalphStatus } from "@/store"
+import { useAppStore, type Task, type RalphStatus, type ClosedTasksTimeFilter } from "@/store"
 
 // Mock the store
 vi.mock("@/store", async () => {
@@ -19,6 +19,7 @@ function setupMock(config: {
   initialTaskCount: number | null
   ralphStatus: RalphStatus
   accentColor?: string | null
+  closedTimeFilter?: ClosedTasksTimeFilter
 }) {
   mockUseAppStore.mockImplementation(selector => {
     const state = {
@@ -26,6 +27,7 @@ function setupMock(config: {
       initialTaskCount: config.initialTaskCount,
       ralphStatus: config.ralphStatus,
       accentColor: config.accentColor ?? null,
+      closedTimeFilter: config.closedTimeFilter ?? "all_time",
     }
     return selector(state as any)
   })
@@ -151,32 +153,62 @@ describe("TaskProgressBar", () => {
       expect(screen.getByText("2/2")).toBeInTheDocument()
     })
 
-    it("uses current task count when it exceeds initial count (new tasks added)", () => {
+    it("uses visible task count (excludes epics)", () => {
       setupMock({
         tasks: [
           createTask({ status: "closed" }),
           createTask({ status: "open" }),
-          createTask({ status: "open" }), // New task added during run
+          createTask({ status: "open", issue_type: "epic" }), // Epic should be excluded
         ],
-        initialTaskCount: 2, // Started with 2 tasks
+        initialTaskCount: 3,
         ralphStatus: "running",
       })
 
       render(<TaskProgressBar />)
-      // Total should be 3 (current count), not 2 (initial count)
-      expect(screen.getByText("1/3")).toBeInTheDocument()
+      // Total should be 2 (excluding epic), not 3
+      expect(screen.getByText("1/2")).toBeInTheDocument()
     })
 
-    it("uses initial count when current count is less (tasks deleted)", () => {
+    it("filters closed tasks based on time filter", () => {
+      const now = new Date()
+      const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString()
+      const thirtyMinutesAgo = new Date(now.getTime() - 30 * 60 * 1000).toISOString()
+
       setupMock({
-        tasks: [createTask({ status: "closed" })],
-        initialTaskCount: 3, // Started with 3 tasks
+        tasks: [
+          createTask({ status: "closed", closed_at: twoHoursAgo }), // Closed 2 hours ago
+          createTask({ status: "closed", closed_at: thirtyMinutesAgo }), // Closed 30 mins ago
+          createTask({ status: "open" }),
+        ],
+        initialTaskCount: 3,
         ralphStatus: "running",
+        closedTimeFilter: "past_hour", // Only show tasks closed in past hour
       })
 
       render(<TaskProgressBar />)
-      // Total should use initial count of 3
-      expect(screen.getByText("1/3")).toBeInTheDocument()
+      // Total should be 2 (1 recent closed + 1 open), closed count should be 1
+      expect(screen.getByText("1/2")).toBeInTheDocument()
+    })
+
+    it("shows all closed tasks when filter is all_time", () => {
+      const now = new Date()
+      const weekAgo = new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000).toISOString()
+      const thirtyMinutesAgo = new Date(now.getTime() - 30 * 60 * 1000).toISOString()
+
+      setupMock({
+        tasks: [
+          createTask({ status: "closed", closed_at: weekAgo }), // Closed over a week ago
+          createTask({ status: "closed", closed_at: thirtyMinutesAgo }), // Closed 30 mins ago
+          createTask({ status: "open" }),
+        ],
+        initialTaskCount: 3,
+        ralphStatus: "running",
+        closedTimeFilter: "all_time",
+      })
+
+      render(<TaskProgressBar />)
+      // All tasks should be visible
+      expect(screen.getByText("2/3")).toBeInTheDocument()
     })
   })
 

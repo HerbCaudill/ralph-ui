@@ -4,6 +4,7 @@ import type { ConnectionStatus } from "../hooks/useWebSocket"
 // localStorage keys
 export const SIDEBAR_WIDTH_STORAGE_KEY = "ralph-ui-sidebar-width"
 export const TASK_CHAT_WIDTH_STORAGE_KEY = "ralph-ui-task-chat-width"
+export const CLOSED_FILTER_STORAGE_KEY = "ralph-ui-task-list-closed-filter"
 
 // Helper functions for localStorage
 function loadSidebarWidth(): number {
@@ -50,6 +51,50 @@ function saveTaskChatWidth(width: number): void {
     localStorage.setItem(TASK_CHAT_WIDTH_STORAGE_KEY, String(width))
   } catch {
     // localStorage may not be available
+  }
+}
+
+// Closed time filter types and localStorage persistence
+export type ClosedTasksTimeFilter = "past_hour" | "past_day" | "past_week" | "all_time"
+
+const CLOSED_TIME_FILTERS: ClosedTasksTimeFilter[] = [
+  "past_hour",
+  "past_day",
+  "past_week",
+  "all_time",
+]
+
+function loadClosedTimeFilter(): ClosedTasksTimeFilter {
+  try {
+    const stored = localStorage.getItem(CLOSED_FILTER_STORAGE_KEY)
+    if (stored && CLOSED_TIME_FILTERS.includes(stored as ClosedTasksTimeFilter)) {
+      return stored as ClosedTasksTimeFilter
+    }
+  } catch {
+    // localStorage may not be available (SSR, private mode, etc.)
+  }
+  return "past_day" // default
+}
+
+function saveClosedTimeFilter(filter: ClosedTasksTimeFilter): void {
+  try {
+    localStorage.setItem(CLOSED_FILTER_STORAGE_KEY, filter)
+  } catch {
+    // localStorage may not be available
+  }
+}
+
+/** Get the cutoff timestamp for a time filter */
+export function getTimeFilterCutoff(filter: ClosedTasksTimeFilter): Date | null {
+  if (filter === "all_time") return null
+  const now = new Date()
+  switch (filter) {
+    case "past_hour":
+      return new Date(now.getTime() - 60 * 60 * 1000)
+    case "past_day":
+      return new Date(now.getTime() - 24 * 60 * 60 * 1000)
+    case "past_week":
+      return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
   }
 }
 
@@ -209,6 +254,9 @@ export interface AppState {
 
   // Task search filter
   taskSearchQuery: string
+
+  // Closed tasks time filter
+  closedTimeFilter: ClosedTasksTimeFilter
 }
 
 // Store Actions
@@ -286,6 +334,9 @@ export interface AppActions {
   // Task search
   setTaskSearchQuery: (query: string) => void
   clearTaskSearchQuery: () => void
+
+  // Closed time filter
+  setClosedTimeFilter: (filter: ClosedTasksTimeFilter) => void
 
   // Reset
   reset: () => void
@@ -381,6 +432,7 @@ const initialState: AppState = {
   taskChatStreamingText: "",
   viewingIterationIndex: null,
   taskSearchQuery: "",
+  closedTimeFilter: "past_day",
 }
 
 // Create the store with localStorage initialization
@@ -388,6 +440,7 @@ const getInitialStateWithPersistence = (): AppState => ({
   ...initialState,
   sidebarWidth: loadSidebarWidth(),
   taskChatWidth: loadTaskChatWidth(),
+  closedTimeFilter: loadClosedTimeFilter(),
 })
 
 // Store
@@ -544,6 +597,12 @@ export const useAppStore = create<AppState & AppActions>(set => ({
   setTaskSearchQuery: query => set({ taskSearchQuery: query }),
   clearTaskSearchQuery: () => set({ taskSearchQuery: "" }),
 
+  // Closed time filter
+  setClosedTimeFilter: filter => {
+    saveClosedTimeFilter(filter)
+    set({ closedTimeFilter: filter })
+  },
+
   // Reset
   reset: () => set(initialState),
 }))
@@ -586,3 +645,4 @@ export const selectCurrentIterationEvents = (state: AppState) =>
 export const selectIsViewingLatestIteration = (state: AppState) =>
   state.viewingIterationIndex === null
 export const selectTaskSearchQuery = (state: AppState) => state.taskSearchQuery
+export const selectClosedTimeFilter = (state: AppState) => state.closedTimeFilter
