@@ -225,6 +225,18 @@ export function TaskChatPanel({ className, onClose }: TaskChatPanelProps) {
     }
   }, [])
 
+  // Track previous loading state to detect when loading completes
+  const wasLoadingRef = useRef(false)
+
+  // Focus input when loading completes (user can type again)
+  useEffect(() => {
+    if (wasLoadingRef.current && !isLoading) {
+      // Loading just finished, focus the input
+      chatInputRef.current?.focus()
+    }
+    wasLoadingRef.current = isLoading
+  }, [isLoading])
+
   // Handle sending a message
   const handleSendMessage = useCallback(
     async (message: string) => {
@@ -256,6 +268,7 @@ export function TaskChatPanel({ className, onClose }: TaskChatPanelProps) {
       }
       // Note: The assistant message is added via WebSocket event (task-chat:message)
       // Loading state is cleared via WebSocket event (task-chat:status or task-chat:message)
+      // Input will be focused via useEffect when loading completes
     },
     [addMessage, setLoading, setStreamingText],
   )

@@ -248,6 +248,37 @@ describe("TaskChatPanel", () => {
         expect(mockFetch).toHaveBeenCalled()
       })
     })
+
+    it("focuses input after loading completes", async () => {
+      mockFetch.mockResolvedValueOnce({
+        json: () => Promise.resolve({ ok: true, response: "Response" }),
+      })
+
+      render(<TaskChatPanel />)
+      const input = screen.getByRole("textbox")
+
+      await act(async () => {
+        fireEvent.change(input, { target: { value: "Hello" } })
+        fireEvent.submit(input.closest("form")!)
+      })
+
+      // Wait for async operations to complete
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalled()
+      })
+
+      // Input is disabled while loading
+      expect(input).toBeDisabled()
+
+      // Simulate loading completing (as would happen via WebSocket)
+      await act(async () => {
+        useAppStore.getState().setTaskChatLoading(false)
+      })
+
+      // Input should be focused after loading completes
+      expect(input).not.toBeDisabled()
+      expect(input).toHaveFocus()
+    })
   })
 
   describe("clear history", () => {
