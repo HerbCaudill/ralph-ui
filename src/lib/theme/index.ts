@@ -41,3 +41,15 @@ export {
   isHighContrastTheme,
   getEssentialColors,
 } from "./parser"
+
+// Re-export mapper functions and types
+export type { CSSVariables } from "./mapper"
+export {
+  extractStatusColors,
+  mapThemeToCSSVariables,
+  createAppTheme,
+  generateThemeCSS,
+  applyThemeToElement,
+  isValidHexColor,
+  normalizeHexColor,
+} from "./mapper"
