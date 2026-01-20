@@ -32,7 +32,7 @@ import {
 import { cn, stripTaskPrefix } from "@/lib/utils"
 import { useAppStore, selectIssuePrefix, selectTasks } from "@/store"
 import type { TaskCardTask, TaskStatus } from "./TaskCard"
-import { IconBug, IconSparkles, IconStack2, IconCheckbox } from "@tabler/icons-react"
+import { IconBug, IconStack2, IconCheckbox } from "@tabler/icons-react"
 import { CommentsSection } from "./CommentsSection"
 import { MarkdownContent } from "@/components/ui/MarkdownContent"
 import { RelatedTasks } from "./RelatedTasks"
@@ -64,7 +64,7 @@ export interface TaskUpdateData {
 }
 
 // Issue Type Options
-export type IssueType = "task" | "bug" | "feature" | "epic"
+export type IssueType = "task" | "bug" | "epic"
 
 const issueTypeOptions: {
   value: IssueType
@@ -74,7 +74,6 @@ const issueTypeOptions: {
 }[] = [
   { value: "task", label: "Task", icon: IconCheckbox, color: "text-gray-500" },
   { value: "bug", label: "Bug", icon: IconBug, color: "text-red-500" },
-  { value: "feature", label: "Feature", icon: IconSparkles, color: "text-purple-500" },
   { value: "epic", label: "Epic", icon: IconStack2, color: "text-indigo-500" },
 ]
 
@@ -667,7 +666,7 @@ export function TaskDetailsDialog({
           <div className="grid grid-cols-2 gap-4">
             {/* Type */}
             <div className="grid gap-2">
-              <Label htmlFor="task-type">Type</Label>
+              <Label>Type</Label>
               {readOnly ?
                 <div className="flex items-center gap-2">
                   {(() => {
@@ -681,24 +680,29 @@ export function TaskDetailsDialog({
                     )
                   })()}
                 </div>
-              : <Select value={issueType} onValueChange={value => setIssueType(value as IssueType)}>
-                  <SelectTrigger id="task-type">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {issueTypeOptions.map(t => {
-                      const Icon = t.icon
-                      return (
-                        <SelectItem key={t.value} value={t.value}>
-                          <div className="flex items-center gap-2">
-                            <Icon className={cn("h-4 w-4", t.color)} />
-                            <span>{t.label}</span>
-                          </div>
-                        </SelectItem>
-                      )
-                    })}
-                  </SelectContent>
-                </Select>
+              : <div className="border-input bg-background flex rounded-md border" role="group">
+                  {issueTypeOptions.map(t => {
+                    const Icon = t.icon
+                    const isSelected = issueType === t.value
+                    return (
+                      <button
+                        key={t.value}
+                        type="button"
+                        onClick={() => setIssueType(t.value)}
+                        className={cn(
+                          "flex flex-1 items-center justify-center gap-1.5 px-2 py-1.5 text-sm transition-colors first:rounded-l-md last:rounded-r-md",
+                          isSelected ?
+                            "bg-accent text-accent-foreground"
+                          : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground",
+                        )}
+                        aria-pressed={isSelected}
+                      >
+                        <Icon className={cn("h-4 w-4", isSelected ? t.color : "")} />
+                        <span>{t.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
               }
             </div>
 

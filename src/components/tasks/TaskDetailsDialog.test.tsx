@@ -275,20 +275,14 @@ describe("TaskDetailsDialog", () => {
       })
     })
 
-    it("allows editing type via selector", async () => {
+    it("allows editing type via button bar", async () => {
       render(
         <TaskDetailsDialog task={mockTask} open={true} onClose={mockOnClose} onSave={mockOnSave} />,
       )
 
-      // Click on the type selector
-      const typeSelect = screen.getByLabelText(/type/i)
-      fireEvent.click(typeSelect)
-
-      // Select "Bug" from the dropdown
-      await waitFor(() => {
-        expect(screen.getByRole("option", { name: /bug/i })).toBeInTheDocument()
-      })
-      fireEvent.click(screen.getByRole("option", { name: /bug/i }))
+      // Find and click the "Bug" button in the type button bar
+      const bugButton = screen.getByRole("button", { name: /bug/i })
+      fireEvent.click(bugButton)
 
       // Save button should now be enabled
       await waitFor(() => {
@@ -301,15 +295,9 @@ describe("TaskDetailsDialog", () => {
         <TaskDetailsDialog task={mockTask} open={true} onClose={mockOnClose} onSave={mockOnSave} />,
       )
 
-      // Click on the type selector
-      const typeSelect = screen.getByLabelText(/type/i)
-      fireEvent.click(typeSelect)
-
-      // Select "Bug" from the dropdown
-      await waitFor(() => {
-        expect(screen.getByRole("option", { name: /bug/i })).toBeInTheDocument()
-      })
-      fireEvent.click(screen.getByRole("option", { name: /bug/i }))
+      // Find and click the "Bug" button in the type button bar
+      const bugButton = screen.getByRole("button", { name: /bug/i })
+      fireEvent.click(bugButton)
 
       // Click save
       await waitFor(() => {
