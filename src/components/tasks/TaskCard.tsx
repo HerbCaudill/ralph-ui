@@ -39,7 +39,7 @@ export interface TaskCardTask {
   labels?: string[]
 }
 
-export interface TaskCardProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface TaskCardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onClick"> {
   /** The task to display */
   task: TaskCardTask
   /** Callback when status is changed */
