@@ -14,3 +14,18 @@ Object.defineProperty(window, "matchMedia", {
     dispatchEvent: () => false,
   }),
 })
+
+// Mock ResizeObserver for tests that use cmdk/command palette
+class ResizeObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+Object.defineProperty(window, "ResizeObserver", {
+  writable: true,
+  value: ResizeObserverMock,
+})
+
+// Mock scrollIntoView for tests that use cmdk/command palette
+Element.prototype.scrollIntoView = () => {}

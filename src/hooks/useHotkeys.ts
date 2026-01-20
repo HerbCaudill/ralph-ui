@@ -178,6 +178,7 @@ export function useHotkeys({ handlers, enabled = true }: UseHotkeysOptions): Use
               "toggleInputFocus",
               "toggleTaskChat",
               "focusTaskChatInput",
+              "showCommandPalette",
             ]
 
             if (isInput && !allowedInInput.includes(action)) {

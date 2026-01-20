@@ -1,5 +1,11 @@
 import { useRef, useCallback, useState, useEffect } from "react"
-import { MainLayout, type MainLayoutHandle, StatusBar, HotkeysDialog } from "./components/layout"
+import {
+  MainLayout,
+  type MainLayoutHandle,
+  StatusBar,
+  HotkeysDialog,
+  CommandPalette,
+} from "./components/layout"
 import { ChatInput, type ChatInputHandle } from "./components/chat/ChatInput"
 import { EventStream, EventLogViewer } from "./components/events"
 import { TaskSidebar } from "./components/tasks/TaskSidebar"
@@ -165,6 +171,9 @@ export function App() {
   // Hotkeys dialog state
   const [hotkeysDialogOpen, setHotkeysDialogOpen] = useState(false)
 
+  // Command palette state
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
+
   // Handle task click - open the dialog
   const handleTaskClick = useCallback(
     (taskId: string) => {
@@ -274,6 +283,14 @@ export function App() {
     setHotkeysDialogOpen(false)
   }, [])
 
+  const handleShowCommandPalette = useCallback(() => {
+    setCommandPaletteOpen(true)
+  }, [])
+
+  const handleCloseCommandPalette = useCallback(() => {
+    setCommandPaletteOpen(false)
+  }, [])
+
   const handleToggleTaskChat = useCallback(() => {
     toggleTaskChat()
   }, [toggleTaskChat])
@@ -309,6 +326,7 @@ export function App() {
       toggleInputFocus: handleToggleInputFocus,
       toggleTaskChat: handleToggleTaskChat,
       focusTaskChatInput: handleFocusTaskChatInput,
+      showCommandPalette: handleShowCommandPalette,
     },
   })
 
@@ -344,6 +362,23 @@ export function App() {
         onSave={taskDialog.saveTask}
       />
       <HotkeysDialog open={hotkeysDialogOpen} onClose={handleCloseHotkeysDialog} />
+      <CommandPalette
+        open={commandPaletteOpen}
+        onClose={handleCloseCommandPalette}
+        handlers={{
+          agentStart: handleAgentStart,
+          agentStop: handleAgentStop,
+          agentPause: handleAgentPause,
+          toggleSidebar: handleToggleSidebar,
+          cycleTheme: handleCycleTheme,
+          showHotkeys: handleShowHotkeys,
+          focusTaskInput: handleFocusTaskInput,
+          focusChatInput: handleFocusChatInput,
+          toggleTaskChat: handleToggleTaskChat,
+        }}
+        ralphStatus={ralphStatus}
+        isConnected={isConnected}
+      />
     </TaskDialogProvider>
   )
 }

@@ -106,7 +106,7 @@ const hotkeyCategories: HotkeyCategory[] = [
   },
   {
     name: "Help",
-    actions: ["showHotkeys"],
+    actions: ["showCommandPalette", "showHotkeys"],
   },
 ]
 

@@ -70,6 +70,11 @@
       "key": "3",
       "modifiers": ["cmd"],
       "description": "Focus task chat input"
+    },
+    "showCommandPalette": {
+      "key": ";",
+      "modifiers": ["cmd"],
+      "description": "Open command palette"
     }
   }
 }

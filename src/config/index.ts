@@ -25,6 +25,7 @@ export type HotkeyAction =
   | "toggleInputFocus"
   | "toggleTaskChat"
   | "focusTaskChatInput"
+  | "showCommandPalette"
 
 export type HotkeysConfig = Record<HotkeyAction, HotkeyConfig>
 
