@@ -102,7 +102,7 @@ interface TypeConfig {
   color: string
 }
 
-const typeConfig: Record<string, TypeConfig> = {
+export const typeConfig: Record<string, TypeConfig> = {
   bug: {
     icon: IconBug,
     label: "Bug",

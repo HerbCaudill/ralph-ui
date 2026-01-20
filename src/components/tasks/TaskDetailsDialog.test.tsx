@@ -80,16 +80,17 @@ describe("TaskDetailsDialog", () => {
       expect(screen.getByText("test-123")).toBeInTheDocument()
     })
 
-    it("shows task type and parent in metadata section", () => {
+    it("shows task type and parent in dialog", () => {
       render(
         <TaskDetailsDialog task={mockTask} open={true} onClose={mockOnClose} onSave={mockOnSave} />,
       )
 
-      expect(screen.getByText("task")).toBeInTheDocument()
+      // Type selector shows "Task" (capitalized)
+      expect(screen.getByText("Task")).toBeInTheDocument()
       expect(screen.getByText("parent-456")).toBeInTheDocument()
     })
 
-    it("does not show metadata section when no type or parent", () => {
+    it("shows type selector with task default when no type is set", () => {
       const taskWithoutMetadata: TaskCardTask = {
         id: "test-123",
         title: "Test Task",
@@ -105,8 +106,9 @@ describe("TaskDetailsDialog", () => {
         />,
       )
 
-      expect(screen.queryByText("Type:")).not.toBeInTheDocument()
-      expect(screen.queryByText("Parent:")).not.toBeInTheDocument()
+      // Type selector defaults to "Task" and Parent shows "None"
+      expect(screen.getByText("Task")).toBeInTheDocument()
+      expect(screen.getByText("None")).toBeInTheDocument()
     })
   })
 
@@ -212,6 +214,54 @@ describe("TaskDetailsDialog", () => {
       await waitFor(() => {
         expect(saveButton).toBeDisabled()
       })
+    })
+
+    it("allows editing type via selector", async () => {
+      render(
+        <TaskDetailsDialog task={mockTask} open={true} onClose={mockOnClose} onSave={mockOnSave} />,
+      )
+
+      // Click on the type selector
+      const typeSelect = screen.getByLabelText(/type/i)
+      fireEvent.click(typeSelect)
+
+      // Select "Bug" from the dropdown
+      await waitFor(() => {
+        expect(screen.getByRole("option", { name: /bug/i })).toBeInTheDocument()
+      })
+      fireEvent.click(screen.getByRole("option", { name: /bug/i }))
+
+      // Save button should now be enabled
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /save/i })).toBeEnabled()
+      })
+    })
+
+    it("saves issue_type when type is changed", async () => {
+      render(
+        <TaskDetailsDialog task={mockTask} open={true} onClose={mockOnClose} onSave={mockOnSave} />,
+      )
+
+      // Click on the type selector
+      const typeSelect = screen.getByLabelText(/type/i)
+      fireEvent.click(typeSelect)
+
+      // Select "Bug" from the dropdown
+      await waitFor(() => {
+        expect(screen.getByRole("option", { name: /bug/i })).toBeInTheDocument()
+      })
+      fireEvent.click(screen.getByRole("option", { name: /bug/i }))
+
+      // Click save
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /save/i })).toBeEnabled()
+      })
+      const saveButton = screen.getByRole("button", { name: /save/i })
+      await act(async () => {
+        fireEvent.click(saveButton)
+      })
+
+      expect(mockOnSave).toHaveBeenCalledWith(mockTask.id, { issue_type: "bug" })
     })
   })
 

@@ -29,6 +29,7 @@ import {
 import { cn, stripTaskPrefix } from "@/lib/utils"
 import { useAppStore, selectIssuePrefix } from "@/store"
 import type { TaskCardTask, TaskStatus } from "./TaskCard"
+import { IconBug, IconSparkles, IconStack2, IconCheckbox } from "@tabler/icons-react"
 
 // Types
 
@@ -50,7 +51,23 @@ export interface TaskUpdateData {
   description?: string
   status?: TaskStatus
   priority?: number
+  issue_type?: string
 }
+
+// Issue Type Options
+export type IssueType = "task" | "bug" | "feature" | "epic"
+
+const issueTypeOptions: {
+  value: IssueType
+  label: string
+  icon: typeof IconCheckbox
+  color: string
+}[] = [
+  { value: "task", label: "Task", icon: IconCheckbox, color: "text-gray-500" },
+  { value: "bug", label: "Bug", icon: IconBug, color: "text-red-500" },
+  { value: "feature", label: "Feature", icon: IconSparkles, color: "text-purple-500" },
+  { value: "epic", label: "Epic", icon: IconStack2, color: "text-indigo-500" },
+]
 
 // Status Configuration
 
@@ -186,6 +203,7 @@ export function TaskDetailsDialog({
   const [description, setDescription] = useState("")
   const [status, setStatus] = useState<TaskStatus>("open")
   const [priority, setPriority] = useState<number>(2)
+  const [issueType, setIssueType] = useState<IssueType>("task")
   const [isSaving, setIsSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
 
@@ -196,6 +214,7 @@ export function TaskDetailsDialog({
       setDescription(task.description ?? "")
       setStatus(task.status)
       setPriority(task.priority ?? 2)
+      setIssueType((task.issue_type as IssueType) ?? "task")
       setHasChanges(false)
     }
   }, [task])
@@ -207,9 +226,10 @@ export function TaskDetailsDialog({
       title !== task.title ||
       description !== (task.description ?? "") ||
       status !== task.status ||
-      priority !== (task.priority ?? 2)
+      priority !== (task.priority ?? 2) ||
+      issueType !== ((task.issue_type as IssueType) ?? "task")
     setHasChanges(changed)
-  }, [task, title, description, status, priority])
+  }, [task, title, description, status, priority, issueType])
 
   const handleSave = useCallback(async () => {
     if (!task || !onSave || readOnly) return
@@ -219,6 +239,7 @@ export function TaskDetailsDialog({
     if (description !== (task.description ?? "")) updates.description = description
     if (status !== task.status) updates.status = status
     if (priority !== (task.priority ?? 2)) updates.priority = priority
+    if (issueType !== ((task.issue_type as IssueType) ?? "task")) updates.issue_type = issueType
 
     if (Object.keys(updates).length === 0) {
       onClose()
@@ -240,7 +261,19 @@ export function TaskDetailsDialog({
     } finally {
       setIsSaving(false)
     }
-  }, [task, onSave, readOnly, title, description, status, priority, onClose, events, workspace])
+  }, [
+    task,
+    onSave,
+    readOnly,
+    title,
+    description,
+    status,
+    priority,
+    issueType,
+    onClose,
+    events,
+    workspace,
+  ])
 
   const handleClose = useCallback(() => {
     onClose()
@@ -371,26 +404,57 @@ export function TaskDetailsDialog({
             </div>
           </div>
 
-          {/* Metadata (read-only) */}
-          {(task.issue_type || task.parent) && (
-            <div className="border-border text-muted-foreground border-t pt-4 text-xs">
-              <div className="flex flex-wrap gap-x-4 gap-y-1">
-                {task.issue_type && (
-                  <span>
-                    Type: <span className="text-foreground capitalize">{task.issue_type}</span>
-                  </span>
-                )}
-                {task.parent && (
-                  <span>
-                    Parent:{" "}
-                    <span className="text-foreground font-mono">
-                      {stripTaskPrefix(task.parent, issuePrefix)}
-                    </span>
-                  </span>
-                )}
-              </div>
+          {/* Type and Parent row */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Type */}
+            <div className="grid gap-2">
+              <Label htmlFor="task-type">Type</Label>
+              {readOnly ?
+                <div className="flex items-center gap-2">
+                  {(() => {
+                    const typeOption = issueTypeOptions.find(t => t.value === issueType)
+                    const TypeIcon = typeOption?.icon ?? IconCheckbox
+                    return (
+                      <>
+                        <TypeIcon className={cn("h-4 w-4", typeOption?.color ?? "text-gray-500")} />
+                        <span className="text-sm capitalize">{issueType}</span>
+                      </>
+                    )
+                  })()}
+                </div>
+              : <Select value={issueType} onValueChange={value => setIssueType(value as IssueType)}>
+                  <SelectTrigger id="task-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {issueTypeOptions.map(t => {
+                      const Icon = t.icon
+                      return (
+                        <SelectItem key={t.value} value={t.value}>
+                          <div className="flex items-center gap-2">
+                            <Icon className={cn("h-4 w-4", t.color)} />
+                            <span>{t.label}</span>
+                          </div>
+                        </SelectItem>
+                      )
+                    })}
+                  </SelectContent>
+                </Select>
+              }
             </div>
-          )}
+
+            {/* Parent (read-only) */}
+            <div className="grid gap-2">
+              <Label>Parent</Label>
+              <span className="text-muted-foreground text-sm">
+                {task.parent ?
+                  <span className="text-foreground font-mono">
+                    {stripTaskPrefix(task.parent, issuePrefix)}
+                  </span>
+                : <span>None</span>}
+              </span>
+            </div>
+          </div>
         </div>
 
         {!readOnly && (
