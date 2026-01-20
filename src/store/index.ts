@@ -374,7 +374,7 @@ const initialState: AppState = {
   viewingEventLog: null,
   eventLogLoading: false,
   eventLogError: null,
-  taskChatOpen: false,
+  taskChatOpen: true,
   taskChatWidth: defaultTaskChatWidth,
   taskChatMessages: [],
   taskChatLoading: false,
