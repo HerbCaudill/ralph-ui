@@ -19,7 +19,7 @@
     "agentStopAfterCurrent": {
       "key": ".",
       "modifiers": ["cmd", "shift"],
-      "description": "Stop after current task (coming soon)"
+      "description": "Stop after current task"
     },
     "toggleSidebar": {
       "key": "b",
