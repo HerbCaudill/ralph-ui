@@ -33,6 +33,7 @@ import { useAppStore, selectIssuePrefix, selectTasks } from "@/store"
 import type { TaskCardTask, TaskStatus } from "./TaskCard"
 import { IconBug, IconSparkles, IconStack2, IconCheckbox } from "@tabler/icons-react"
 import { CommentsSection } from "./CommentsSection"
+import { MarkdownContent } from "@/components/ui/MarkdownContent"
 
 // Types
 
@@ -444,9 +445,9 @@ export function TaskDetailsDialog({
           <div className="grid gap-2">
             <Label htmlFor="task-description">Description</Label>
             {readOnly ?
-              <p className="text-muted-foreground text-sm whitespace-pre-wrap">
-                {description || "No description"}
-              </p>
+              description ?
+                <MarkdownContent className="text-muted-foreground">{description}</MarkdownContent>
+              : <p className="text-muted-foreground text-sm">No description</p>
             : <Textarea
                 id="task-description"
                 value={description}

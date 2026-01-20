@@ -1,14 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react"
-import ReactMarkdown from "react-markdown"
-import remarkGfm from "remark-gfm"
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { IconLoader2 } from "@tabler/icons-react"
-import type { Components } from "react-markdown"
-import type { ReactNode } from "react"
-import { TaskIdLink } from "@/components/ui/TaskIdLink"
+import { MarkdownContent } from "@/components/ui/MarkdownContent"
 
 // Types
 
@@ -52,43 +48,6 @@ function formatRelativeTime(dateString: string): string {
   }
 }
 
-// Markdown components with TaskIdLink support
-function createMarkdownComponents(): Components {
-  const processChildren = (children: ReactNode): ReactNode => {
-    if (typeof children === "string") {
-      return <TaskIdLink>{children}</TaskIdLink>
-    }
-    return children
-  }
-
-  return {
-    p(props) {
-      const { children, ...rest } = props
-      return <p {...rest}>{processChildren(children)}</p>
-    },
-    li(props) {
-      const { children, ...rest } = props
-      return <li {...rest}>{processChildren(children)}</li>
-    },
-    strong(props) {
-      const { children, ...rest } = props
-      return <strong {...rest}>{processChildren(children)}</strong>
-    },
-    em(props) {
-      const { children, ...rest } = props
-      return <em {...rest}>{processChildren(children)}</em>
-    },
-    code(props) {
-      const { children, className: codeClassName, ...rest } = props
-      return (
-        <code className={codeClassName} {...rest}>
-          {processChildren(children)}
-        </code>
-      )
-    },
-  }
-}
-
 // CommentItem Component
 
 interface CommentItemProps {
@@ -96,8 +55,6 @@ interface CommentItemProps {
 }
 
 function CommentItem({ comment }: CommentItemProps) {
-  const components = createMarkdownComponents()
-
   return (
     <div className="border-border border-b pb-3 last:border-0 last:pb-0">
       <div className="mb-1 flex items-center gap-2">
@@ -106,11 +63,7 @@ function CommentItem({ comment }: CommentItemProps) {
           {formatRelativeTime(comment.created_at)}
         </span>
       </div>
-      <div className="prose prose-sm dark:prose-invert max-w-none">
-        <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
-          {comment.text}
-        </ReactMarkdown>
-      </div>
+      <MarkdownContent withCodeBlocks={false}>{comment.text}</MarkdownContent>
     </div>
   )
 }
