@@ -48,8 +48,8 @@ export function TaskSidebar({ quickInput, taskList, searchInputRef, className }:
         <SearchInput ref={searchInputRef} />
       </div>
 
-      {/* Task List Area */}
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      {/* Task List Area - scrolling is handled by TaskList sections */}
+      <div className="min-h-0 flex-1">
         {taskList ?? (
           <div className="text-muted-foreground flex h-full items-center justify-center p-4 text-center text-sm">
             No tasks yet

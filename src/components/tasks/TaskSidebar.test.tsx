@@ -72,11 +72,12 @@ describe("TaskSidebar", () => {
       expect(sidebar).toHaveClass("h-full")
     })
 
-    it("task list area has overflow scroll", () => {
+    it("task list area is flexible container", () => {
       render(<TaskSidebar taskList={<div data-testid="task-list-content">My tasks</div>} />)
-      // The task list container should have overflow-y-auto
+      // The task list container should be a flexible container
+      // (scrolling is handled by TaskList sections internally)
       const taskListContainer = screen.getByTestId("task-list-content").parentElement
-      expect(taskListContainer).toHaveClass("overflow-y-auto")
+      expect(taskListContainer).toHaveClass("min-h-0", "flex-1")
     })
   })
 

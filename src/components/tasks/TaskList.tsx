@@ -575,13 +575,23 @@ export function TaskList({
   }
 
   return (
-    <div className={cn("flex flex-col", className)} role="list" aria-label="Task list">
-      {/* Status groups with epic sub-groups */}
+    <div className={cn("flex h-full flex-col", className)} role="list" aria-label="Task list">
+      {/* Status groups with epic sub-groups - each group is a flex item with scrollable content */}
       {visibleStatusGroups.map(({ config, epicSubGroups, totalCount }) => {
         const isStatusCollapsed = statusCollapsedState[config.key]
 
         return (
-          <div key={config.key} role="listitem" aria-label={`${config.label} group`}>
+          <div
+            key={config.key}
+            role="listitem"
+            aria-label={`${config.label} group`}
+            className={cn(
+              "flex min-h-0 flex-col",
+              // When collapsed, only show the header (shrink-0)
+              // When expanded, flex-1 to share space with other expanded groups
+              isStatusCollapsed ? "shrink-0" : "flex-1",
+            )}
+          >
             <TaskGroupHeader
               label={config.label}
               count={totalCount}
@@ -591,7 +601,11 @@ export function TaskList({
               onTimeFilterChange={config.key === "closed" ? setClosedTimeFilter : undefined}
             />
             {!isStatusCollapsed && (
-              <div role="group" aria-label={`${config.label} tasks`}>
+              <div
+                role="group"
+                aria-label={`${config.label} tasks`}
+                className="min-h-0 flex-1 overflow-y-auto"
+              >
                 {epicSubGroups.length > 0 ?
                   epicSubGroups.map(({ epic, tasks: epicTasks }) => {
                     if (epic) {
