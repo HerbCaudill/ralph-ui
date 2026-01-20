@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from "vitest"
+import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render, screen, fireEvent } from "@testing-library/react"
 import { TaskIdLink, containsTaskId } from "./TaskIdLink"
 import { TaskDialogProvider } from "@/contexts"
+import { useAppStore } from "@/store"
 
 // Helper to render with context
 function renderWithContext(ui: React.ReactNode, openTaskById = vi.fn()) {
@@ -9,6 +10,13 @@ function renderWithContext(ui: React.ReactNode, openTaskById = vi.fn()) {
 }
 
 describe("TaskIdLink", () => {
+  beforeEach(() => {
+    // Reset store before each test
+    useAppStore.getState().reset()
+    // Set a default issue prefix for tests
+    useAppStore.getState().setIssuePrefix("rui")
+  })
+
   describe("without context", () => {
     it("renders text without changes when no context is provided", () => {
       render(<TaskIdLink>Check out rui-48s for details</TaskIdLink>)
@@ -67,13 +75,40 @@ describe("TaskIdLink", () => {
       expect(openTaskById).toHaveBeenCalledWith("rui-26f")
     })
 
-    it("handles different project prefixes", () => {
+    it("only matches task IDs with the configured prefix", () => {
       const openTaskById = vi.fn()
-      renderWithContext(<TaskIdLink>Tasks: proj-abc123, foo-1, bar-xyz</TaskIdLink>, openTaskById)
+      // With prefix "rui", only rui-xxx should match
+      renderWithContext(
+        <TaskIdLink>Tasks: proj-abc123, foo-1, bar-xyz, rui-123</TaskIdLink>,
+        openTaskById,
+      )
 
+      // Only rui-123 should be a link since prefix is "rui"
+      expect(screen.getByRole("button", { name: "View task rui-123" })).toBeInTheDocument()
+      expect(
+        screen.queryByRole("button", { name: "View task proj-abc123" }),
+      ).not.toBeInTheDocument()
+      expect(screen.queryByRole("button", { name: "View task foo-1" })).not.toBeInTheDocument()
+      expect(screen.queryByRole("button", { name: "View task bar-xyz" })).not.toBeInTheDocument()
+    })
+
+    it("matches task IDs when prefix is changed", () => {
+      const openTaskById = vi.fn()
+      useAppStore.getState().setIssuePrefix("proj")
+      renderWithContext(<TaskIdLink>Tasks: proj-abc123, rui-123, foo-1</TaskIdLink>, openTaskById)
+
+      // Only proj-abc123 should be a link since prefix is "proj"
       expect(screen.getByRole("button", { name: "View task proj-abc123" })).toBeInTheDocument()
-      expect(screen.getByRole("button", { name: "View task foo-1" })).toBeInTheDocument()
-      expect(screen.getByRole("button", { name: "View task bar-xyz" })).toBeInTheDocument()
+      expect(screen.queryByRole("button", { name: "View task rui-123" })).not.toBeInTheDocument()
+      expect(screen.queryByRole("button", { name: "View task foo-1" })).not.toBeInTheDocument()
+    })
+
+    it("does not linkify anything when no prefix is configured", () => {
+      useAppStore.getState().setIssuePrefix(null)
+      renderWithContext(<TaskIdLink>Check rui-48s and proj-123</TaskIdLink>)
+
+      const buttons = screen.queryAllByRole("button")
+      expect(buttons).toHaveLength(0)
     })
 
     it("handles task IDs with decimal suffixes", () => {
@@ -133,6 +168,15 @@ describe("TaskIdLink", () => {
       expect(buttons).toHaveLength(0)
     })
 
+    it("does not linkify arbitrary hyphenated words", () => {
+      renderWithContext(
+        <TaskIdLink>Words like self-contained or high-quality should not be linkified</TaskIdLink>,
+      )
+
+      const buttons = screen.queryAllByRole("button")
+      expect(buttons).toHaveLength(0)
+    })
+
     it("stops event propagation when clicking task link", () => {
       const openTaskById = vi.fn()
       const parentClick = vi.fn()
@@ -155,21 +199,38 @@ describe("TaskIdLink", () => {
 })
 
 describe("containsTaskId", () => {
-  it("returns true for text containing a task ID", () => {
-    expect(containsTaskId("Check rui-48s")).toBe(true)
-    expect(containsTaskId("proj-abc123")).toBe(true)
+  it("returns true for text containing a task ID with matching prefix", () => {
+    expect(containsTaskId("Check rui-48s", "rui")).toBe(true)
+    expect(containsTaskId("proj-abc123", "proj")).toBe(true)
+  })
+
+  it("returns false for text containing task IDs with non-matching prefix", () => {
+    expect(containsTaskId("Check rui-48s", "proj")).toBe(false)
+    expect(containsTaskId("proj-abc123", "rui")).toBe(false)
   })
 
   it("returns true for task IDs with decimal suffixes", () => {
-    expect(containsTaskId("Check rui-48s.5")).toBe(true)
-    expect(containsTaskId("proj-abc.1")).toBe(true)
-    expect(containsTaskId("rui-xyz.10")).toBe(true)
+    expect(containsTaskId("Check rui-48s.5", "rui")).toBe(true)
+    expect(containsTaskId("proj-abc.1", "proj")).toBe(true)
+    expect(containsTaskId("rui-xyz.10", "rui")).toBe(true)
   })
 
   it("returns false for text without task IDs", () => {
-    expect(containsTaskId("Hello world")).toBe(false)
-    expect(containsTaskId("")).toBe(false)
-    expect(containsTaskId("RUI-48S")).toBe(false)
-    expect(containsTaskId("rui-")).toBe(false)
+    expect(containsTaskId("Hello world", "rui")).toBe(false)
+    expect(containsTaskId("", "rui")).toBe(false)
+    expect(containsTaskId("RUI-48S", "rui")).toBe(false)
+    expect(containsTaskId("rui-", "rui")).toBe(false)
+  })
+
+  it("returns false when prefix is null", () => {
+    expect(containsTaskId("Check rui-48s", null)).toBe(false)
+    expect(containsTaskId("proj-abc123", null)).toBe(false)
+  })
+
+  it("does not match hyphenated words when prefix doesn't match", () => {
+    // With prefix "rui", words like "self-contained" or "high-quality" won't match
+    expect(containsTaskId("self-contained", "rui")).toBe(false)
+    expect(containsTaskId("high-quality work", "rui")).toBe(false)
+    expect(containsTaskId("This is a well-known fact", "rui")).toBe(false)
   })
 })

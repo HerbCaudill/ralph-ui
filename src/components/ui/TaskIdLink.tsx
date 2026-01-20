@@ -1,10 +1,21 @@
 import { useTaskDialogContext } from "@/contexts"
+import { useAppStore, selectIssuePrefix } from "@/store"
 import type { ReactNode, MouseEvent } from "react"
 
-// Task ID pattern: prefix-alphanumeric with optional decimal suffix (e.g., rui-48s, proj-abc123, rui-4vp.5)
-// The prefix is typically lowercase letters, the suffix is lowercase alphanumeric
-// Optionally followed by a decimal point and digits for sub-task notation
-const TASK_ID_PATTERN = /\b([a-z]+-[a-z0-9]+(?:\.\d+)?)\b/g
+/**
+ * Creates a regex pattern that matches task IDs with the given prefix.
+ * If no prefix is provided, returns null (don't match anything).
+ *
+ * @param prefix - The issue prefix for this workspace (e.g., "rui")
+ * @returns A regex that matches task IDs like "rui-48s" or "rui-4vp.5", or null if no prefix
+ */
+function createTaskIdPattern(prefix: string | null): RegExp | null {
+  if (!prefix) return null
+  // Escape any special regex characters in the prefix (unlikely but safe)
+  const escapedPrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  // Match prefix-alphanumeric with optional decimal suffix
+  return new RegExp(`\\b(${escapedPrefix}-[a-z0-9]+(?:\\.\\d+)?)\\b`, "g")
+}
 
 // Types
 
@@ -24,9 +35,16 @@ export interface TaskIdLinkProps {
  */
 export function TaskIdLink({ children, className }: TaskIdLinkProps) {
   const taskDialogContext = useTaskDialogContext()
+  const issuePrefix = useAppStore(selectIssuePrefix)
 
   // If no task dialog context is available, just render the text
   if (!taskDialogContext) {
+    return <>{children}</>
+  }
+
+  // If no issue prefix is configured, don't try to match any task IDs
+  const pattern = createTaskIdPattern(issuePrefix)
+  if (!pattern) {
     return <>{children}</>
   }
 
@@ -38,9 +56,9 @@ export function TaskIdLink({ children, className }: TaskIdLinkProps) {
   let match: RegExpExecArray | null
 
   // Reset the regex state
-  TASK_ID_PATTERN.lastIndex = 0
+  pattern.lastIndex = 0
 
-  while ((match = TASK_ID_PATTERN.exec(children)) !== null) {
+  while ((match = pattern.exec(children)) !== null) {
     const taskId = match[1]
     const startIndex = match.index
 
@@ -88,9 +106,14 @@ export function TaskIdLink({ children, className }: TaskIdLinkProps) {
 }
 
 /**
- * Utility function to check if a string contains any task IDs
+ * Utility function to check if a string contains any task IDs with the given prefix.
+ *
+ * @param text - The text to check
+ * @param prefix - The issue prefix (e.g., "rui")
+ * @returns true if the text contains task IDs matching the prefix
  */
-export function containsTaskId(text: string): boolean {
-  TASK_ID_PATTERN.lastIndex = 0
-  return TASK_ID_PATTERN.test(text)
+export function containsTaskId(text: string, prefix: string | null): boolean {
+  const pattern = createTaskIdPattern(prefix)
+  if (!pattern) return false
+  return pattern.test(text)
 }
