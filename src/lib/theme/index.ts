@@ -26,3 +26,18 @@ export {
   getSupportedLanguages,
   normalizeLanguage,
 } from "./highlighter"
+
+// Re-export parser functions and types
+export type { ParseResult, ValidationResult } from "./parser"
+export {
+  parseThemeJson,
+  parseThemeObject,
+  validateThemeObject,
+  getColor,
+  getTokenColorsForScope,
+  getForegroundForScope,
+  isDarkTheme,
+  isLightTheme,
+  isHighContrastTheme,
+  getEssentialColors,
+} from "./parser"
