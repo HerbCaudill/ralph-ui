@@ -245,6 +245,24 @@ export function TaskDetailsDialog({
     onClose()
   }, [onClose])
 
+  // Handle Cmd+Enter / Ctrl+Enter to save
+  useEffect(() => {
+    if (!open || readOnly) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform)
+      const modifierPressed = isMac ? event.metaKey : event.ctrlKey
+
+      if (modifierPressed && event.key === "Enter" && hasChanges && !isSaving) {
+        event.preventDefault()
+        handleSave()
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [open, readOnly, hasChanges, isSaving, handleSave])
+
   if (!task) return null
 
   const StatusIcon = statusConfig[status].icon

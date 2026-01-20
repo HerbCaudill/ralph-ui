@@ -413,6 +413,102 @@ describe("TaskDetailsDialog", () => {
     })
   })
 
+  describe("keyboard shortcuts", () => {
+    it("saves on Cmd+Enter (Mac) when changes exist", async () => {
+      // Mock Mac platform
+      const originalPlatform = navigator.platform
+      Object.defineProperty(navigator, "platform", { value: "MacIntel", configurable: true })
+
+      mockOnSave.mockResolvedValue(undefined)
+
+      render(
+        <TaskDetailsDialog task={mockTask} open={true} onClose={mockOnClose} onSave={mockOnSave} />,
+      )
+
+      const titleInput = screen.getByLabelText(/title/i)
+      typeInInput(titleInput, "Updated Title")
+
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /save/i })).toBeEnabled()
+      })
+
+      // Press Cmd+Enter
+      await act(async () => {
+        fireEvent.keyDown(window, { key: "Enter", metaKey: true })
+      })
+
+      await waitFor(() => {
+        expect(mockOnSave).toHaveBeenCalledWith(mockTask.id, { title: "Updated Title" })
+      })
+
+      // Restore platform
+      Object.defineProperty(navigator, "platform", { value: originalPlatform, configurable: true })
+    })
+
+    it("saves on Ctrl+Enter (Windows/Linux) when changes exist", async () => {
+      // Mock Windows platform
+      const originalPlatform = navigator.platform
+      Object.defineProperty(navigator, "platform", { value: "Win32", configurable: true })
+
+      mockOnSave.mockResolvedValue(undefined)
+
+      render(
+        <TaskDetailsDialog task={mockTask} open={true} onClose={mockOnClose} onSave={mockOnSave} />,
+      )
+
+      const titleInput = screen.getByLabelText(/title/i)
+      typeInInput(titleInput, "Updated Title")
+
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /save/i })).toBeEnabled()
+      })
+
+      // Press Ctrl+Enter
+      await act(async () => {
+        fireEvent.keyDown(window, { key: "Enter", ctrlKey: true })
+      })
+
+      await waitFor(() => {
+        expect(mockOnSave).toHaveBeenCalledWith(mockTask.id, { title: "Updated Title" })
+      })
+
+      // Restore platform
+      Object.defineProperty(navigator, "platform", { value: originalPlatform, configurable: true })
+    })
+
+    it("does not save on Cmd+Enter when no changes", async () => {
+      render(
+        <TaskDetailsDialog task={mockTask} open={true} onClose={mockOnClose} onSave={mockOnSave} />,
+      )
+
+      // Press Cmd+Enter without making changes
+      await act(async () => {
+        fireEvent.keyDown(window, { key: "Enter", metaKey: true })
+      })
+
+      expect(mockOnSave).not.toHaveBeenCalled()
+    })
+
+    it("does not save on Cmd+Enter in read-only mode", async () => {
+      render(
+        <TaskDetailsDialog
+          task={mockTask}
+          open={true}
+          onClose={mockOnClose}
+          onSave={mockOnSave}
+          readOnly={true}
+        />,
+      )
+
+      // Press Cmd+Enter
+      await act(async () => {
+        fireEvent.keyDown(window, { key: "Enter", metaKey: true })
+      })
+
+      expect(mockOnSave).not.toHaveBeenCalled()
+    })
+  })
+
   describe("event log capture on close", () => {
     it("does not save event log when task is already closed", async () => {
       const mockFetch = vi.fn()
