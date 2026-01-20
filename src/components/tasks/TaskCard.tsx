@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils"
-import { useCallback, useState } from "react"
+import { forwardRef, useCallback, useState } from "react"
 import {
   IconCircle,
   IconCircleDot,
@@ -39,11 +39,9 @@ export interface TaskCardTask {
   labels?: string[]
 }
 
-export interface TaskCardProps {
+export interface TaskCardProps extends React.HTMLAttributes<HTMLDivElement> {
   /** The task to display */
   task: TaskCardTask
-  /** Additional CSS classes */
-  className?: string
   /** Callback when status is changed */
   onStatusChange?: (id: string, status: TaskStatus) => void
   /** Callback when task is clicked */
@@ -161,7 +159,10 @@ const priorityConfig: Record<number, PriorityConfig> = {
  * Clicking opens the task details dialog.
  * Supports inline status changes via dropdown.
  */
-export function TaskCard({ task, className, onStatusChange, onClick }: TaskCardProps) {
+export const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(function TaskCard(
+  { task, className, onStatusChange, onClick, ...props },
+  ref,
+) {
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false)
 
   const config = statusConfig[task.status]
@@ -201,11 +202,13 @@ export function TaskCard({ task, className, onStatusChange, onClick }: TaskCardP
 
   return (
     <div
+      ref={ref}
       className={cn(
         "border-border hover:bg-muted/50 group border-b transition-colors",
         task.status === "closed" && "opacity-60",
         className,
       )}
+      {...props}
     >
       {/* Main row */}
       <div className="flex w-full items-center gap-2 px-3 py-2">
@@ -321,4 +324,4 @@ export function TaskCard({ task, className, onStatusChange, onClick }: TaskCardP
       </div>
     </div>
   )
-}
+})
