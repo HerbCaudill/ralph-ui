@@ -12,6 +12,7 @@ import { TaskSidebar } from "./components/tasks/TaskSidebar"
 import { TaskList } from "./components/tasks/TaskList"
 import { TaskDetailsDialog } from "./components/tasks/TaskDetailsDialog"
 import { QuickTaskInput, type QuickTaskInputHandle } from "./components/tasks/QuickTaskInput"
+import { type SearchInputHandle } from "./components/tasks/SearchInput"
 import {
   useAppStore,
   selectRalphStatus,
@@ -99,11 +100,17 @@ async function stopAfterCurrentRalph(): Promise<{ ok: boolean; error?: string }>
 
 interface TasksSidebarPanelProps {
   quickInputRef?: React.RefObject<QuickTaskInputHandle | null>
+  searchInputRef?: React.RefObject<SearchInputHandle | null>
   onTaskClick?: (taskId: string) => void
   onTaskCreated?: () => void
 }
 
-function TasksSidebarPanel({ quickInputRef, onTaskClick, onTaskCreated }: TasksSidebarPanelProps) {
+function TasksSidebarPanel({
+  quickInputRef,
+  searchInputRef,
+  onTaskClick,
+  onTaskCreated,
+}: TasksSidebarPanelProps) {
   const { tasks, refresh } = useTasks({ all: true })
 
   const handleTaskCreated = useCallback(async () => {
@@ -115,6 +122,7 @@ function TasksSidebarPanel({ quickInputRef, onTaskClick, onTaskCreated }: TasksS
     <TaskSidebar
       quickInput={<QuickTaskInput ref={quickInputRef} onTaskCreated={handleTaskCreated} />}
       taskList={<TaskList tasks={tasks} onTaskClick={onTaskClick} />}
+      searchInputRef={searchInputRef}
     />
   )
 }
@@ -158,6 +166,7 @@ export function App() {
   const layoutRef = useRef<MainLayoutHandle>(null)
   const chatInputRef = useRef<ChatInputHandle>(null)
   const quickTaskInputRef = useRef<QuickTaskInputHandle>(null)
+  const searchInputRef = useRef<SearchInputHandle>(null)
 
   // Initialize theme management (applies dark class and listens for system changes)
   const { cycleTheme } = useTheme()
@@ -314,6 +323,10 @@ export function App() {
     }, 50)
   }, [toggleTaskChat])
 
+  const handleFocusSearch = useCallback(() => {
+    searchInputRef.current?.focus()
+  }, [])
+
   // Register hotkeys
   useHotkeys({
     handlers: {
@@ -335,6 +348,7 @@ export function App() {
       previousIteration: goToPreviousIteration,
       nextIteration: goToNextIteration,
       latestIteration: goToLatestIteration,
+      focusSearch: handleFocusSearch,
     },
   })
 
@@ -352,7 +366,11 @@ export function App() {
       <MainLayout
         ref={layoutRef}
         sidebar={
-          <TasksSidebarPanel quickInputRef={quickTaskInputRef} onTaskClick={handleTaskClick} />
+          <TasksSidebarPanel
+            quickInputRef={quickTaskInputRef}
+            searchInputRef={searchInputRef}
+            onTaskClick={handleTaskClick}
+          />
         }
         main={<AgentView chatInputRef={chatInputRef} />}
         statusBar={<StatusBar />}

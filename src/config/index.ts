@@ -29,6 +29,7 @@ export type HotkeyAction =
   | "previousIteration"
   | "nextIteration"
   | "latestIteration"
+  | "focusSearch"
 
 export type HotkeysConfig = Record<HotkeyAction, HotkeyConfig>
 

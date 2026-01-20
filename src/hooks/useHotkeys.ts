@@ -182,6 +182,7 @@ export function useHotkeys({ handlers, enabled = true }: UseHotkeysOptions): Use
               "previousIteration",
               "nextIteration",
               "latestIteration",
+              "focusSearch",
             ]
 
             if (isInput && !allowedInInput.includes(action)) {

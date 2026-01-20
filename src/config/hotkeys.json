@@ -90,6 +90,11 @@
       "key": "\\",
       "modifiers": ["cmd"],
       "description": "Go to latest iteration"
+    },
+    "focusSearch": {
+      "key": "f",
+      "modifiers": ["cmd"],
+      "description": "Focus task search"
     }
   }
 }

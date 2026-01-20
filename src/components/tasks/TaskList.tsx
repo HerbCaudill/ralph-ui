@@ -3,6 +3,7 @@ import { useState, useCallback, useMemo, useEffect } from "react"
 import { IconChevronDown, IconStack2 } from "@tabler/icons-react"
 import { TaskCard, type TaskCardTask, type TaskStatus } from "./TaskCard"
 import { TaskHoverCard } from "./TaskHoverCard"
+import { useAppStore, selectTaskSearchQuery } from "@/store"
 
 // Constants
 
@@ -353,6 +354,18 @@ interface StatusGroupData {
   totalCount: number
 }
 
+/** Check if a task matches the search query */
+function matchesSearchQuery(task: TaskCardTask, query: string): boolean {
+  if (!query.trim()) return true
+  const lowerQuery = query.toLowerCase()
+  // Search in task id, title, and description
+  return (
+    task.id.toLowerCase().includes(lowerQuery) ||
+    task.title.toLowerCase().includes(lowerQuery) ||
+    (task.description?.toLowerCase().includes(lowerQuery) ?? false)
+  )
+}
+
 export function TaskList({
   tasks,
   className,
@@ -362,6 +375,8 @@ export function TaskList({
   showEmptyGroups = false,
   persistCollapsedState = true,
 }: TaskListProps) {
+  // Get search query from store
+  const searchQuery = useAppStore(selectTaskSearchQuery)
   // Initialize status collapsed state: props override -> localStorage -> defaults
   const [statusCollapsedState, setStatusCollapsedState] = useState<Record<TaskGroup, boolean>>(
     () => {
@@ -444,6 +459,9 @@ export function TaskList({
 
     for (const task of tasks) {
       if (task.issue_type === "epic") continue // Don't show epics as tasks
+
+      // Apply search filter
+      if (!matchesSearchQuery(task, searchQuery)) continue
 
       // Find which status group this task belongs to
       const config = groupConfigs.find(g => g.statusFilter(task.status))
@@ -531,7 +549,7 @@ export function TaskList({
     }
 
     return result
-  }, [tasks, closedTimeFilter])
+  }, [tasks, closedTimeFilter, searchQuery])
 
   // Filter to only non-empty status groups (or all if showEmptyGroups is true)
   const visibleStatusGroups = useMemo(() => {
@@ -549,9 +567,9 @@ export function TaskList({
           className,
         )}
         role="status"
-        aria-label="No tasks"
+        aria-label={searchQuery ? "No matching tasks" : "No tasks"}
       >
-        No tasks
+        {searchQuery ? "No matching tasks" : "No tasks"}
       </div>
     )
   }

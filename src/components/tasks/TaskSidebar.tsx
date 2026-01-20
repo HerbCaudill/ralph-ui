@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils"
-import type { ReactNode } from "react"
+import type { ReactNode, RefObject } from "react"
 import { TaskProgressBar } from "./TaskProgressBar"
+import { SearchInput, type SearchInputHandle } from "./SearchInput"
 
 // Types
 
@@ -16,6 +17,11 @@ export interface TaskSidebarProps {
   taskList?: ReactNode
 
   /**
+   * Ref for the search input (for focus handling).
+   */
+  searchInputRef?: RefObject<SearchInputHandle | null>
+
+  /**
    * Additional CSS classes.
    */
   className?: string
@@ -27,7 +33,7 @@ export interface TaskSidebarProps {
  * Sidebar container for task management.
  * Contains quick task input at top and task list below.
  */
-export function TaskSidebar({ quickInput, taskList, className }: TaskSidebarProps) {
+export function TaskSidebar({ quickInput, taskList, searchInputRef, className }: TaskSidebarProps) {
   return (
     <div
       className={cn("flex h-full flex-col", className)}
@@ -36,6 +42,11 @@ export function TaskSidebar({ quickInput, taskList, className }: TaskSidebarProp
     >
       {/* Quick Input Area */}
       {quickInput && <div className="border-border shrink-0 border-b px-4 py-3">{quickInput}</div>}
+
+      {/* Search Input */}
+      <div className="border-border shrink-0 border-b px-3 py-2">
+        <SearchInput ref={searchInputRef} />
+      </div>
 
       {/* Task List Area */}
       <div className="min-h-0 flex-1 overflow-y-auto">

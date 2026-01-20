@@ -206,6 +206,9 @@ export interface AppState {
 
   // Iteration view state (null = show current/latest iteration)
   viewingIterationIndex: number | null
+
+  // Task search filter
+  taskSearchQuery: string
 }
 
 // Store Actions
@@ -279,6 +282,10 @@ export interface AppActions {
   goToPreviousIteration: () => void
   goToNextIteration: () => void
   goToLatestIteration: () => void
+
+  // Task search
+  setTaskSearchQuery: (query: string) => void
+  clearTaskSearchQuery: () => void
 
   // Reset
   reset: () => void
@@ -373,6 +380,7 @@ const initialState: AppState = {
   taskChatLoading: false,
   taskChatStreamingText: "",
   viewingIterationIndex: null,
+  taskSearchQuery: "",
 }
 
 // Create the store with localStorage initialization
@@ -532,6 +540,10 @@ export const useAppStore = create<AppState & AppActions>(set => ({
     }),
   goToLatestIteration: () => set({ viewingIterationIndex: null }),
 
+  // Task search
+  setTaskSearchQuery: query => set({ taskSearchQuery: query }),
+  clearTaskSearchQuery: () => set({ taskSearchQuery: "" }),
+
   // Reset
   reset: () => set(initialState),
 }))
@@ -573,3 +585,4 @@ export const selectCurrentIterationEvents = (state: AppState) =>
   getEventsForIteration(state.events, state.viewingIterationIndex)
 export const selectIsViewingLatestIteration = (state: AppState) =>
   state.viewingIterationIndex === null
+export const selectTaskSearchQuery = (state: AppState) => state.taskSearchQuery

@@ -2,6 +2,7 @@ import { render, screen, fireEvent } from "@testing-library/react"
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { TaskList, type TaskGroup } from "./TaskList"
 import type { TaskCardTask } from "./TaskCard"
+import { useAppStore } from "@/store"
 
 const STORAGE_KEY = "ralph-ui-task-list-collapsed-state"
 const CLOSED_FILTER_STORAGE_KEY = "ralph-ui-task-list-closed-filter"
@@ -829,6 +830,149 @@ describe("TaskList", () => {
       // Only one combobox should exist (for closed group)
       const filterDropdowns = screen.getAllByRole("combobox")
       expect(filterDropdowns).toHaveLength(1)
+    })
+  })
+
+  describe("search filtering", () => {
+    beforeEach(() => {
+      useAppStore.getState().clearTaskSearchQuery()
+    })
+
+    afterEach(() => {
+      useAppStore.getState().clearTaskSearchQuery()
+    })
+
+    it("filters tasks by title", () => {
+      const tasks: TaskCardTask[] = [
+        { id: "task-1", title: "Fix authentication bug", status: "open" },
+        { id: "task-2", title: "Add new feature", status: "open" },
+        { id: "task-3", title: "Update documentation", status: "open" },
+      ]
+      useAppStore.getState().setTaskSearchQuery("auth")
+      render(<TaskList tasks={tasks} persistCollapsedState={false} />)
+
+      expect(screen.getByText("Fix authentication bug")).toBeInTheDocument()
+      expect(screen.queryByText("Add new feature")).not.toBeInTheDocument()
+      expect(screen.queryByText("Update documentation")).not.toBeInTheDocument()
+    })
+
+    it("filters tasks by id", () => {
+      const tasks: TaskCardTask[] = [
+        { id: "rui-abc", title: "First task", status: "open" },
+        { id: "rui-xyz", title: "Second task", status: "open" },
+      ]
+      useAppStore.getState().setTaskSearchQuery("xyz")
+      render(<TaskList tasks={tasks} persistCollapsedState={false} />)
+
+      expect(screen.getByText("Second task")).toBeInTheDocument()
+      expect(screen.queryByText("First task")).not.toBeInTheDocument()
+    })
+
+    it("filters tasks by description", () => {
+      const tasks: TaskCardTask[] = [
+        { id: "task-1", title: "Task 1", status: "open", description: "This is about React hooks" },
+        {
+          id: "task-2",
+          title: "Task 2",
+          status: "open",
+          description: "This is about Vue components",
+        },
+      ]
+      useAppStore.getState().setTaskSearchQuery("React")
+      render(<TaskList tasks={tasks} persistCollapsedState={false} />)
+
+      expect(screen.getByText("Task 1")).toBeInTheDocument()
+      expect(screen.queryByText("Task 2")).not.toBeInTheDocument()
+    })
+
+    it("is case insensitive", () => {
+      const tasks: TaskCardTask[] = [
+        { id: "task-1", title: "FIX AUTHENTICATION", status: "open" },
+        { id: "task-2", title: "Add Feature", status: "open" },
+      ]
+      useAppStore.getState().setTaskSearchQuery("fix")
+      render(<TaskList tasks={tasks} persistCollapsedState={false} />)
+
+      expect(screen.getByText("FIX AUTHENTICATION")).toBeInTheDocument()
+      expect(screen.queryByText("Add Feature")).not.toBeInTheDocument()
+    })
+
+    it("shows all tasks when search query is empty", () => {
+      const tasks: TaskCardTask[] = [
+        { id: "task-1", title: "Task 1", status: "open" },
+        { id: "task-2", title: "Task 2", status: "open" },
+      ]
+      useAppStore.getState().setTaskSearchQuery("")
+      render(<TaskList tasks={tasks} persistCollapsedState={false} />)
+
+      expect(screen.getByText("Task 1")).toBeInTheDocument()
+      expect(screen.getByText("Task 2")).toBeInTheDocument()
+    })
+
+    it("shows all tasks when search query is only whitespace", () => {
+      const tasks: TaskCardTask[] = [
+        { id: "task-1", title: "Task 1", status: "open" },
+        { id: "task-2", title: "Task 2", status: "open" },
+      ]
+      useAppStore.getState().setTaskSearchQuery("   ")
+      render(<TaskList tasks={tasks} persistCollapsedState={false} />)
+
+      expect(screen.getByText("Task 1")).toBeInTheDocument()
+      expect(screen.getByText("Task 2")).toBeInTheDocument()
+    })
+
+    it("shows 'No matching tasks' when no tasks match", () => {
+      const tasks: TaskCardTask[] = [
+        { id: "task-1", title: "Task 1", status: "open" },
+        { id: "task-2", title: "Task 2", status: "open" },
+      ]
+      useAppStore.getState().setTaskSearchQuery("nonexistent")
+      render(<TaskList tasks={tasks} persistCollapsedState={false} />)
+
+      expect(screen.getByText("No matching tasks")).toBeInTheDocument()
+    })
+
+    it("updates filtered results when query changes", () => {
+      const tasks: TaskCardTask[] = [
+        { id: "task-1", title: "Fix bug", status: "open" },
+        { id: "task-2", title: "Add feature", status: "open" },
+      ]
+
+      // Start with one search
+      useAppStore.getState().setTaskSearchQuery("bug")
+      const { rerender } = render(<TaskList tasks={tasks} persistCollapsedState={false} />)
+
+      expect(screen.getByText("Fix bug")).toBeInTheDocument()
+      expect(screen.queryByText("Add feature")).not.toBeInTheDocument()
+
+      // Change query
+      useAppStore.getState().setTaskSearchQuery("feature")
+      rerender(<TaskList tasks={tasks} persistCollapsedState={false} />)
+
+      expect(screen.queryByText("Fix bug")).not.toBeInTheDocument()
+      expect(screen.getByText("Add feature")).toBeInTheDocument()
+    })
+
+    it("filters across all status groups", () => {
+      const tasks: TaskCardTask[] = [
+        { id: "task-1", title: "Open auth task", status: "open" },
+        { id: "task-2", title: "In progress auth task", status: "in_progress" },
+        { id: "task-3", title: "Blocked other task", status: "blocked" },
+        { id: "task-4", title: "Closed auth task", status: "closed", closed_at: getRecentDate() },
+      ]
+      useAppStore.getState().setTaskSearchQuery("auth")
+      render(
+        <TaskList
+          tasks={tasks}
+          defaultCollapsed={{ blocked: false, closed: false }}
+          persistCollapsedState={false}
+        />,
+      )
+
+      expect(screen.getByText("Open auth task")).toBeInTheDocument()
+      expect(screen.getByText("In progress auth task")).toBeInTheDocument()
+      expect(screen.getByText("Closed auth task")).toBeInTheDocument()
+      expect(screen.queryByText("Blocked other task")).not.toBeInTheDocument()
     })
   })
 })
